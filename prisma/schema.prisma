@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  name           String
+  apiKey         String          @unique // Internal API key for Tranzmit
+  posthogKey     String
+  posthogHost    String          @default("https://us.posthog.com")
+  posthogProjId  String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  campaigns      Campaign[]
+  frictionPoints FrictionPoint[]
+  cohorts        Cohort[]
+  interviews     Interview[]
+}
+
+model Campaign {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id])
+  name        String
+  status      String // 'active', 'completed', 'paused'
+  triggerType String // 'manual', 'automatic_dropoff'
+  funnelId    String?
+  stepId      String?
+  config      String? // JSON string for campaign specific settings
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  jobs        Job[]
+  interviews  Interview[]
+}
+
+model Job {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  type       String // 'ANALYZE_FUNNEL', 'CREATE_COHORT'
+  status     String // 'pending', 'processing', 'completed', 'failed'
+  result     String? // JSON result
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model FrictionPoint {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id])
+  funnelId          String
+  funnelName        String
+  stepId            String
+  stepName          String
+  stepOrder         Int
+  dropOffRate       Float
+  dropOffCount      Int
+  avgTimeToConvert  Float? // Average time in seconds
+  severity          String // 'critical', 'high', 'medium', 'low'
+  insights          String? // JSON: { reasons: [], recommendations: [], affectedSegments: [] }
+  sessionRecordings String? // JSON: [{ recordingId, userId, ... }]
+  status            String @default("active") // 'active', 'resolved', 'investigating'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([projectId, funnelId, stepId])
+}
+
+model Cohort {
+  id               String          @id @default(cuid())
+  projectId        String
+  project          Project         @relation(fields: [projectId], references: [id])
+  posthogCohortId  String? // PostHog cohort ID
+  name             String
+  description      String?
+  type             String          @default("manual") // 'manual', 'funnel_dropoff', 'churn_risk', 'low_engagement', 'high_errors'
+  size             Int             @default(0)
+  criteria         String? // JSON: cohort definition criteria
+  status           String          @default("active") // 'active', 'archived'
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  analyses         CohortAnalysis[]
+  interviews       Interview[]
+  members          CohortMember[]
+  hypotheses       Hypothesis[]
+}
+
+// Individual users within a cohort with their behavioral signals
+model CohortMember {
+  id              String        @id @default(cuid())
+  cohortId        String
+  cohort          Cohort        @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  distinctId      String        // PostHog distinct_id
+  email           String?
+  name            String?
+  properties      String?       // JSON: user properties from PostHog
+  priorityScore   Int           @default(0) // 0-100 priority for interviews
+  signals         String?       // JSON: array of behavioral signals
+  signalSummary   String?       // Human-readable signal summary
+  interviewStatus String        @default("pending") // 'pending', 'scheduled', 'completed', 'skipped'
+  metadata        String?       // JSON: enriched profile data (geo, device, acquisition, engagement)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([cohortId, distinctId])
+}
+
+// AI-generated hypotheses for cohorts
+model Hypothesis {
+  id              String              @id @default(cuid())
+  cohortId        String
+  cohort          Cohort              @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  title           String              // Brief hypothesis title
+  description     String              // Detailed hypothesis explanation
+  behaviorPattern String?             // JSON: the behavioral pattern this hypothesis addresses
+  confidence      Float               @default(0.5) // 0-1 confidence score
+  evidence        String?             // JSON: supporting evidence from data
+  status          String              @default("active") // 'active', 'validated', 'invalidated'
+  validationNotes String?             // Notes from validation
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  questions       InterviewQuestion[]
+}
+
+// Suggested interview questions linked to hypotheses
+model InterviewQuestion {
+  id           String     @id @default(cuid())
+  hypothesisId String
+  hypothesis   Hypothesis @relation(fields: [hypothesisId], references: [id], onDelete: Cascade)
+  question     String     // The interview question
+  purpose      String?    // Why this question matters
+  category     String?    // 'opening', 'discovery', 'pain_point', 'solution', 'closing'
+  priority     Int        @default(1) // 1-5, higher = more important
+  createdAt    DateTime   @default(now())
+}
+
+model CohortAnalysis {
+  id                  String   @id @default(cuid())
+  cohortId            String
+  cohort              Cohort   @relation(fields: [cohortId], references: [id])
+  analysisType        String // 'behavior', 'conversion', 'retention', 'engagement'
+  metrics             String // JSON: { metric1: value1, metric2: value2, ... }
+  insights            String? // JSON: { summary, trends, anomalies, recommendations }
+  dateRange           String // JSON: { from, to }
+  createdAt           DateTime @default(now())
+}
+
+model Interview {
+  id              String            @id @default(cuid())
+  campaignId      String?
+  campaign        Campaign?         @relation(fields: [campaignId], references: [id])
+  cohortId        String?
+  cohort          Cohort?           @relation(fields: [cohortId], references: [id])
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id])
+  userId          String // PostHog distinct ID
+  userEmail       String?
+  userName        String?
+  status          String // 'scheduled', 'in_progress', 'completed', 'failed', 'cancelled'
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  transcript      String? // JSON: [{ speaker, text, timestamp }]
+  notes           String? // Free-form notes
+  metadata        String? // JSON: additional metadata
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  insights        InterviewInsight[]
+}
+
+model InterviewInsight {
+  id           String   @id @default(cuid())
+  interviewId  String
+  interview    Interview @relation(fields: [interviewId], references: [id])
+  painPoints   String? // JSON: [{ point, severity, context }]
+  suggestions  String? // JSON: [{ suggestion, priority, category }]
+  sentiment    String? // 'positive', 'neutral', 'negative', 'mixed'
+  themes       String? // JSON: [{ theme, mentions, quotes }]
+  satisfaction Float? // 0-10 score
+  summary      String? // AI-generated summary
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

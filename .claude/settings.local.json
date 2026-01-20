@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:posthog.com)"
+    ]
+  }
+}
