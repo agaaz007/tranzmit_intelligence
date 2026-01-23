@@ -7,11 +7,14 @@ import {
   Loader2,
   RefreshCw,
   ChevronDown,
-  ChevronUp,
   Users,
   ExternalLink,
+  X,
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
 } from 'lucide-react';
-import FunnelMap from '@/components/FunnelMap';
+import InteractiveFunnelMap from '@/components/InteractiveFunnelMap';
 
 interface FunnelStep {
   name: string;
@@ -34,9 +37,10 @@ export default function FunnelsPage() {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [projectId, setProjectId] = useState<string>('');
-  const [expandedFunnel, setExpandedFunnel] = useState<number | string | null>(null);
+  const [selectedFunnel, setSelectedFunnel] = useState<Funnel | null>(null);
   const [posthogHost, setPosthogHost] = useState<string>('https://us.posthog.com');
   const [posthogProjectId, setPosthogProjectId] = useState<string>('');
+  const [posthogKey, setPosthogKey] = useState<string>('');
 
   useEffect(() => {
     const initializeProject = async () => {
@@ -66,6 +70,17 @@ export default function FunnelsPage() {
     initializeProject();
   }, []);
 
+  // Close modal on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedFunnel(null);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const loadFunnels = async (projId: string) => {
     setIsLoading(true);
     try {
@@ -81,6 +96,7 @@ export default function FunnelsPage() {
       const host = projectData.project.posthogHost || 'https://us.posthog.com';
       setPosthogHost(host);
       setPosthogProjectId(projectData.project.posthogProjId);
+      setPosthogKey(projectData.project.posthogKey);
 
       const response = await fetch(`/api/posthog?action=funnels`, {
         headers: {
@@ -151,19 +167,17 @@ export default function FunnelsPage() {
             </a>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {funnels.map((funnel) => (
               <motion.div
                 key={funnel.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+                whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden cursor-pointer transition-all"
+                onClick={() => setSelectedFunnel(funnel)}
               >
-                {/* Funnel Header */}
-                <div
-                  className="p-5 cursor-pointer hover:bg-slate-50/50 transition-colors"
-                  onClick={() => setExpandedFunnel(expandedFunnel === funnel.id ? null : funnel.id)}
-                >
+                <div className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="p-2.5 bg-indigo-50 rounded-xl">
@@ -201,42 +215,157 @@ export default function FunnelsPage() {
                         <ExternalLink className="w-5 h-5" />
                       </a>
 
-                      <div className={`p-1 rounded-lg transition-colors ${expandedFunnel === funnel.id ? 'bg-slate-100' : ''}`}>
-                        {expandedFunnel === funnel.id ? (
-                          <ChevronUp className="w-5 h-5 text-slate-500" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
-                        )}
+                      <div className="p-1 rounded-lg">
+                        <ChevronDown className="w-5 h-5 text-slate-400" />
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Expanded Funnel Map */}
-                <AnimatePresence>
-                  {expandedFunnel === funnel.id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-slate-100"
-                    >
-                      <div className="p-6 bg-slate-50/50">
-                        <FunnelMap 
-                          steps={funnel.steps}
-                          onAnalyzeDropOff={(step, stepIndex) => {
-                            window.location.href = `/dashboard/priority-queue?funnelId=${funnel.id}&step=${stepIndex}`;
-                          }}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Full Screen Funnel Modal */}
+      <AnimatePresence>
+        {selectedFunnel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedFunnel(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-[98vw] h-[95vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-xl shadow-sm">
+                      <Target className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">{selectedFunnel.name}</h2>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center gap-1.5">
+                          <Users className="w-4 h-4" />
+                          {selectedFunnel.totalUsers.toLocaleString()} users
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span>{selectedFunnel.steps.length} steps</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="flex items-center gap-1 text-indigo-600 font-medium">
+                          <TrendingUp className="w-4 h-4" />
+                          {(selectedFunnel.overallConversion || 0).toFixed(1)}% conversion
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={getPostHogFunnelUrl(selectedFunnel.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium shadow-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View in PostHog
+                    </a>
+                    <button
+                      onClick={() => setSelectedFunnel(null)}
+                      className="p-2 hover:bg-white/80 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Funnel Summary Stats */}
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex-shrink-0">
+                <div className="flex items-center gap-6">
+                  {selectedFunnel.steps.map((step, idx) => (
+                    <React.Fragment key={idx}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                          idx === 0 ? 'bg-indigo-100 text-indigo-700' : 
+                          idx === selectedFunnel.steps.length - 1 ? 'bg-emerald-100 text-emerald-700' : 
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        <div className="text-sm">
+                          <div className="font-medium text-slate-900 truncate max-w-[120px]" title={step.name}>
+                            {step.name}
+                          </div>
+                          <div className="text-slate-500">{step.count.toLocaleString()} users</div>
+                        </div>
+                      </div>
+                      {idx < selectedFunnel.steps.length - 1 && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <ArrowRight className="w-4 h-4 text-slate-300" />
+                          <span className={`font-medium ${
+                            (selectedFunnel.steps[idx + 1]?.count / step.count * 100) >= 50 
+                              ? 'text-emerald-600' 
+                              : 'text-red-500'
+                          }`}>
+                            {step.count > 0 
+                              ? ((selectedFunnel.steps[idx + 1]?.count / step.count) * 100).toFixed(0)
+                              : 0}%
+                          </span>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interactive Funnel Map */}
+              <div className="flex-1 overflow-hidden bg-gradient-to-br from-slate-100 via-white to-indigo-50/30" style={{ minHeight: '60vh' }}>
+                <InteractiveFunnelMap
+                  steps={selectedFunnel.steps}
+                  funnelId={selectedFunnel.id}
+                  posthogConfig={{
+                    apiKey: posthogKey,
+                    projectId: posthogProjectId,
+                    host: posthogHost,
+                  }}
+                  localProjectId={projectId}
+                  onAnalyzeDropOff={(_, stepIndex) => {
+                    window.location.href = `/dashboard/priority-queue?funnelId=${selectedFunnel.id}&step=${stepIndex}`;
+                  }}
+                  onCreateCohort={(stepIndex, cohortType) => {
+                    window.location.href = `/dashboard/priority-queue?funnelId=${selectedFunnel.id}&step=${stepIndex}&cohort=${cohortType}`;
+                  }}
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-500">
+                    Click on <span className="text-emerald-600 font-medium">converted</span> or <span className="text-red-500 font-medium">dropped</span> badges to analyze user cohorts
+                  </div>
+                  <button
+                    onClick={() => setSelectedFunnel(null)}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -10,13 +10,23 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.13",
     "@prisma/client": "^5.22.0",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@xyflow/react": "^12.10.0",
+    "ai": "^6.0.48",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.0.0",
     "lucide-react": "^0.424.0",
     "next": "16.1.2",
+    "openai": "^6.16.0",
     "prisma": "^5.22.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "rrweb": "^2.0.0-alpha.4",
+    "rrweb-player": "^1.0.0-alpha.4",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

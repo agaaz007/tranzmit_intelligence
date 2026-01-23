@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Replay - rrweb Player</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .info strong {
+            color: #333;
+        }
+        #player-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+    <!-- Load rrweb-player from CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/style.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Session Replay Viewer</h1>
+        
+        <div class="info">
+            <p><strong>Session ID:</strong> <span id="session-id">Loading...</span></p>
+            <p><strong>Total Events:</strong> <span id="event-count">Loading...</span></p>
+            <p><strong>Duration:</strong> <span id="duration">Loading...</span></p>
+            <p>
+                <label for="file-select"><strong>Select Recording:</strong></label>
+                <select id="file-select">
+                    <option value="">-- Select a file --</option>
+                </select>
+            </p>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>📦 Loading session recording...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="player-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/rrweb-player@latest/dist/index.js"></script>
+    <script>
+        const sessionFiles = [
+            'session_019bdd72-a23b-7734-bf10-a958cbc568e4_rrweb.json',
+            'session_019bdd72-a23b-7734-bf10-a958cbc568e4_processed.json',
+            'session_019bdd72-a23b-7734-bf10-a958cbc568e4_raw.json',
+            'session_019bdd4c-fc0f-7dfb-9d87-9101fdd0b836_rrweb.json',
+            '/Users/Agaaz/voicejourneys/session_019bdd4c-fc0f-7dfb-9d87-9101fdd0b836_processed.json'
+        ];
+
+        const fileSelect = document.getElementById('file-select');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const playerContainer = document.getElementById('player-container');
+
+        // Populate file selector
+        sessionFiles.forEach(file => {
+            const option = document.createElement('option');
+            option.value = file;
+            option.textContent = file;
+            fileSelect.appendChild(option);
+        });
+
+        // Set default to rrweb file
+        fileSelect.value = sessionFiles[0];
+
+        let currentPlayer = null;
+
+        async function loadSession(filename) {
+            try {
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                playerContainer.innerHTML = '';
+
+                // Destroy existing player
+                if (currentPlayer) {
+                    currentPlayer = null;
+                }
+
+                console.log('Loading session from:', filename);
+                const response = await fetch(filename);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+                }
+
+                const events = await response.json();
+                console.log('Loaded events:', events.length);
+
+                if (!Array.isArray(events) || events.length === 0) {
+                    throw new Error('Invalid session data: expected non-empty array of events');
+                }
+
+                // Update info
+                document.getElementById('session-id').textContent = filename.replace('session_', '').replace(/\.(json|_rrweb\.json|_processed\.json|_raw\.json)$/, '');
+                document.getElementById('event-count').textContent = events.length.toLocaleString();
+
+                // Calculate duration
+                const firstTimestamp = events[0].timestamp;
+                const lastTimestamp = events[events.length - 1].timestamp;
+                const durationMs = lastTimestamp - firstTimestamp;
+                const durationMin = Math.floor(durationMs / 60000);
+                const durationSec = Math.floor((durationMs % 60000) / 1000);
+                document.getElementById('duration').textContent = `${durationMin}m ${durationSec}s`;
+
+                loadingDiv.style.display = 'none';
+
+                // Create rrweb player
+                console.log('Creating rrweb player...');
+                currentPlayer = new rrwebPlayer({
+                    target: playerContainer,
+                    props: {
+                        events,
+                        autoPlay: false,
+                        showController: true,
+                        showDebug: true,
+                        width: playerContainer.offsetWidth || 1200,
+                        height: 800,
+                        // Optional: skip inactive periods
+                        skipInactive: true,
+                        // Speed controls
+                        speed: 1.0,
+                        // Tags for categorization
+                        tags: {
+                            'Session ID': filename
+                        }
+                    },
+                });
+
+                console.log('Player created successfully');
+
+            } catch (error) {
+                console.error('Error loading session:', error);
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `
+                    <strong>❌ Error loading session:</strong><br>
+                    ${error.message}
+                    <br><br>
+                    <strong>Troubleshooting:</strong>
+                    <ul>
+                        <li>Make sure you're viewing this file via a web server (not file://)</li>
+                        <li>Check that the JSON file exists in the same directory</li>
+                        <li>Check the browser console for more details</li>
+                    </ul>
+                `;
+            }
+        }
+
+        // Load session when file is selected
+        fileSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                loadSession(e.target.value);
+            }
+        });
+
+        // Auto-load default file
+        if (fileSelect.value) {
+            loadSession(fileSelect.value);
+        }
+    </script>
+</body>
+</html>

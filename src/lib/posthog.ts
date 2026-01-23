@@ -602,75 +602,47 @@ class PostHogClient {
     }
     // Create a static cohort from a list of distinct IDs
     async createCohort(name: string, distinctIds: string[]): Promise<any> {
-        // 1. Create the cohort container
+        // Create a DYNAMIC cohort with filters based on distinct_id
+        // This is more reliable than static cohorts which require CSV upload
+        
+        if (distinctIds.length === 0) {
+            throw new Error('No users to add to cohort');
+        }
+
+        // For large lists, we need to chunk the OR conditions
+        // PostHog has limits on filter complexity
+        const maxIdsPerCohort = 100;
+        const idsToUse = distinctIds.slice(0, maxIdsPerCohort);
+
+        // Build the filter groups - using distinct_id property
+        const filterGroups = [{
+            properties: [{
+                key: '$distinct_id',
+                type: 'person',
+                value: idsToUse,
+                operator: 'exact'
+            }]
+        }];
+
         const createResponse = await this.request<any>(
             `/api/projects/${this.config.projectId}/cohorts/`,
             {
                 method: 'POST',
                 body: JSON.stringify({
                     name: name,
-                    is_static: true,
+                    description: `Auto-generated cohort with ${distinctIds.length} users from funnel analysis`,
+                    is_static: false, // Dynamic cohort with filters
+                    groups: filterGroups,
                 })
             }
         );
 
         if (!createResponse.id) {
-            throw new Error('Failed to create cohort container');
+            throw new Error('Failed to create cohort');
         }
 
-        const cohortId = createResponse.id;
-
-        // 2. Add people to the cohort (PostHog requires a separate call/csv upload usually, 
-        // but for static cohorts via API, we often use the 'persons' endpoint with cohort params 
-        // OR the unofficial 'update_people' endpoint. 
-        // THE STANDARD WAY for static cohorts by ID is actually tricky via public API docs sometimes.
-        // A reliable way often used is filtering by ID, but for 'static', we need to POST to /cohorts/{id}/persons
-
-        // Let's try the standard /cohorts/ID/persons endpoint if available or fallback to internal behavior
-        // API docs say: POST /api/projects/{project_id}/cohorts/{id}/persons/ with { users: [distinct_id, ...] } (CSV often preferred for bulk)
-
-        // We will try adding them one by one or batch if supported, but for now let's assume a small batch is fine.
-        // NOTE: PostHog API for static cohort members can be: POST /api/projects/:id/cohorts/:cohort_id/members
-
-        // Using "update" with csv is common, but let's try the direct JSON association if documented.
-        // Reference: https://posthog.com/docs/api/cohorts
-        // Actually, static cohorts are often populated via CSV. 
-        // Alternative: Create a dynamic cohort based on "person_id" is X, Y, Z. 
-        // Let's go with DYNAMIC cohort with ID filters for simplicity and reliability if the list is < 100.
-
-        if (distinctIds.length > 0) {
-            // Create a "Static" cohort but populated via CSV-like mechanism is complex. 
-            // Let's try creating a DYNAMIC cohort defined by IDs. It's cleaner for the API.
-
-            const updatePayload = {
-                criteria: {
-                    groups: [{
-                        variant: 'OR',
-                        properties: distinctIds.map(id => ({
-                            key: 'id', // This matches the internal Person UUID or Distinct ID? usually 'id' or '$distinct_id'
-                            type: 'person',
-                            value: id,
-                            operator: 'exact'
-                        }))
-                    }]
-                },
-                is_static: false // Switch to dynamic so we can just set criteria
-            };
-
-            // Wait, if we want static, we upload CSV. 
-            // Let's use the explicit "Add Users" endpoint which is safer for "Static".
-            // Endpoint: POST /api/projects/{project_id}/cohorts/{cohort_id}/persons via multipart (CSV)
-            // OR... let's stick to the simplest working method for a prototype:
-            // We will assumes these IDs are Person UUIDs.
-
-            // For this MVP, let's just Log it because the exact endpoint varies by PostHog version (Cloud vs Self-hosted)
-            // and CSV upload is heavy to implement in one go.
-
-            console.log(`[PostHogClient] Mocking adding ${distinctIds.length} users to cohort ${cohortId}`);
-            return { id: cohortId, size: distinctIds.length };
-        }
-
-        return createResponse;
+        console.log(`[PostHog] Created dynamic cohort ${createResponse.id} with ${idsToUse.length} users`);
+        return { id: createResponse.id, size: idsToUse.length };
     }
 
     // Get persons list with properties
@@ -726,6 +698,337 @@ class PostHogClient {
 
         const result = await this.executeHogQL(hogql);
         return result.results || [];
+    }
+
+    // Get top events for a funnel cohort (converted or dropped users)
+    // Returns events with % of users in the cohort who performed each event
+    async getCohortTopEvents(
+        insightId: number,
+        stepIndex: number,
+        cohortType: 'converted' | 'dropped'
+    ): Promise<{ name: string; count: number; percentage: number }[]> {
+        try {
+            const insight = await this.getFunnelWithResults(insightId);
+
+            if (!insight.result || !insight.result[stepIndex]) {
+                console.log('[PostHog] No funnel results for cohort events');
+                return [];
+            }
+
+            const step = insight.result[stepIndex];
+            const peopleUrl = cohortType === 'converted'
+                ? step.converted_people_url
+                : step.dropped_people_url;
+
+            if (!peopleUrl) {
+                console.log(`[PostHog] No ${cohortType} people URL available`);
+                return [];
+            }
+
+            // Get the list of users in this cohort
+            const peopleData = await this.request<{ results: unknown[] }>(peopleUrl);
+            const distinctIds = (peopleData.results || [])
+                .slice(0, 100) // Limit to 100 users for performance
+                .map((p: unknown) => {
+                    const person = p as { distinct_ids?: string[]; distinct_id?: string };
+                    return person.distinct_ids?.[0] || person.distinct_id;
+                })
+                .filter(Boolean) as string[];
+
+            if (distinctIds.length === 0) {
+                console.log('[PostHog] No users found in cohort');
+                return [];
+            }
+
+            const totalUsersInCohort = distinctIds.length;
+
+            // Query top events by unique users (not total event count)
+            const escapedIds = distinctIds.map((id: string) => `'${id.replace(/'/g, "\\'")}'`).join(',');
+            const hogql = `
+                SELECT
+                    event,
+                    uniqExact(distinct_id) as user_count
+                FROM events
+                WHERE distinct_id IN (${escapedIds})
+                AND timestamp > now() - INTERVAL 30 DAY
+                AND event NOT LIKE '$%'
+                GROUP BY event
+                ORDER BY user_count DESC
+                LIMIT 5
+            `;
+
+            const result = await this.executeHogQL(hogql);
+
+            return (result.results || []).map((r: [string, number]) => ({
+                name: r[0],
+                count: r[1],
+                // Percentage of users in cohort who performed this event
+                percentage: Math.round((r[1] / totalUsersInCohort) * 100)
+            }));
+        } catch (e) {
+            console.error('[PostHog] Failed to get cohort top events:', e);
+            return [];
+        }
+    }
+
+    // Get distinct IDs for users in a funnel cohort (for creating cohorts)
+    async getCohortUserIds(
+        insightId: number,
+        stepIndex: number,
+        cohortType: 'converted' | 'dropped'
+    ): Promise<string[]> {
+        try {
+            const insight = await this.getFunnelWithResults(insightId);
+
+            if (!insight.result || !insight.result[stepIndex]) {
+                console.log('[PostHog] No result or step data for insight:', insightId, 'step:', stepIndex);
+                return [];
+            }
+
+            // First, try to use the people URLs from the insight result
+            const step = insight.result[stepIndex];
+            const peopleUrl = cohortType === 'converted'
+                ? step.converted_people_url
+                : step.dropped_people_url;
+
+            if (peopleUrl) {
+                try {
+                    console.log('[PostHog] Trying people URL:', peopleUrl);
+                    const peopleData = await this.request<{ results: unknown[] }>(peopleUrl);
+                    const userIds = (peopleData.results || [])
+                        .map((p: unknown) => {
+                            const person = p as { distinct_ids?: string[]; distinct_id?: string };
+                            return person.distinct_ids?.[0] || person.distinct_id;
+                        })
+                        .filter(Boolean) as string[];
+                    
+                    if (userIds.length > 0) {
+                        console.log('[PostHog] Got', userIds.length, 'users from people URL');
+                        return userIds;
+                    }
+                } catch (urlError) {
+                    console.log('[PostHog] People URL failed:', urlError);
+                }
+            } else {
+                console.log('[PostHog] No', cohortType, 'people URL available');
+            }
+
+            // Use HogQL to get users - this is the most reliable method
+            console.log('[PostHog] Using HogQL query for', cohortType, 'users at step', stepIndex);
+            return this.getCohortUserIdsViaHogQL(insight, stepIndex, cohortType);
+        } catch (e) {
+            console.error('[PostHog] Failed to get cohort user IDs:', e);
+            return [];
+        }
+    }
+
+    // Fallback method to get cohort users via HogQL
+    private async getCohortUserIdsViaHogQL(
+        insight: PostHogInsight,
+        stepIndex: number,
+        cohortType: 'converted' | 'dropped'
+    ): Promise<string[]> {
+        try {
+            // Extract event names from result data (more reliable)
+            const funnelSteps = insight.result || [];
+            if (funnelSteps.length <= stepIndex) {
+                console.log('[PostHog] Step index', stepIndex, 'out of bounds for', funnelSteps.length, 'steps');
+                return [];
+            }
+
+            // Get the event at the current step and next step
+            const currentEvent = funnelSteps[stepIndex]?.name || funnelSteps[stepIndex]?.custom_name;
+            const nextEvent = funnelSteps[stepIndex + 1]?.name || funnelSteps[stepIndex + 1]?.custom_name;
+
+            if (!currentEvent) {
+                console.log('[PostHog] No event name found for step', stepIndex);
+                return [];
+            }
+
+            console.log('[PostHog] Building HogQL query for:', { currentEvent, nextEvent, cohortType });
+
+            let hogql: string;
+            const escapedCurrentEvent = currentEvent.replace(/'/g, "''");
+            const escapedNextEvent = nextEvent?.replace(/'/g, "''");
+            
+            if (cohortType === 'converted' && nextEvent) {
+                // Users who did current event AND next event (simpler query without alias)
+                hogql = `
+                    SELECT DISTINCT distinct_id
+                    FROM events
+                    WHERE event = '${escapedCurrentEvent}'
+                    AND timestamp > now() - INTERVAL 30 DAY
+                    AND distinct_id IN (
+                        SELECT DISTINCT distinct_id
+                        FROM events
+                        WHERE event = '${escapedNextEvent}'
+                        AND timestamp > now() - INTERVAL 30 DAY
+                    )
+                    LIMIT 1000
+                `;
+            } else if (cohortType === 'dropped' && nextEvent) {
+                // Users who did current event but NOT next event
+                hogql = `
+                    SELECT DISTINCT distinct_id
+                    FROM events
+                    WHERE event = '${escapedCurrentEvent}'
+                    AND timestamp > now() - INTERVAL 30 DAY
+                    AND distinct_id NOT IN (
+                        SELECT DISTINCT distinct_id
+                        FROM events
+                        WHERE event = '${escapedNextEvent}'
+                        AND timestamp > now() - INTERVAL 30 DAY
+                    )
+                    LIMIT 1000
+                `;
+            } else {
+                // For the last step or if no next event, just get users who did this event
+                hogql = `
+                    SELECT DISTINCT distinct_id
+                    FROM events
+                    WHERE event = '${escapedCurrentEvent}'
+                    AND timestamp > now() - INTERVAL 30 DAY
+                    LIMIT 1000
+                `;
+            }
+
+            console.log('[PostHog] Executing HogQL query for cohort users');
+            const result = await this.executeHogQL(hogql);
+            const userIds = (result.results || [])
+                .map((row: string[]) => row[0])
+                .filter(Boolean) as string[];
+
+            console.log('[PostHog] HogQL returned', userIds.length, 'users');
+            return userIds;
+        } catch (e) {
+            console.error('[PostHog] HogQL query failed:', e);
+            return [];
+        }
+    }
+
+    // Get funnel correlation data to understand why users drop off
+    async getFunnelCorrelation(insightId: number, stepIndex: number): Promise<any[]> {
+        try {
+            console.log('[PostHog] Fetching funnel correlation for insight:', insightId, 'step:', stepIndex);
+            
+            // First get the insight to understand the funnel structure
+            const insight = await this.getInsight(insightId);
+            if (!insight) {
+                console.log('[PostHog] Insight not found for correlation');
+                return [];
+            }
+
+            // Extract funnel events from the insight
+            const funnelSteps = insight.result || [];
+            if (funnelSteps.length <= stepIndex) {
+                console.log('[PostHog] Step index out of bounds');
+                return [];
+            }
+
+            // Try to use the funnel correlation endpoint
+            // This endpoint analyzes events that correlate with conversion/drop-off
+            try {
+                const correlationResponse = await this.request<any>(
+                    `/api/projects/${this.config.projectId}/insights/funnel/correlation/`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            insight: insightId,
+                            funnel_step: stepIndex + 1,
+                            correlation_type: 'events',
+                        })
+                    }
+                );
+
+                if (correlationResponse.result) {
+                    console.log('[PostHog] Got correlation data:', correlationResponse.result.length, 'events');
+                    return correlationResponse.result.map((item: any) => ({
+                        event: item.event?.event || item.event || 'Unknown',
+                        success_count: item.success_count || 0,
+                        failure_count: item.failure_count || 0,
+                        odds_ratio: item.odds_ratio || 1,
+                        correlation_type: item.correlation_type || (item.odds_ratio > 1 ? 'failure' : 'success'),
+                        success_percentage: item.success_count && (item.success_count + item.failure_count) > 0
+                            ? (item.success_count / (item.success_count + item.failure_count) * 100)
+                            : 0,
+                        failure_percentage: item.failure_count && (item.success_count + item.failure_count) > 0
+                            ? (item.failure_count / (item.success_count + item.failure_count) * 100)
+                            : 0,
+                    }));
+                }
+            } catch (correlationError) {
+                console.log('[PostHog] Correlation endpoint not available, using optimized HogQL fallback');
+            }
+
+            // Fallback: Use optimized HogQL to analyze events that correlate with drop-off
+            const currentEvent = funnelSteps[stepIndex]?.name || funnelSteps[stepIndex]?.custom_name;
+            const nextEvent = funnelSteps[stepIndex + 1]?.name || funnelSteps[stepIndex + 1]?.custom_name;
+
+            if (!currentEvent || !nextEvent) {
+                console.log('[PostHog] Missing event names for correlation analysis');
+                return [];
+            }
+
+            const escapedCurrentEvent = currentEvent.replace(/'/g, "''");
+            const escapedNextEvent = nextEvent.replace(/'/g, "''");
+
+            // Optimized query: Use a single scan with conditional aggregation
+            // Cast to Float64 to avoid type mismatch errors in ClickHouse
+            const hogql = `
+                WITH 
+                    -- Get users who reached current step
+                    current_step_users AS (
+                        SELECT DISTINCT distinct_id
+                        FROM events 
+                        WHERE event = '${escapedCurrentEvent}' 
+                        AND timestamp > now() - INTERVAL 14 DAY
+                    ),
+                    -- Get users who converted to next step
+                    converted_users AS (
+                        SELECT DISTINCT distinct_id
+                        FROM events 
+                        WHERE event = '${escapedNextEvent}' 
+                        AND timestamp > now() - INTERVAL 14 DAY
+                    )
+                SELECT 
+                    e.event,
+                    toFloat(countDistinctIf(e.distinct_id, e.distinct_id NOT IN (SELECT distinct_id FROM converted_users))) as failure_count,
+                    toFloat(countDistinctIf(e.distinct_id, e.distinct_id IN (SELECT distinct_id FROM converted_users))) as success_count,
+                    if(success_count > 0, failure_count / success_count, failure_count + 1.0) as odds_ratio
+                FROM events e
+                WHERE e.distinct_id IN (SELECT distinct_id FROM current_step_users)
+                AND e.timestamp > now() - INTERVAL 14 DAY
+                AND e.event NOT IN ('$pageview', '$pageleave', '$autocapture', '$identify', '$set', '${escapedCurrentEvent}', '${escapedNextEvent}')
+                AND e.event NOT LIKE '$%'
+                GROUP BY e.event
+                HAVING (failure_count >= 2 OR success_count >= 2) AND (failure_count + success_count) >= 3
+                ORDER BY odds_ratio DESC
+                LIMIT 15
+            `;
+
+            console.log('[PostHog] Executing optimized correlation HogQL query');
+            const result = await this.executeHogQL(hogql);
+            
+            const correlations = (result.results || []).map((row: any[]) => ({
+                event: row[0],
+                failure_count: row[1] || 0,
+                success_count: row[2] || 0,
+                odds_ratio: row[3] || 1,
+                correlation_type: (row[3] || 1) > 1 ? 'failure' : 'success',
+                success_percentage: row[2] && (row[1] + row[2]) > 0
+                    ? (row[2] / (row[1] + row[2]) * 100)
+                    : 0,
+                failure_percentage: row[1] && (row[1] + row[2]) > 0
+                    ? (row[1] / (row[1] + row[2]) * 100)
+                    : 0,
+            }));
+
+            console.log('[PostHog] HogQL correlation returned', correlations.length, 'events');
+            return correlations;
+        } catch (e) {
+            console.error('[PostHog] Funnel correlation failed:', e);
+            return [];
+        }
     }
 
     // Get users from problematic sessions (uses session recordings API which is reliable)

@@ -5,7 +5,9 @@
       "Bash(npx prisma db push:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "WebFetch(domain:posthog.com)"
+      "WebFetch(domain:posthog.com)",
+      "Bash(node:*)",
+      "Bash(ls:*)"
     ]
   }
 }
