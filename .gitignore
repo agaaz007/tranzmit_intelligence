@@ -43,3 +43,4 @@ next-env.d.ts
 # local session data for debugging
 /posthog-sessions/
 session_*.json
+Tranzmit Listen Labs Clone/
