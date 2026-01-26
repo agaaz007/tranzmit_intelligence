@@ -211,8 +211,28 @@ export default function SessionInsightsPage() {
         });
 
         try {
+            // First, get project credentials
+            const projectId = localStorage.getItem('currentProjectId');
+            let posthogHeaders: Record<string, string> = {};
+            
+            if (projectId) {
+                const projectRes = await fetch(`/api/projects/${projectId}`);
+                if (projectRes.ok) {
+                    const projectData = await projectRes.json();
+                    if (projectData.project?.posthogKey) {
+                        posthogHeaders = {
+                            'x-posthog-key': projectData.project.posthogKey,
+                            'x-posthog-project': projectData.project.posthogProjId,
+                            'x-posthog-host': projectData.project.posthogHost || 'https://us.posthog.com',
+                        };
+                    }
+                }
+            }
+
             // Step 1: Fetch list of recent sessions
-            const listResponse = await fetch(`/api/posthog/sessions?limit=${sessionCount}`);
+            const listResponse = await fetch(`/api/posthog/sessions?limit=${sessionCount}`, {
+                headers: posthogHeaders,
+            });
             if (!listResponse.ok) {
                 const errorData = await listResponse.json();
                 throw new Error(errorData.error || 'Failed to fetch session list');
@@ -257,7 +277,7 @@ export default function SessionInsightsPage() {
                     // Fetch rrweb data
                     const dataResponse = await fetch('/api/posthog/sessions', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...posthogHeaders },
                         body: JSON.stringify({ sessionId: session.id }),
                     });
 

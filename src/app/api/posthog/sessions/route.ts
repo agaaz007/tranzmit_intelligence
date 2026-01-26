@@ -136,8 +136,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50);
 
+    // Get credentials from headers first, then fall back to env/defaults
     const apiKey = request.headers.get('x-posthog-key') || API_KEY;
     const projectId = request.headers.get('x-posthog-project') || PROJECT_ID;
+    const host = request.headers.get('x-posthog-host') || POSTHOG_HOST;
 
     if (!apiKey) {
         return NextResponse.json(
@@ -153,7 +155,7 @@ export async function GET(request: NextRequest) {
 
     try {
         // Fetch recent session recordings (sessions are returned in descending order by default)
-        const url = `${POSTHOG_HOST}/api/environments/${projectId}/session_recordings?limit=${limit}`;
+        const url = `${host}/api/environments/${projectId}/session_recordings?limit=${limit}`;
         console.log('[PostHog Sessions] Fetching:', url);
 
         const res = await fetch(url, { headers });
@@ -204,8 +206,10 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // Get credentials from headers first, then fall back to env/defaults
     const apiKey = request.headers.get('x-posthog-key') || API_KEY;
     const projectId = request.headers.get('x-posthog-project') || PROJECT_ID;
+    const host = request.headers.get('x-posthog-host') || POSTHOG_HOST;
 
     if (!apiKey) {
         return NextResponse.json(
@@ -221,7 +225,7 @@ export async function POST(request: NextRequest) {
 
     try {
         // Step 1: Get snapshot sources (blob keys)
-        const sourcesUrl = `${POSTHOG_HOST}/api/environments/${projectId}/session_recordings/${sessionId}/snapshots?blob_v2=true`;
+        const sourcesUrl = `${host}/api/environments/${projectId}/session_recordings/${sessionId}/snapshots?blob_v2=true`;
         console.log('[PostHog Sessions] Fetching sources:', sourcesUrl);
 
         const sourcesRes = await fetch(sourcesUrl, { headers });
@@ -253,7 +257,7 @@ export async function POST(request: NextRequest) {
 
         for (let i = 0; i < blobKeys.length; i++) {
             const blobKey = blobKeys[i];
-            const blobUrl = `${POSTHOG_HOST}/api/environments/${projectId}/session_recordings/${sessionId}/snapshots?source=blob_v2&start_blob_key=${blobKey}&end_blob_key=${blobKey}`;
+            const blobUrl = `${host}/api/environments/${projectId}/session_recordings/${sessionId}/snapshots?source=blob_v2&start_blob_key=${blobKey}&end_blob_key=${blobKey}`;
 
             const blobRes = await fetch(blobUrl, { headers });
 

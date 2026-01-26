@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.13",
+    "@libsql/client": "^0.17.0",
+    "@prisma/adapter-libsql": "^7.3.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@xyflow/react": "^12.10.0",

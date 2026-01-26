@@ -463,7 +463,12 @@ class PostHogClient {
             throw new Error(`PostHog API error: ${response.status} - ${error}`);
         }
 
-        return response.json();
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch {
+            throw new Error(`PostHog returned invalid JSON: ${text.substring(0, 200)}`);
+        }
     }
 
     // ... (existing getInsights and others)
