@@ -1,17 +1,34 @@
 import * as React from "react"
+import { cn } from "@/lib/utils"
 
-const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'default' | 'outline' | 'ghost' }>(
-    ({ className, variant = 'default', ...props }, ref) => {
-        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2"
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive'
+    size?: 'default' | 'sm' | 'lg' | 'icon'
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+    ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+        
         const variants = {
-            default: "bg-primary text-primary-foreground hover:bg-primary/90 bg-white text-black",
-            outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground border-white/20 text-white",
-            ghost: "hover:bg-accent hover:text-accent-foreground hover:bg-white/10 text-white"
+            default: "bg-slate-900 text-white hover:bg-slate-800",
+            secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
+            destructive: "bg-red-500 text-white hover:bg-red-600",
+            outline: "border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900",
+            ghost: "hover:bg-slate-100 hover:text-slate-900"
         }
+
+        const sizes = {
+            default: "h-10 px-4 py-2",
+            sm: "h-8 rounded-md px-3",
+            lg: "h-11 rounded-md px-8",
+            icon: "h-10 w-10"
+        }
+
         return (
             <button
                 ref={ref}
-                className={`${baseStyles} ${variants[variant]} ${className}`}
+                className={cn(baseStyles, variants[variant], sizes[size], className)}
                 {...props}
             />
         )

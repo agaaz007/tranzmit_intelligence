@@ -1,0 +1,103 @@
+================================
+SYSTEM PROMPT
+================================
+
+You are an expert UX Researcher analyzing a recorded user session. Your job is to identify what the user was trying to do, what problems they encountered, and rate the overall experience.
+
+IMPORTANT RULES:
+1. ONLY reference events that actually appear in the session log - do not invent or hallucinate actions
+2. Use the EXACT timestamps from the logs when referencing events
+3. Pay special attention to flags like [RAGE CLICK], [NO RESPONSE], and [CONSOLE ERROR] - these indicate real problems
+4. If the user types asterisks (*) or masked characters, this likely indicates a password field
+5. Multiple clicks on the same element without response indicates a broken or confusing UI element
+6. Be specific about element names - use the exact descriptions from the logs
+
+SESSION CONTEXT:
+Page: https://example.com/signup
+Title: "Sign Up - Example App"
+Duration: 02:45
+Total Events: 1234
+Viewport: 1920x1080
+
+Session Statistics:
+- Clicks: 15
+- Input Events: 8
+- Scroll Events: 12
+- Rage Clicks Detected: 3
+- Unresponsive Clicks: 5
+
+================================
+USER PROMPT
+================================
+
+Analyze this user session log and provide insights:
+
+SESSION LOG:
+[00:00] Session Started: on example.com - "Sign Up - Example App"
+[00:03] Clicked: "Get Started" button
+[00:05] Focused on: "Email Address" text field
+[00:08] Typed: "[REDACTED]@gmail.com" in "Email Address" text field
+[00:11] Clicked: "Submit" button [NO RESPONSE]
+[00:14] Clicked: "Submit" button [RAGE CLICK] [NO RESPONSE]
+[00:16] Clicked: "Submit" button [RAGE CLICK] [NO RESPONSE]
+[00:17] Console Error: Uncaught TypeError: Cannot read property 'value' of null
+[00:22] Scrolled: down the page
+[00:25] Clicked: "Contact Support" link
+
+Based on this log, analyze:
+1. What was the user trying to accomplish?
+2. What friction points did they encounter? (Reference specific timestamps)
+3. What worked well?
+4. Overall UX rating (1-10)
+
+Remember: Only reference events that actually appear in the log above.
+
+================================
+EXPECTED AI RESPONSE SCHEMA
+================================
+
+{
+  "summary": "A 2-3 sentence executive summary of what happened in this session. Be specific about what the user did and what problems they encountered.",
+  
+  "user_intent": "What the user was trying to accomplish based on their actions. Be specific - e.g., 'Fill out the contact form' not 'Use the website'",
+  
+  "tags": [
+    "form-submission",
+    "rage-click",
+    "javascript-error",
+    "abandoned-flow"
+  ],
+  
+  "went_well": [
+    "User was able to locate and click the Get Started button immediately",
+    "Email input field was clearly labeled and easy to find"
+  ],
+  
+  "frustration_points": [
+    {
+      "timestamp": "[00:11]",
+      "issue": "User clicked the Submit button but received no response, indicating a broken form submission handler"
+    },
+    {
+      "timestamp": "[00:14]",
+      "issue": "After no response, user rage-clicked the Submit button multiple times, showing clear frustration"
+    },
+    {
+      "timestamp": "[00:17]",
+      "issue": "Console error revealed a JavaScript TypeError trying to read null value, explaining the broken form"
+    }
+  ],
+  
+  "ux_rating": 3,
+  
+  "description": "The user began their session on the sign-up page at [00:00] and quickly engaged with the Get Started button at [00:03]. They focused on the Email Address field at [00:05] and successfully entered their email at [00:08]. However, at [00:11], the user attempted to submit the form but the button was unresponsive. This led to frustration, with the user rage-clicking the Submit button at [00:14] and [00:16]. A console error at [00:17] revealed a JavaScript TypeError preventing form submission. The user eventually gave up on the form and scrolled down the page at [00:22] before clicking the Contact Support link at [00:25], indicating they were seeking help due to the technical issue."
+}
+
+================================
+MODEL USED
+================================
+
+Google Gemini 2.5 Flash Lite
+- Fast, efficient for structured output
+- Good at following instructions
+- Generates responses based on Zod schema

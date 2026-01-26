@@ -1,32 +1,68 @@
 @import "tailwindcss";
 
+/* ==================== RRWeb Player Styles ==================== */
+
+.rr-player {
+  background: white !important;
+}
+
+.rr-player__frame {
+  background: white !important;
+}
+
+.replayer-wrapper {
+  position: relative !important;
+}
+
+.replayer-wrapper iframe {
+  border: none !important;
+}
+
 /* ==================== Tranzmit Design System ==================== */
 
 :root {
-  /* Light Base - Clean & Professional */
-  --background: #f8fafc;
+  /* Clean & Minimal Base */
+  --background: #fafafa;
   --background-elevated: #ffffff;
-  --background-subtle: #f1f5f9;
-  --foreground: #0f172a;
-  --foreground-muted: #64748b;
+  --foreground: #1a1a1a;
+  --foreground-muted: #666666;
+  --foreground-subtle: #999999;
 
-  /* Tranzmit Brand - Deep Blue */
+  /* Brand - Deep Blue */
   --brand-primary: #1a56db;
-  --brand-secondary: #3b82f6;
+  --brand-hover: #1e40af;
   --brand-light: #dbeafe;
 
-  /* Accent Colors */
-  --accent-blue: #3b82f6;
-  --accent-cyan: #06b6d4;
-  --accent-violet: #7c3aed;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
+  /* Borders */
+  --border: #e5e5e5;
+  --border-hover: #d1d5db;
+
+  /* Status Colors */
+  --success: #166534;
+  --success-bg: #dcfce7;
+  --warning: #92400e;
+  --warning-bg: #fef3c7;
+  --error: #991b1b;
+  --error-bg: #fee2e2;
+  --info: #1e40af;
+  --info-bg: #dbeafe;
+
+  /* Card & UI Variables */
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --radius: 0.75rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -40,7 +76,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -48,23 +84,18 @@ body {
 
 /* ==================== Typography ==================== */
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-  color: #0f172a;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--foreground);
 }
 
 /* ==================== Selection ==================== */
 
 ::selection {
-  background: rgba(26, 86, 219, 0.2);
-  color: #1a56db;
+  background: rgba(26, 86, 219, 0.15);
+  color: var(--brand-primary);
 }
 
 /* ==================== Scrollbar ==================== */
@@ -75,16 +106,16 @@ h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9ca3af;
 }
 
 /* ==================== Focus States ==================== */
@@ -94,6 +125,141 @@ h6 {
   outline-offset: 2px;
 }
 
+/* ==================== Card Styles ==================== */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+}
+
+/* ==================== Button Styles ==================== */
+
+.btn-primary {
+  background: var(--brand-primary);
+  color: white;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--foreground);
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--muted);
+  border-color: var(--border-hover);
+}
+
+/* ==================== Input Styles ==================== */
+
+.input {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+}
+
+/* ==================== Badge Styles ==================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.badge-error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.badge-default {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* ==================== Table Styles ==================== */
+
+.table-header {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-row {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s ease;
+}
+
+.table-row:hover {
+  background: var(--muted);
+}
+
+/* ==================== Animation Utilities ==================== */
+
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ==================== Voice Interview Animations ==================== */
 
 .voice-pulse {
@@ -101,11 +267,9 @@ h6 {
 }
 
 @keyframes voice-pulse {
-  0%,
-  100% {
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(26, 86, 219, 0.4);
   }
-
   50% {
     box-shadow: 0 0 0 12px rgba(26, 86, 219, 0);
   }
@@ -120,193 +284,45 @@ h6 {
 
 .waveform-bar {
   width: 3px;
-  background: linear-gradient(to top, var(--brand-primary), var(--brand-secondary));
+  background: var(--brand-primary);
   border-radius: 1.5px;
   animation: wave 1.2s ease-in-out infinite;
 }
 
-.waveform-bar:nth-child(1) {
-  animation-delay: 0ms;
-  height: 8px;
-}
-
-.waveform-bar:nth-child(2) {
-  animation-delay: 100ms;
-  height: 16px;
-}
-
-.waveform-bar:nth-child(3) {
-  animation-delay: 200ms;
-  height: 24px;
-}
-
-.waveform-bar:nth-child(4) {
-  animation-delay: 300ms;
-  height: 16px;
-}
-
-.waveform-bar:nth-child(5) {
-  animation-delay: 400ms;
-  height: 8px;
-}
+.waveform-bar:nth-child(1) { animation-delay: 0ms; height: 8px; }
+.waveform-bar:nth-child(2) { animation-delay: 100ms; height: 16px; }
+.waveform-bar:nth-child(3) { animation-delay: 200ms; height: 24px; }
+.waveform-bar:nth-child(4) { animation-delay: 300ms; height: 16px; }
+.waveform-bar:nth-child(5) { animation-delay: 400ms; height: 8px; }
 
 @keyframes wave {
-  0%,
-  100% {
+  0%, 100% {
     transform: scaleY(0.4);
     opacity: 0.5;
   }
-
   50% {
     transform: scaleY(1);
     opacity: 1;
   }
 }
 
-/* ==================== Gradient Text - Tranzmit Style ==================== */
+/* ==================== Gradient Text ==================== */
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  background: linear-gradient(135deg, var(--brand-primary), #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.text-gradient-blue {
-  background: linear-gradient(135deg, #1a56db, #3b82f6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* ==================== Striped Pattern (for example cards) ==================== */
 
-/* ==================== Cards & Surfaces ==================== */
-
-.card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-
-/* ==================== Button Styles ==================== */
-
-.btn-primary {
-  background: #1a56db;
-  color: white;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
-}
-
-.btn-primary:hover {
-  background: #1e40af;
-  box-shadow: 0 6px 16px rgba(26, 86, 219, 0.35);
-}
-
-.btn-secondary {
-  background: white;
-  color: #1a56db;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 2px solid #1a56db;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background: #dbeafe;
-}
-
-/* ==================== Animation Utilities ==================== */
-
-.animate-in {
-  animation: animate-in 0.3s ease-out;
-}
-
-@keyframes animate-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ==================== Stat Cards ==================== */
-
-.stat-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px;
-  transition: all 0.2s ease;
-}
-
-.stat-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
-  transform: translateY(-2px);
-}
-
-/* ==================== Badge Styles ==================== */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-blue {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.badge-green {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.badge-amber {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.badge-rose {
-  background: #ffe4e6;
-  color: #9f1239;
-}
-
-/* ==================== Table Styles ==================== */
-
-.table-header {
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table-row {
-  border-bottom: 1px solid #f1f5f9;
-  transition: background 0.15s ease;
-}
-
-.table-row:hover {
-  background: #f8fafc;
+.striped-pattern {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.03) 10px,
+    rgba(0, 0, 0, 0.03) 11px
+  );
 }

@@ -1,0 +1,89 @@
+{
+  "totalDuration": "02:45",
+  "eventCount": 1234,
+  "pageUrl": "https://example.com/signup",
+  "pageTitle": "Sign Up - Example App",
+  "viewportSize": {
+    "width": 1920,
+    "height": 1080
+  },
+  "logs": [
+    {
+      "timestamp": "[00:00]",
+      "action": "Session Started",
+      "details": "on example.com - \"Sign Up - Example App\"",
+      "flags": [],
+      "rawTimestamp": 1704110400000
+    },
+    {
+      "timestamp": "[00:03]",
+      "action": "Clicked",
+      "details": "\"Get Started\" button",
+      "flags": [],
+      "rawTimestamp": 1704110403000
+    },
+    {
+      "timestamp": "[00:05]",
+      "action": "Focused on",
+      "details": "\"Email Address\" text field",
+      "flags": [],
+      "rawTimestamp": 1704110405000
+    },
+    {
+      "timestamp": "[00:08]",
+      "action": "Typed",
+      "details": "\"[REDACTED]@gmail.com\" in \"Email Address\" text field",
+      "flags": [],
+      "rawTimestamp": 1704110408000
+    },
+    {
+      "timestamp": "[00:11]",
+      "action": "Clicked",
+      "details": "\"Submit\" button",
+      "flags": ["[NO RESPONSE]"],
+      "rawTimestamp": 1704110411000
+    },
+    {
+      "timestamp": "[00:14]",
+      "action": "Clicked",
+      "details": "\"Submit\" button",
+      "flags": ["[RAGE CLICK]", "[NO RESPONSE]"],
+      "rawTimestamp": 1704110414000
+    },
+    {
+      "timestamp": "[00:16]",
+      "action": "Clicked",
+      "details": "\"Submit\" button",
+      "flags": ["[RAGE CLICK]", "[NO RESPONSE]"],
+      "rawTimestamp": 1704110416000
+    },
+    {
+      "timestamp": "[00:17]",
+      "action": "Console Error",
+      "details": "Uncaught TypeError: Cannot read property 'value' of null",
+      "flags": ["[CONSOLE ERROR]"],
+      "rawTimestamp": 1704110417000
+    },
+    {
+      "timestamp": "[00:22]",
+      "action": "Scrolled",
+      "details": "down the page",
+      "flags": [],
+      "rawTimestamp": 1704110422000
+    },
+    {
+      "timestamp": "[00:25]",
+      "action": "Clicked",
+      "details": "\"Contact Support\" link",
+      "flags": [],
+      "rawTimestamp": 1704110425000
+    }
+  ],
+  "summary": {
+    "totalClicks": 15,
+    "totalInputs": 8,
+    "totalScrolls": 12,
+    "rageClicks": 3,
+    "deadClicks": 5
+  }
+}

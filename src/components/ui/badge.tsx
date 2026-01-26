@@ -1,19 +1,22 @@
 import * as React from "react"
+import { cn } from "@/lib/utils"
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: "default" | "secondary" | "destructive" | "outline"
 }
 
 function Badge({ className, variant = "default", ...props }: BadgeProps) {
+    const baseStyles = "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+    
     const variants = {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80 bg-white text-black",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 bg-white/20 text-white",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80 bg-red-500",
-        outline: "text-foreground border-white/20 text-white"
+        default: "border-transparent bg-slate-900 text-white hover:bg-slate-800",
+        secondary: "border-transparent bg-slate-100 text-slate-900 hover:bg-slate-200",
+        destructive: "border-transparent bg-red-500 text-white hover:bg-red-600",
+        outline: "text-slate-900 border-slate-200 hover:bg-slate-100"
     }
 
     return (
-        <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${variants[variant]} ${className}`} {...props} />
+        <div className={cn(baseStyles, variants[variant], className)} {...props} />
     )
 }
 

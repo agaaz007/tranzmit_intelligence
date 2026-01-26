@@ -120,47 +120,44 @@ export default function FunnelsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Header */}
+      <div className="bg-white border-b border-[#e5e5e5] px-8 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-              <Target className="w-8 h-8 text-indigo-600" />
-              Journey Map
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Your funnels from PostHog — click any step to explore breakdowns
-            </p>
+            <div className="text-[#999] text-sm mb-0.5">Tranzmit / Journey Map</div>
+            <h1 className="text-2xl font-semibold text-[#1a1a1a]">Journey Map</h1>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => loadFunnels(projectId)}
               disabled={isLoading || !projectId}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium disabled:opacity-50 shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#e5e5e5] text-[#666] rounded-lg hover:bg-[#f5f5f5] transition-all font-medium disabled:opacity-50 text-sm"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
           </div>
         </div>
+      </div>
 
+      <div className="p-8 max-w-7xl mx-auto space-y-6">
         {/* Funnels List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#1a56db]" />
           </div>
         ) : funnels.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <Target className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-            <p className="text-slate-600 mb-2">No funnels found in PostHog.</p>
-            <p className="text-slate-500 text-sm mb-4">Create funnels in PostHog to see them here.</p>
+          <div className="text-center py-20 bg-white rounded-xl border border-[#e5e5e5]">
+            <Target className="w-12 h-12 mx-auto mb-4 text-[#d1d5db]" />
+            <p className="text-[#666] mb-2">No funnels found in PostHog.</p>
+            <p className="text-[#999] text-sm mb-4">Create funnels in PostHog to see them here.</p>
             <a
               href={`${posthogHost}/project/${posthogProjectId}/insights/new`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a56db] text-white rounded-lg font-medium hover:bg-[#1e40af] transition-all text-sm"
             >
               Create Funnel in PostHog
               <ExternalLink className="w-4 h-4" />
@@ -171,26 +168,26 @@ export default function FunnelsPage() {
             {funnels.map((funnel) => (
               <motion.div
                 key={funnel.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
-                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden cursor-pointer transition-all"
+                whileHover={{ y: -2 }}
+                className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden cursor-pointer hover:border-[#1a56db] hover:shadow-sm transition-all"
                 onClick={() => setSelectedFunnel(funnel)}
               >
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-indigo-50 rounded-xl">
-                        <Target className="w-5 h-5 text-indigo-600" />
+                      <div className="p-2.5 bg-[#dbeafe] rounded-lg">
+                        <Target className="w-5 h-5 text-[#1a56db]" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900 text-lg">{funnel.name}</h3>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                        <h3 className="font-semibold text-[#1a1a1a]">{funnel.name}</h3>
+                        <div className="flex items-center gap-4 mt-1 text-sm text-[#999]">
                           <span className="flex items-center gap-1.5">
                             <Users className="w-4 h-4" />
                             {funnel.totalUsers.toLocaleString()} users
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-[#e5e5e5]">•</span>
                           <span>{funnel.steps.length} steps</span>
                         </div>
                       </div>
