@@ -26,6 +26,52 @@ interface RRWebEvent {
     windowId?: string;
 }
 
+// Try to decompress a gzip-compressed string
+function tryDecompressString(str: string): unknown | null {
+    // Check for gzip magic number (0x1f 0x8b)
+    if (str.length < 2) return null;
+    const firstTwo = str.charCodeAt(0) === 0x1f && str.charCodeAt(1) === 0x8b;
+    if (!firstTwo) return null;
+
+    try {
+        // Try binary encoding (raw gzip bytes stored as string)
+        const buf = Buffer.from(str, 'binary');
+        const decompressed = zlib.gunzipSync(buf).toString('utf8');
+        return JSON.parse(decompressed);
+    } catch {
+        try {
+            // Try base64 encoding
+            const buf = Buffer.from(str, 'base64');
+            const decompressed = zlib.gunzipSync(buf).toString('utf8');
+            return JSON.parse(decompressed);
+        } catch {
+            return null;
+        }
+    }
+}
+
+// Recursively decompress all nested compressed fields in an object
+function decompressNestedFields(obj: unknown): unknown {
+    if (typeof obj === 'string') {
+        const decompressed = tryDecompressString(obj);
+        return decompressed !== null ? decompressed : obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => decompressNestedFields(item));
+    }
+
+    if (obj && typeof obj === 'object') {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+            result[key] = decompressNestedFields(value);
+        }
+        return result;
+    }
+
+    return obj;
+}
+
 // Decompress event data (handles multiple PostHog compression formats)
 function decompressEvent(event: unknown): RRWebEvent | null {
     if (typeof event === 'string') {
@@ -38,30 +84,45 @@ function decompressEvent(event: unknown): RRWebEvent | null {
 
     if (event && typeof event === 'object') {
         const evt = event as Record<string, unknown>;
+
         // Check if event has cv (compression version) field - indicates compressed data
         if (evt.cv && typeof evt.data === 'string') {
             try {
                 const buf = Buffer.from(evt.data, 'base64');
                 const parsedData = JSON.parse(zlib.gunzipSync(buf).toString('utf8'));
+                // Also decompress any nested fields within the parsed data
+                const fullyDecompressed = decompressNestedFields(parsedData);
                 return {
                     type: evt.type as number,
                     timestamp: evt.timestamp as number,
-                    data: parsedData,
+                    data: fullyDecompressed as Record<string, unknown>,
                 };
             } catch {
                 try {
                     const buf = Buffer.from(evt.data as string, 'binary');
                     const parsedData = JSON.parse(zlib.gunzipSync(buf).toString('utf8'));
+                    const fullyDecompressed = decompressNestedFields(parsedData);
                     return {
                         type: evt.type as number,
                         timestamp: evt.timestamp as number,
-                        data: parsedData,
+                        data: fullyDecompressed as Record<string, unknown>,
                     };
                 } catch {
                     return evt as unknown as RRWebEvent;
                 }
             }
         }
+
+        // Even without cv flag, the data object might have compressed nested fields
+        // This handles PostHog's newer format where individual fields are compressed
+        if (evt.data && typeof evt.data === 'object') {
+            const decompressedData = decompressNestedFields(evt.data);
+            return {
+                ...evt,
+                data: decompressedData as Record<string, unknown>,
+            } as RRWebEvent;
+        }
+
         return evt as unknown as RRWebEvent;
     }
 

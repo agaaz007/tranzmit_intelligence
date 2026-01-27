@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus } from 'lucide-react';
 
 interface ProjectSettings {
   id: string;
@@ -16,27 +16,58 @@ export default function SettingsPage() {
   const [project, setProject] = useState<ProjectSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [projectId, setProjectId] = useState<string>('');
+  const [noProjectExists, setNoProjectExists] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     posthogKey: '',
-    posthogHost: '',
+    posthogHost: 'https://us.posthog.com',
     posthogProjId: '',
   });
 
   useEffect(() => {
-    const storedProjectId = localStorage.getItem('currentProjectId');
-    if (storedProjectId) {
-      setProjectId(storedProjectId);
-      loadProject(storedProjectId);
-    }
+    const initializeProject = async () => {
+      setIsLoading(true);
+      
+      // First check if there's a stored project ID
+      const storedProjectId = localStorage.getItem('currentProjectId');
+      
+      if (storedProjectId) {
+        setProjectId(storedProjectId);
+        await loadProject(storedProjectId);
+      } else {
+        // No stored project - try to load existing projects from database
+        try {
+          const response = await fetch('/api/projects');
+          const data = await response.json();
+          
+          if (data.projects && data.projects.length > 0) {
+            // Use the first project
+            const firstProject = data.projects[0];
+            localStorage.setItem('currentProjectId', firstProject.id);
+            setProjectId(firstProject.id);
+            await loadProject(firstProject.id);
+          } else {
+            // No projects exist - show create form
+            setNoProjectExists(true);
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('Failed to fetch projects:', error);
+          setNoProjectExists(true);
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    initializeProject();
   }, []);
 
   const loadProject = async (projId: string) => {
-    setIsLoading(true);
     try {
       const response = await fetch(`/api/projects/${projId}`);
       const data = await response.json();
@@ -46,13 +77,19 @@ export default function SettingsPage() {
         setFormData({
           name: data.project.name,
           posthogKey: data.project.posthogKey,
-          posthogHost: data.project.posthogHost,
+          posthogHost: data.project.posthogHost || 'https://us.posthog.com',
           posthogProjId: data.project.posthogProjId,
         });
+        setNoProjectExists(false);
+      } else {
+        // Project not found - might be stale ID
+        localStorage.removeItem('currentProjectId');
+        setNoProjectExists(true);
       }
     } catch (error) {
       console.error('Failed to load project:', error);
       setMessage({ type: 'error', text: 'Failed to load project settings' });
+      setNoProjectExists(true);
     } finally {
       setIsLoading(false);
     }
@@ -85,6 +122,40 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCreate = async () => {
+    if (!formData.name || !formData.posthogKey || !formData.posthogProjId) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields' });
+      return;
+    }
+
+    setIsCreating(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.project) {
+        localStorage.setItem('currentProjectId', data.project.id);
+        setProjectId(data.project.id);
+        setProject(data.project);
+        setNoProjectExists(false);
+        setMessage({ type: 'success', text: 'Project created successfully!' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to create project' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to create project' });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -106,7 +177,9 @@ export default function SettingsPage() {
           </div>
           <div>
             <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Settings</h1>
-            <p className="text-slate-600 mt-1">Manage your project configuration</p>
+            <p className="text-slate-600 mt-1">
+              {noProjectExists ? 'Set up your project to get started' : 'Manage your project configuration'}
+            </p>
           </div>
         </div>
 
@@ -129,12 +202,17 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-6">
             <Globe className="w-6 h-6 text-blue-600" />
             <h2 className="text-2xl font-bold text-slate-900">Project Settings</h2>
+            {noProjectExists && (
+              <span className="ml-auto text-xs bg-amber-100 px-3 py-1 rounded-full font-semibold text-amber-700 border border-amber-300">
+                New Project
+              </span>
+            )}
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Project Name
+                Project Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -157,23 +235,23 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                API Key
+                API Key <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
                 value={formData.posthogKey}
                 onChange={(e) => handleInputChange('posthogKey', e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-900 font-mono"
-                placeholder="phc_••••••••••••••••••••"
+                placeholder="phx_••••••••••••••••••••"
               />
               <p className="text-xs text-slate-500 mt-2">
-                Your PostHog Personal API Key
+                Your PostHog Personal API Key (starts with phx_)
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Project ID
+                Project ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -183,7 +261,7 @@ export default function SettingsPage() {
                 placeholder="12345"
               />
               <p className="text-xs text-slate-500 mt-2">
-                Your PostHog Project ID
+                Your PostHog Project ID (found in PostHog project settings)
               </p>
             </div>
 
@@ -229,25 +307,45 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Save Button */}
+        {/* Save/Create Button */}
         <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 font-semibold transition-all"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Settings
-              </>
-            )}
-          </button>
+          {noProjectExists ? (
+            <button
+              onClick={handleCreate}
+              disabled={isCreating}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl hover:shadow-lg hover:shadow-green-500/30 disabled:opacity-50 font-semibold transition-all"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5" />
+                  Create Project
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 font-semibold transition-all"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Settings
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
