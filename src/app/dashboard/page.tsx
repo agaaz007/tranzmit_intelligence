@@ -261,12 +261,12 @@ export default function DashboardPage() {
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-2 text-[var(--foreground-subtle)] text-xs">
                                     <Mic className="w-4 h-4" />
-                                    <span>Interviews</span>
+                                    <span>Voice of Customer</span>
                                 </div>
                                 {getStatusBadge(data.stats.interviews.value > 0 ? 'active' : 'draft')}
                             </div>
-                            <h3 className="font-semibold text-[var(--foreground)] mb-1">User Interviews</h3>
-                            <p className="text-sm text-[var(--foreground-muted)] mb-4">Conduct AI-powered user interviews</p>
+                            <h3 className="font-semibold text-[var(--foreground)] mb-1">Voice of Customer</h3>
+                            <p className="text-sm text-[var(--foreground-muted)] mb-4">Customer insights, verbatims & issue tracking</p>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1 text-xs text-[var(--foreground-subtle)]">
                                     <Users className="w-3.5 h-3.5" />
