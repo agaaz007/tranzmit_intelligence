@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Uploader } from '@/components/ui/uploader';
 import { AnalysisTable, AnalysisEntry } from '@/components/analysis-table';
@@ -137,7 +137,7 @@ function saveToStorage(data: { analyses: AnalysisEntry[]; synthesizedInsights: S
     }
 }
 
-export default function SessionInsightsPage() {
+function SessionInsightsContent() {
     const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
     const [selectedEntry, setSelectedEntry] = useState<AnalysisEntry | null>(null);
     const [analyzingCount, setAnalyzingCount] = useState(0);
@@ -1030,5 +1030,17 @@ export default function SessionInsightsPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function SessionInsightsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--muted-foreground)]" />
+            </div>
+        }>
+            <SessionInsightsContent />
+        </Suspense>
     );
 }
