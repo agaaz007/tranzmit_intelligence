@@ -188,6 +188,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (!cohort.project.posthogKey || !cohort.project.posthogProjId || !cohort.project.posthogHost) {
+        return NextResponse.json(
+          { error: 'Project PostHog configuration is incomplete' },
+          { status: 400 }
+        );
+      }
+
       // Create PostHog client
       const posthogClient = createPostHogClient({
         apiKey: cohort.project.posthogKey,
