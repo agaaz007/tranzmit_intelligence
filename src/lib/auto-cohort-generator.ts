@@ -69,10 +69,14 @@ export async function detectAndCreateCohorts(
     throw new Error('Project not found');
   }
 
+  if (!project.posthogKey || !project.posthogProjId) {
+    throw new Error('PostHog not configured for this project');
+  }
+
   const posthog = createPostHogClient({
     apiKey: project.posthogKey,
     projectId: project.posthogProjId,
-    host: project.posthogHost,
+    host: project.posthogHost || 'https://us.posthog.com',
   });
 
   const generatedCohorts: GeneratedCohort[] = [];
@@ -536,10 +540,14 @@ export async function refreshAutoCohort(cohortId: string): Promise<{
     throw new Error('Not an auto-generated cohort');
   }
 
+  if (!cohort.project.posthogKey || !cohort.project.posthogProjId) {
+    throw new Error('PostHog not configured for this project');
+  }
+
   const posthog = createPostHogClient({
     apiKey: cohort.project.posthogKey,
     projectId: cohort.project.posthogProjId,
-    host: cohort.project.posthogHost,
+    host: cohort.project.posthogHost || 'https://us.posthog.com',
   });
 
   // Query for latest users based on pattern

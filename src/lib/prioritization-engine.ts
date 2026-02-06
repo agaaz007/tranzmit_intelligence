@@ -167,10 +167,14 @@ export async function buildPriorityQueue(
     throw new Error('Project not found');
   }
 
+  if (!project.posthogKey || !project.posthogProjId) {
+    throw new Error('PostHog not configured for this project');
+  }
+
   const posthog = createPostHogClient({
     apiKey: project.posthogKey,
     projectId: project.posthogProjId,
-    host: project.posthogHost,
+    host: project.posthogHost || 'https://us.posthog.com',
   });
 
   const allUsers: PersonWithSignals[] = [];

@@ -28,10 +28,14 @@ export async function GET(
             return NextResponse.json({ error: 'Project not found' }, { status: 404 });
         }
 
+        if (!project.posthogKey || !project.posthogProjId) {
+            return NextResponse.json({ error: 'PostHog not configured for this project' }, { status: 400 });
+        }
+
         const posthogClient = createPostHogClient({
             apiKey: project.posthogKey,
             projectId: project.posthogProjId,
-            host: project.posthogHost,
+            host: project.posthogHost || 'https://us.posthog.com',
         });
 
         // If comprehensive flag is set, return full session data
