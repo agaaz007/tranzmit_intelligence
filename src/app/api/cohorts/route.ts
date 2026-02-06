@@ -6,6 +6,7 @@ import {
   storeCohortAnalysis,
   getCohortAnalyses,
 } from '@/lib/cohort-analysis';
+import { getProjectWithAccess } from '@/lib/auth';
 
 /**
  * GET /api/cohorts - List cohorts
@@ -22,6 +23,12 @@ export async function GET(request: NextRequest) {
         { error: 'projectId is required' },
         { status: 400 }
       );
+    }
+
+    // Verify user has access to this project
+    const projectAccess = await getProjectWithAccess(projectId);
+    if (!projectAccess) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get specific cohort with analyses and hypotheses
@@ -120,6 +127,12 @@ export async function POST(request: NextRequest) {
           { error: 'projectId and name are required' },
           { status: 400 }
         );
+      }
+
+      // Verify user has access to this project
+      const projectAccess = await getProjectWithAccess(projectId);
+      if (!projectAccess) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
       // Determine criteria to store

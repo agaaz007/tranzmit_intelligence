@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPostHogClient, processFunnelData, type PostHogConfig } from '@/lib/posthog';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser, getProjectWithAccess } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+    // Verify user is authenticated
+    const user = await getCurrentUser();
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action');
 
@@ -24,7 +30,8 @@ export async function GET(request: NextRequest) {
     try {
         switch (action) {
             case 'funnels': {
-                const insights = await client.getInsights();
+                const dateFrom = searchParams.get('date_from') || undefined;
+                const insights = await client.getInsights(dateFrom);
                 const funnels = insights.map(insight => processFunnelData(insight));
                 return NextResponse.json({ funnels });
             }
@@ -59,6 +66,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    // Verify user is authenticated
+    const user = await getCurrentUser();
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { action } = body;
     let { apiKey, projectId, host } = body;
@@ -294,6 +307,14 @@ export async function POST(request: NextRequest) {
 
                 if (!funnelId || stepIndex === undefined || !cohortType) {
                     return NextResponse.json({ error: 'Funnel ID, Step Index, and Cohort Type required' }, { status: 400 });
+                }
+
+                // Verify project access if localProjectId is provided
+                if (localProjectId) {
+                    const projectAccess = await getProjectWithAccess(localProjectId);
+                    if (!projectAccess) {
+                        return NextResponse.json({ error: 'Unauthorized - no access to project' }, { status: 401 });
+                    }
                 }
 
                 // Handle Demo or Custom funnels

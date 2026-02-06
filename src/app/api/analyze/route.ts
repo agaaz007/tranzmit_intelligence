@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { parseRRWebSession } from '@/lib/rrweb-parser';
 import { writeFile } from 'fs/promises';
@@ -176,7 +176,7 @@ Remember: Only reference events that actually appear in the log above.`;
 
             // Save the full prompt being sent to AI
             const promptData = {
-                model: 'gemini-2.5-flash-lite',
+                model: 'gpt-5.2-chat-latest',
                 timestamp: new Date().toISOString(),
                 systemPrompt,
                 userPrompt,
@@ -199,7 +199,7 @@ Remember: Only reference events that actually appear in the log above.`;
 
         // 3. Call LLM
         const { object } = await generateObject({
-            model: google('gemini-2.5-flash-lite'),
+            model: openai('gpt-5.2-chat-latest'),
             schema: UXAnalysisSchema,
             system: systemPrompt,
             prompt: userPrompt,

@@ -10,19 +10,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== AUTHENTICATION & MULTI-TENANCY ====================
+
+// User model - synced from Clerk via webhook
+model User {
+  id                String               @id @default(cuid())
+  clerkId           String               @unique // Clerk user ID
+  email             String               @unique
+  firstName         String?
+  lastName          String?
+  imageUrl          String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  memberships       OrganizationMember[]
+}
+
+// Organization (workspace/company) - each user gets a default org on signup
+model Organization {
+  id               String               @id @default(cuid())
+  name             String
+  slug             String               @unique // URL-friendly name
+  imageUrl         String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  members          OrganizationMember[]
+  projects         Project[]
+}
+
+// Organization membership - links users to organizations with roles
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("member") // 'owner', 'admin', 'member'
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+// ==================== PROJECT & DATA MODELS ====================
+
 model Project {
   id             String          @id @default(cuid())
+  organizationId String?
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   apiKey         String          @unique // Internal API key for Tranzmit
-  posthogKey     String
+  posthogKey     String?
   posthogHost    String          @default("https://us.posthog.com")
-  posthogProjId  String
+  posthogProjId  String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   campaigns      Campaign[]
   frictionPoints FrictionPoint[]
   cohorts        Cohort[]
   interviews     Interview[]
+  sessions       Session[]
+  churnedUsers   ChurnedUser[]
+
+  @@index([organizationId])
 }
 
 model Campaign {
@@ -188,4 +239,92 @@ model InterviewInsight {
   summary      String? // AI-generated summary
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// Manually uploaded users for interview invitations
+model UploadedUser {
+  id           String   @id @default(cuid())
+  projectId    String
+  name         String?
+  email        String
+  phone        String?
+  cohort       String?  // Optional cohort name from CSV
+  inviteStatus String   @default("pending") // 'pending', 'invited', 'failed'
+  invitedAt    DateTime?
+  messageId    String?  // Email message ID for tracking (Resend)
+  source       String   @default("csv") // 'csv', 'manual'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([projectId, email])
+  @@index([projectId])
+}
+
+// Session recordings from manual uploads or PostHog syncs
+model Session {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  source            String    // 'upload' | 'posthog'
+  posthogSessionId  String?   // PostHog session ID (for deduplication)
+
+  name              String    // Display name (filename for uploads, formatted name for PostHog)
+  distinctId        String?   // User identifier from PostHog
+  startTime         DateTime?
+  endTime           DateTime?
+  duration          Int?      // Duration in seconds
+
+  events            String?   @db.Text  // JSON rrweb events (loaded on-demand for replay)
+  eventCount        Int       @default(0)
+
+  analysis          String?   @db.Text  // JSON analysis results
+  analysisStatus    String    @default("pending") // 'pending' | 'analyzing' | 'completed' | 'failed'
+  analyzedAt        DateTime?
+
+  metadata          String?   // JSON: additional metadata (viewport, behavioral signals, etc.)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([projectId, posthogSessionId])
+  @@index([projectId])
+  @@index([projectId, createdAt])
+}
+
+// Churned users for recovery outreach campaigns
+model ChurnedUser {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // User info (from CSV)
+  name              String?
+  email             String
+  phone             String?
+  posthogDistinctId String?   // PostHog distinct_id for session lookup
+
+  // Session analysis
+  sessionCount      Int       @default(0)
+  analysisStatus    String    @default("pending") // pending|analyzing|completed|failed
+  analysisResult    String?   @db.Text  // JSON: frustration points, behavior patterns, etc.
+  analyzedAt        DateTime?
+
+  // Generated outreach content
+  recoveryEmail     String?   @db.Text  // JSON: {subject, body, tone}
+  callScript        String?   @db.Text  // JSON: {openingLine, keyPoints, objectionHandlers, closingCTA}
+
+  // Outreach tracking
+  outreachStatus    String    @default("pending") // pending|email_sent|called|recovered|unresponsive
+  emailSentAt       DateTime?
+  emailMessageId    String?   // Resend message ID for tracking
+  callCompletedAt   DateTime?
+  callNotes         String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([projectId, email])
+  @@index([projectId])
+  @@index([projectId, outreachStatus])
 }

@@ -36,17 +36,17 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
+    <div className="flex flex-col h-full bg-[var(--card)] border-r border-[var(--border)]">
       {/* Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center space-x-3">
-        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-          <Bot size={18} className="text-green-600" />
+      <div className="p-4 border-b border-[var(--border)] flex items-center space-x-3">
+        <div className="w-8 h-8 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center">
+          <Bot size={18} className="text-green-600 dark:text-green-400" />
         </div>
         <div>
-          <h2 className="font-semibold text-gray-800">AI Research Architect</h2>
+          <h2 className="font-semibold text-[var(--foreground)]">AI Research Architect</h2>
           <div className="flex items-center space-x-1">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-xs text-green-600">Online</span>
+            <span className="text-xs text-green-600 dark:text-green-400">Online</span>
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
                 "max-w-[85%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed",
                 msg.role === 'user'
                   ? "bg-indigo-600 text-white rounded-br-none"
-                  : "bg-gray-100 text-gray-800 rounded-bl-none"
+                  : "bg-[var(--muted)] text-[var(--foreground)] rounded-bl-none"
               )}
             >
               {msg.content}
@@ -76,10 +76,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
 
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gray-50 p-4 rounded-2xl rounded-bl-none border border-gray-100 flex items-center space-x-2">
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+            <div className="bg-[var(--muted)] p-4 rounded-2xl rounded-bl-none border border-[var(--border)] flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 bg-[var(--muted-foreground)] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1.5 h-1.5 bg-[var(--muted-foreground)] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1.5 h-1.5 bg-[var(--muted-foreground)] rounded-full animate-bounce"></span>
             </div>
           </div>
         )}
@@ -87,7 +87,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-100 bg-white sticky bottom-0">
+      <div className="p-4 border-t border-[var(--border)] bg-[var(--card)] sticky bottom-0">
         <form onSubmit={handleSubmit} className="relative">
           <textarea
             value={input}
@@ -99,7 +99,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
               }
             }}
             placeholder="Type your response..."
-            className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all resize-none h-[52px] text-sm text-gray-800 placeholder:text-gray-400 outline-none"
+            className="w-full pl-4 pr-12 py-3 bg-[var(--muted)] border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none h-[52px] text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none"
           />
           <button
             type="submit"

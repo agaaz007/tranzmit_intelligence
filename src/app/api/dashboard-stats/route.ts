@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createPostHogClient, type PostHogConfig } from '@/lib/posthog';
+import { getProjectWithAccess } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -11,14 +12,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get project to retrieve PostHog credentials
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    // Verify user has access to this project
+    const projectAccess = await getProjectWithAccess(projectId);
+    if (!projectAccess) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const project = projectAccess.project;
 
     // Parallel fetch from database
     const [

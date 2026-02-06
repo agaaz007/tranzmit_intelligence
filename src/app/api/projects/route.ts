@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserProjects, getDefaultOrganization } from '@/lib/auth';
 import crypto from 'crypto';
 
 export async function GET() {
     try {
-        const projects = await prisma.project.findMany({
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                name: true,
-                posthogHost: true,
-                posthogProjId: true,
-                createdAt: true,
-            },
-        });
+        // Get only projects the user has access to
+        const projects = await getUserProjects();
 
         return NextResponse.json({ projects });
     } catch (error) {
@@ -24,6 +17,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
+        // Get user's default organization
+        const orgData = await getDefaultOrganization();
+
+        if (!orgData) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { name, posthogKey, posthogHost, posthogProjId } = body;
 
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
                 posthogKey,
                 posthogHost: posthogHost || 'https://us.posthog.com',
                 posthogProjId,
+                organizationId: orgData.organization.id,
             },
         });
 

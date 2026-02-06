@@ -43,4 +43,8 @@ next-env.d.ts
 # local session data for debugging
 /posthog-sessions/
 session_*.json
+/extracted-sessions/
 Tranzmit Listen Labs Clone/
+
+# clerk configuration (can include secrets)
+/.clerk/

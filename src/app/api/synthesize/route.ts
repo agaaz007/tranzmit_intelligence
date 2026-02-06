@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 // Define the schema for synthesized insights
@@ -55,7 +55,7 @@ Dont hallucinate.
 Identify the most serious issues that need immediate attention and provide actionable recommendations.`;
 
         const { object } = await generateObject({
-            model: google('gemini-2.5-flash-lite'),
+            model: openai('gpt-5.2-chat-latest'),
             schema: SynthesizedInsightsSchema,
             system: systemPrompt,
             prompt: userPrompt,

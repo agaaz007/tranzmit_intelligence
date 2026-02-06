@@ -492,10 +492,13 @@ class PostHogClient {
     }
 
     // Get all insights (funnels are insights with insight type = 'FUNNELS')
-    async getInsights(): Promise<PostHogInsight[]> {
-        const response = await this.request<{ results: PostHogInsight[] }>(
-            `/api/projects/${this.config.projectId}/insights/?insight=FUNNELS`
-        );
+    // dateFrom: '-7d', '-30d', '-90d', etc.
+    async getInsights(dateFrom?: string): Promise<PostHogInsight[]> {
+        let url = `/api/projects/${this.config.projectId}/insights/?insight=FUNNELS&refresh=true`;
+        if (dateFrom) {
+            url += `&date_from=${encodeURIComponent(dateFrom)}`;
+        }
+        const response = await this.request<{ results: PostHogInsight[] }>(url);
         return response.results;
     }
 

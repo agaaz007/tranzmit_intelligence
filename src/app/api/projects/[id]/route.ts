@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getProjectWithAccess } from '@/lib/auth';
 
 /**
  * GET /api/projects/[id] - Get project details
@@ -10,18 +11,18 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const project = await prisma.project.findUnique({
-      where: { id },
-    });
 
-    if (!project) {
+    // Verify user has access to this project
+    const result = await getProjectWithAccess(id);
+
+    if (!result) {
       return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json({ project });
+    return NextResponse.json({ project: result.project });
   } catch (error: any) {
     console.error('[Projects API] GET error:', error);
     return NextResponse.json(
@@ -41,6 +42,17 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+
+    // Verify user has access to this project
+    const result = await getProjectWithAccess(id);
+
+    if (!result) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { name, posthogKey, posthogHost, posthogProjId } = body;
 

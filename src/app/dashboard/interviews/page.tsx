@@ -88,15 +88,15 @@ export default function InterviewsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#dcfce7] text-[#166534]">Completed</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">Completed</span>;
       case 'in_progress':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#dbeafe] text-[#1e40af]">In Progress</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">In Progress</span>;
       case 'scheduled':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#fef3c7] text-[#92400e]">Scheduled</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">Scheduled</span>;
       case 'failed':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#fee2e2] text-[#991b1b]">Failed</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">Failed</span>;
       default:
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[#f3f4f6] text-[#6b7280]">Draft</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[var(--muted)] text-[var(--muted-foreground)]">Draft</span>;
     }
   };
 
@@ -118,13 +118,13 @@ export default function InterviewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Header */}
-      <div className="bg-white border-b border-[#e5e5e5] px-8 py-5">
+      <div className="bg-[var(--card)] border-b border-[var(--border)] px-8 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[#999] text-sm mb-0.5">Tranzmit / Interviews</div>
-            <h1 className="text-2xl font-semibold text-[#1a1a1a]">Interviews</h1>
+            <div className="text-[var(--muted-foreground)] text-sm mb-0.5">Tranzmit / Interviews</div>
+            <h1 className="text-2xl font-semibold text-[var(--foreground)]">Interviews</h1>
           </div>
         </div>
       </div>
@@ -132,21 +132,21 @@ export default function InterviewsPage() {
       <div className="p-8">
         {/* Stats Row */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div className="text-[#999] text-xs mb-1">Total</div>
-            <div className="text-2xl font-semibold text-[#1a1a1a]">{stats.total}</div>
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+            <div className="text-[var(--muted-foreground)] text-xs mb-1">Total</div>
+            <div className="text-2xl font-semibold text-[var(--foreground)]">{stats.total}</div>
           </div>
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div className="text-[#166534] text-xs mb-1">Completed</div>
-            <div className="text-2xl font-semibold text-[#166534]">{stats.completed}</div>
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+            <div className="text-emerald-600 dark:text-emerald-400 text-xs mb-1">Completed</div>
+            <div className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{stats.completed}</div>
           </div>
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div className="text-[#92400e] text-xs mb-1">Scheduled</div>
-            <div className="text-2xl font-semibold text-[#92400e]">{stats.scheduled}</div>
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+            <div className="text-amber-600 dark:text-amber-400 text-xs mb-1">Scheduled</div>
+            <div className="text-2xl font-semibold text-amber-600 dark:text-amber-400">{stats.scheduled}</div>
           </div>
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div className="text-[#1e40af] text-xs mb-1">In Progress</div>
-            <div className="text-2xl font-semibold text-[#1e40af]">{stats.inProgress}</div>
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+            <div className="text-blue-600 dark:text-blue-400 text-xs mb-1">In Progress</div>
+            <div className="text-2xl font-semibold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
           </div>
         </div>
 
@@ -154,13 +154,13 @@ export default function InterviewsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
               <input
                 type="text"
                 placeholder="Search interviews..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#e5e5e5] rounded-lg text-sm focus:outline-none focus:border-[#1a56db] focus:ring-1 focus:ring-[#1a56db]"
+                className="w-full pl-10 pr-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[#1a56db] focus:ring-1 focus:ring-[#1a56db]"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function InterviewsPage() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 statusFilter === status
                   ? 'bg-[#1a56db] text-white'
-                  : 'bg-white text-[#666] border border-[#e5e5e5] hover:border-[#1a56db] hover:text-[#1a56db]'
+                  : 'bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)] hover:border-[#1a56db] hover:text-[#1a56db]'
               }`}
             >
               {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -193,10 +193,10 @@ export default function InterviewsPage() {
             <Loader2 className="w-8 h-8 animate-spin text-[#1a56db]" />
           </div>
         ) : interviews.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-[#e5e5e5]">
-            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-[#d1d5db]" />
-            <p className="text-[#666] mb-2">No interviews found</p>
-            <p className="text-[#999] text-sm">Schedule your first interview to get started.</p>
+          <div className="text-center py-20 bg-[var(--card)] rounded-xl border border-[var(--border)]">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
+            <p className="text-[var(--muted-foreground)] mb-2">No interviews found</p>
+            <p className="text-[var(--muted-foreground)] text-sm">Schedule your first interview to get started.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -205,18 +205,18 @@ export default function InterviewsPage() {
                 key={interview.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-[#e5e5e5] rounded-xl p-5 hover:border-[#1a56db] hover:shadow-sm transition-all cursor-pointer group"
+                className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[#1a56db] hover:shadow-sm transition-all cursor-pointer group"
                 whileHover={{ y: -2 }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-[#f3f4f6] flex items-center justify-center">
-                      <User className="w-4 h-4 text-[#666]" />
+                    <div className="w-8 h-8 rounded-full bg-[var(--muted)] flex items-center justify-center">
+                      <User className="w-4 h-4 text-[var(--muted-foreground)]" />
                     </div>
                     <div>
-                      <span className="font-medium text-[#1a1a1a] text-sm">{interview.userName || interview.userId}</span>
+                      <span className="font-medium text-[var(--foreground)] text-sm">{interview.userName || interview.userId}</span>
                       {interview.userEmail && (
-                        <p className="text-xs text-[#999]">{interview.userEmail}</p>
+                        <p className="text-xs text-[var(--muted-foreground)]">{interview.userEmail}</p>
                       )}
                     </div>
                   </div>
@@ -225,22 +225,22 @@ export default function InterviewsPage() {
 
                 {interview.cohort && (
                   <div className="mb-3">
-                    <span className="text-xs text-[#666] bg-[#f3f4f6] px-2 py-1 rounded">
+                    <span className="text-xs text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-1 rounded">
                       {interview.cohort.name}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-3 border-t border-[#f3f4f6]">
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
                   <div className="flex items-center gap-3">
                     {interview.scheduledAt && (
-                      <div className="flex items-center gap-1 text-xs text-[#999]">
+                      <div className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
                         <Calendar className="w-3 h-3" />
                         {new Date(interview.scheduledAt).toLocaleDateString()}
                       </div>
                     )}
                     {interview.completedAt && (
-                      <div className="flex items-center gap-1 text-xs text-[#166534]">
+                      <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                         <CheckCircle className="w-3 h-3" />
                         Done
                       </div>
@@ -257,7 +257,7 @@ export default function InterviewsPage() {
                         {interview.insights[0].satisfaction.toFixed(1)}
                       </div>
                     )}
-                    <button className="p-1.5 rounded-lg hover:bg-[#f5f5f5] text-[#999] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="p-1.5 rounded-lg hover:bg-[var(--muted)] text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity">
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>

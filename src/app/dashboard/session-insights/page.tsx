@@ -1,25 +1,20 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Uploader } from '@/components/ui/uploader';
 import { AnalysisTable, AnalysisEntry } from '@/components/analysis-table';
 import { SessionPlayer } from '@/components/session-player';
+import { SessionList } from '@/components/session-list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, Target, Sparkles, RefreshCw, ChevronDown, Upload, Cloud, Check, Trash2 } from 'lucide-react';
+import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, Target, Sparkles, RefreshCw, ChevronDown, Upload, Cloud, Check, Trash2, Database, User } from 'lucide-react';
+import type { SessionListItem, RRWebEvent } from '@/types/session';
 
-type InputMode = 'upload' | 'sync';
+type InputMode = 'upload' | 'sync' | 'all-sessions';
 type SyncStatus = 'idle' | 'fetching-list' | 'fetching-sessions' | 'analyzing' | 'complete' | 'error';
-
-interface PostHogSession {
-    id: string;
-    distinctId: string;
-    startTime: string;
-    duration: number;
-    clickCount: number;
-}
 
 interface SyncProgress {
     status: SyncStatus;
@@ -153,7 +148,7 @@ export default function SessionInsightsPage() {
     const [isHydrated, setIsHydrated] = useState(false);
 
     // New state for input mode
-    const [inputMode, setInputMode] = useState<InputMode>('upload');
+    const [inputMode, setInputMode] = useState<InputMode>('all-sessions');
     const [sessionCount, setSessionCount] = useState<number>(5);
     const [syncProgress, setSyncProgress] = useState<SyncProgress>({
         status: 'idle',
@@ -161,6 +156,22 @@ export default function SessionInsightsPage() {
         current: 0,
         total: 0,
     });
+
+    // State for database-backed sessions
+    const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+    const [dbSelectedSession, setDbSelectedSession] = useState<SessionListItem | null>(null);
+    const [dbSessionEvents, setDbSessionEvents] = useState<RRWebEvent[]>([]);
+    const [dbSessionCount, setDbSessionCount] = useState(0);
+
+    // Get distinctId from URL params (for filtering by user from Recovery tab)
+    const searchParams = useSearchParams();
+    const distinctIdFilter = searchParams.get('distinctId');
+
+    // Load current project ID
+    useEffect(() => {
+        const projectId = localStorage.getItem('currentProjectId');
+        setCurrentProjectId(projectId);
+    }, []);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -201,155 +212,62 @@ export default function SessionInsightsPage() {
         return () => clearTimeout(timeoutId);
     }, [analyses, synthesizedInsights, lastSynthesizedCount, isHydrated]);
 
-    // Sync from PostHog
+    // Sync from PostHog - now saves directly to database
     const syncFromPostHog = useCallback(async () => {
+        if (!currentProjectId) {
+            setSyncProgress({
+                status: 'error',
+                message: 'No project selected',
+                current: 0,
+                total: 0,
+                error: 'Please select a project first',
+            });
+            return;
+        }
+
         setSyncProgress({
             status: 'fetching-list',
-            message: 'Fetching session list from PostHog...',
+            message: 'Syncing sessions from PostHog to database...',
             current: 0,
             total: sessionCount,
         });
 
         try {
-            // First, get project credentials
-            const projectId = localStorage.getItem('currentProjectId');
-            let posthogHeaders: Record<string, string> = {};
-            
-            if (projectId) {
-                const projectRes = await fetch(`/api/projects/${projectId}`);
-                if (projectRes.ok) {
-                    const projectData = await projectRes.json();
-                    if (projectData.project?.posthogKey) {
-                        posthogHeaders = {
-                            'x-posthog-key': projectData.project.posthogKey,
-                            'x-posthog-project': projectData.project.posthogProjId,
-                            'x-posthog-host': projectData.project.posthogHost || 'https://us.posthog.com',
-                        };
-                    }
-                }
-            }
-
-            // Step 1: Fetch list of recent sessions
-            const listResponse = await fetch(`/api/posthog/sessions?limit=${sessionCount}`, {
-                headers: posthogHeaders,
-            });
-            if (!listResponse.ok) {
-                const errorData = await listResponse.json();
-                throw new Error(errorData.error || 'Failed to fetch session list');
-            }
-
-            const { sessions } = await listResponse.json() as { sessions: PostHogSession[] };
-
-            if (sessions.length === 0) {
-                setSyncProgress({
-                    status: 'error',
-                    message: 'No sessions found in PostHog',
-                    current: 0,
-                    total: 0,
-                    error: 'No recent sessions available',
-                });
-                return;
-            }
-
-            setSyncProgress({
-                status: 'fetching-sessions',
-                message: `Found ${sessions.length} sessions. Fetching replay data...`,
-                current: 0,
-                total: sessions.length,
+            // Use the new sync endpoint that saves directly to database
+            const response = await fetch('/api/sessions/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectId: currentProjectId,
+                    count: sessionCount,
+                }),
             });
 
-            // Step 2: Fetch rrweb data for each session and analyze
-            let successCount = 0;
-            let failCount = 0;
+            const result = await response.json();
 
-            for (let i = 0; i < sessions.length; i++) {
-                const session = sessions[i];
-                const sessionName = `PostHog Session ${session.id.substring(0, 8)}`;
-
-                setSyncProgress(prev => ({
-                    ...prev,
-                    status: 'fetching-sessions',
-                    message: `Fetching session ${i + 1}/${sessions.length}...`,
-                    current: i + 1,
-                }));
-
-                try {
-                    // Fetch rrweb data
-                    const dataResponse = await fetch('/api/posthog/sessions', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...posthogHeaders },
-                        body: JSON.stringify({ sessionId: session.id }),
-                    });
-
-                    if (!dataResponse.ok) {
-                        console.error(`Failed to fetch session ${session.id}`);
-                        failCount++;
-                        continue;
-                    }
-
-                    const { events } = await dataResponse.json();
-
-                    if (!events || events.length === 0) {
-                        console.error(`No events for session ${session.id}`);
-                        failCount++;
-                        continue;
-                    }
-
-                    // Create entry and analyze
-                    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-                    const timestamp = new Date(session.startTime).toLocaleTimeString();
-                    const fileName = `${sessionName} (${new Date(session.startTime).toLocaleDateString()})`;
-
-                    const newEntry: AnalysisEntry = {
-                        id,
-                        fileName,
-                        timestamp,
-                        analysis: null,
-                        events,
-                        isAnalyzing: true,
-                    };
-
-                    setAnalyses(prev => [newEntry, ...prev]);
-                    setAnalyzingCount(prev => prev + 1);
-
-                    // Analyze in background
-                    fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ events }),
-                    })
-                        .then(res => res.ok ? res.json() : Promise.reject('Analysis failed'))
-                        .then(result => {
-                            setAnalyses(prev => prev.map(entry =>
-                                entry.id === id
-                                    ? { ...entry, analysis: result, isAnalyzing: false }
-                                    : entry
-                            ));
-                        })
-                        .catch(() => {
-                            setAnalyses(prev => prev.map(entry =>
-                                entry.id === id
-                                    ? { ...entry, analysis: { error: true, summary: 'Analysis failed' }, isAnalyzing: false }
-                                    : entry
-                            ));
-                        })
-                        .finally(() => {
-                            setAnalyzingCount(prev => prev - 1);
-                        });
-
-                    successCount++;
-                } catch (err) {
-                    console.error(`Error processing session ${session.id}:`, err);
-                    failCount++;
-                }
+            if (!response.ok) {
+                const errorMsg = result.error || 'Sync failed';
+                const hint = result.hint ? ` (${result.hint})` : '';
+                throw new Error(`${errorMsg}${hint}`);
             }
 
+            const hasResults = result.imported > 0 || result.skipped > 0;
             setSyncProgress({
                 status: 'complete',
-                message: `Synced ${successCount} sessions${failCount > 0 ? ` (${failCount} failed)` : ''}`,
-                current: sessions.length,
-                total: sessions.length,
+                message: hasResults
+                    ? `Imported ${result.imported} sessions${result.skipped > 0 ? `, ${result.skipped} skipped (already exists)` : ''}${result.failed > 0 ? `, ${result.failed} failed` : ''}`
+                    : result.message || 'No sessions found in PostHog',
+                current: result.imported + result.skipped,
+                total: result.imported + result.skipped + result.failed,
             });
+
+            // Update session count
+            setDbSessionCount(prev => prev + result.imported);
+
+            // Switch to All Sessions tab to show imported sessions
+            if (result.imported > 0) {
+                setInputMode('all-sessions');
+            }
 
             // Reset after delay
             setTimeout(() => {
@@ -371,7 +289,7 @@ export default function SessionInsightsPage() {
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
         }
-    }, [sessionCount]);
+    }, [sessionCount, currentProjectId]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUpload = useCallback(async (json: any, fileName: string) => {
@@ -391,6 +309,30 @@ export default function SessionInsightsPage() {
         setAnalyses(prev => [newEntry, ...prev]);
         setAnalyzingCount(prev => prev + 1);
 
+        // Also save to database if we have a project ID
+        let dbSessionId: string | null = null;
+        if (currentProjectId) {
+            try {
+                const saveRes = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProjectId,
+                        name: fileName,
+                        events,
+                        source: 'upload',
+                    }),
+                });
+                if (saveRes.ok) {
+                    const { session } = await saveRes.json();
+                    dbSessionId = session.id;
+                    setDbSessionCount(prev => prev + 1);
+                }
+            } catch (err) {
+                console.error('Failed to save session to database:', err);
+            }
+        }
+
         try {
             const response = await fetch('/api/analyze', {
                 method: 'POST',
@@ -402,22 +344,27 @@ export default function SessionInsightsPage() {
 
             const result = await response.json();
 
-            setAnalyses(prev => prev.map(entry => 
-                entry.id === id 
+            setAnalyses(prev => prev.map(entry =>
+                entry.id === id
                     ? { ...entry, analysis: result, isAnalyzing: false }
                     : entry
             ));
+
+            // Update DB session with analysis
+            if (dbSessionId) {
+                await fetch(`/api/sessions/${dbSessionId}/analyze`, { method: 'POST' });
+            }
         } catch (error) {
             console.error(error);
-            setAnalyses(prev => prev.map(entry => 
-                entry.id === id 
+            setAnalyses(prev => prev.map(entry =>
+                entry.id === id
                     ? { ...entry, analysis: { error: true, summary: 'Analysis failed' }, isAnalyzing: false }
                     : entry
             ));
         } finally {
             setAnalyzingCount(prev => prev - 1);
         }
-    }, []);
+    }, [currentProjectId]);
 
     const handleView = (entry: AnalysisEntry | null) => {
         setSelectedEntry(entry);
@@ -431,6 +378,16 @@ export default function SessionInsightsPage() {
     };
 
     const handleCloseDetail = () => {
+        setSelectedEntry(null);
+        setDbSelectedSession(null);
+        setDbSessionEvents([]);
+    };
+
+    // Handler for selecting a session from the database list
+    const handleDbSessionSelect = (session: SessionListItem | null, events?: RRWebEvent[]) => {
+        setDbSelectedSession(session);
+        setDbSessionEvents(events || []);
+        // Clear localStorage-based selection
         setSelectedEntry(null);
     };
 
@@ -536,13 +493,13 @@ export default function SessionInsightsPage() {
     }, [aggregatedInsights?.totalSessions, lastSynthesizedCount, isSynthesizing, synthesizeInsights]);
 
     return (
-        <div className="min-h-screen bg-[#fafafa]">
+        <div className="min-h-screen bg-[var(--background)]">
             {/* Header */}
-            <div className="bg-white border-b border-[#e5e5e5] px-8 py-5">
+            <div className="bg-[var(--card)] border-b border-[var(--border)] px-8 py-5">
                 <div className="flex items-center justify-between">
                     <div>
-                        <div className="text-[#999] text-sm mb-0.5">Tranzmit / Session Insights</div>
-                        <h1 className="text-2xl font-semibold text-[#1a1a1a]">Session Insights</h1>
+                        <div className="text-[var(--muted-foreground)] text-sm mb-0.5">Tranzmit / Session Insights</div>
+                        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Session Insights</h1>
                     </div>
                     {analyses.length > 0 && (
                         <div className="flex items-center gap-3">
@@ -573,47 +530,47 @@ export default function SessionInsightsPage() {
                                     <Sparkles className="w-4 h-4 text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-semibold tracking-tight">Synthesized Insights</h2>
-                                    <p className="text-xs text-slate-500">{aggregatedInsights?.totalSessions || 0} sessions analyzed</p>
+                                    <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Synthesized Insights</h2>
+                                    <p className="text-xs text-[var(--muted-foreground)]">{aggregatedInsights?.totalSessions || 0} sessions analyzed</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={synthesizeInsights} disabled={isSynthesizing} className="text-slate-500 hover:text-slate-900">
+                            <Button variant="ghost" size="sm" onClick={synthesizeInsights} disabled={isSynthesizing} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
                                 <RefreshCw className={`w-3.5 h-3.5 ${isSynthesizing ? 'animate-spin' : ''}`} />
                             </Button>
                         </div>
 
                         {isSynthesizing && !synthesizedInsights && (
-                            <div className="h-32 flex items-center justify-center border border-dashed border-slate-200 rounded-xl">
-                                <Loader2 className="w-5 h-5 animate-spin text-slate-400 mr-2" />
-                                <span className="text-sm text-slate-500">Synthesizing...</span>
+                            <div className="h-32 flex items-center justify-center border border-dashed border-[var(--border)] rounded-xl bg-[var(--card)]">
+                                <Loader2 className="w-5 h-5 animate-spin text-[var(--muted-foreground)] mr-2" />
+                                <span className="text-sm text-[var(--muted-foreground)]">Synthesizing...</span>
                             </div>
                         )}
 
                         {synthesizedInsights && (
                             <div className="grid grid-cols-3 gap-3">
-                                <div onClick={() => setExpandedTab(expandedTab === 'issues' ? null : 'issues')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'issues' ? 'col-span-3 border-red-200 bg-red-50/50' : 'border-slate-200 hover:border-red-200 hover:bg-red-50/30'}`}>
+                                <div onClick={() => setExpandedTab(expandedTab === 'issues' ? null : 'issues')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'issues' ? 'col-span-3 border-red-200 bg-red-50/50 dark:bg-red-950/30 dark:border-red-800' : 'border-[var(--border)] hover:border-red-200 hover:bg-red-50/30 dark:hover:bg-red-950/20 dark:hover:border-red-800 bg-[var(--card)]'}`}>
                                     <div className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-red-100 flex items-center justify-center">
+                                                <div className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
                                                     <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
                                                 </div>
-                                                <span className="font-medium text-sm">Critical Issues</span>
+                                                <span className="font-medium text-sm text-[var(--foreground)]">Critical Issues</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-2xl font-bold text-red-600">{synthesizedInsights.critical_issues.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedTab === 'issues' ? 'rotate-180' : ''}`} />
+                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'issues' ? 'rotate-180' : ''}`} />
                                             </div>
                                         </div>
                                         {expandedTab === 'issues' && (
-                                            <div className="mt-4 pt-4 border-t border-red-200 space-y-3" onClick={e => e.stopPropagation()}>
+                                            <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800 space-y-3" onClick={e => e.stopPropagation()}>
                                                 {synthesizedInsights.critical_issues.map((issue, i) => (
-                                                    <div key={i} className="p-3 rounded-lg bg-white border border-red-100">
+                                                    <div key={i} className="p-3 rounded-lg bg-[var(--card)] border border-red-100 dark:border-red-800">
                                                         <div className="flex items-start justify-between gap-2 mb-1">
-                                                            <span className="font-medium text-sm text-slate-900">{issue.title}</span>
+                                                            <span className="font-medium text-sm text-[var(--foreground)]">{issue.title}</span>
                                                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wide ${issue.severity === 'critical' ? 'bg-red-100 text-red-700' : issue.severity === 'high' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'}`}>{issue.severity}</span>
                                                         </div>
-                                                        <p className="text-xs text-slate-500 mb-2">{issue.description}</p>
+                                                        <p className="text-xs text-[var(--muted-foreground)] mb-2">{issue.description}</p>
                                                         <p className="text-xs text-emerald-600">→ {issue.recommendation}</p>
                                                     </div>
                                                 ))}
@@ -622,25 +579,25 @@ export default function SessionInsightsPage() {
                                     </div>
                                 </div>
 
-                                <div onClick={() => setExpandedTab(expandedTab === 'goals' ? null : 'goals')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'goals' ? 'col-span-3 border-blue-200 bg-blue-50/50' : expandedTab === 'issues' ? 'hidden' : 'border-slate-200 hover:border-blue-200 hover:bg-blue-50/30'}`}>
+                                <div onClick={() => setExpandedTab(expandedTab === 'goals' ? null : 'goals')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'goals' ? 'col-span-3 border-blue-200 bg-blue-50/50 dark:bg-blue-950/30 dark:border-blue-800' : expandedTab === 'issues' ? 'hidden' : 'border-[var(--border)] hover:border-blue-200 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 dark:hover:border-blue-800 bg-[var(--card)]'}`}>
                                     <div className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center">
+                                                <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
                                                     <Target className="w-3.5 h-3.5 text-blue-600" />
                                                 </div>
-                                                <span className="font-medium text-sm">User Goals</span>
+                                                <span className="font-medium text-sm text-[var(--foreground)]">User Goals</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-2xl font-bold text-blue-600">{synthesizedInsights.top_user_goals.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedTab === 'goals' ? 'rotate-180' : ''}`} />
+                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'goals' ? 'rotate-180' : ''}`} />
                                             </div>
                                         </div>
                                         {expandedTab === 'goals' && (
-                                            <div className="mt-4 pt-4 border-t border-blue-200 space-y-2" onClick={e => e.stopPropagation()}>
+                                            <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800 space-y-2" onClick={e => e.stopPropagation()}>
                                                 {synthesizedInsights.top_user_goals.map((goal, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white border border-blue-100">
-                                                        <span className="text-sm text-slate-700">{goal.goal}</span>
+                                                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--card)] border border-blue-100 dark:border-blue-800">
+                                                        <span className="text-sm text-[var(--foreground)]">{goal.goal}</span>
                                                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${goal.success_rate.toLowerCase().includes('fail') || goal.success_rate.toLowerCase().includes('low') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{goal.success_rate}</span>
                                                     </div>
                                                 ))}
@@ -649,26 +606,26 @@ export default function SessionInsightsPage() {
                                     </div>
                                 </div>
 
-                                <div onClick={() => setExpandedTab(expandedTab === 'actions' ? null : 'actions')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'actions' ? 'col-span-3 border-emerald-200 bg-emerald-50/50' : (expandedTab === 'issues' || expandedTab === 'goals') ? 'hidden' : 'border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/30'}`}>
+                                <div onClick={() => setExpandedTab(expandedTab === 'actions' ? null : 'actions')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'actions' ? 'col-span-3 border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/30 dark:border-emerald-800' : (expandedTab === 'issues' || expandedTab === 'goals') ? 'hidden' : 'border-[var(--border)] hover:border-emerald-200 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 dark:hover:border-emerald-800 bg-[var(--card)]'}`}>
                                     <div className="p-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center">
+                                                <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                                 </div>
-                                                <span className="font-medium text-sm">Actions</span>
+                                                <span className="font-medium text-sm text-[var(--foreground)]">Actions</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-2xl font-bold text-emerald-600">{synthesizedInsights.immediate_actions.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedTab === 'actions' ? 'rotate-180' : ''}`} />
+                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'actions' ? 'rotate-180' : ''}`} />
                                             </div>
                                         </div>
                                         {expandedTab === 'actions' && (
-                                            <div className="mt-4 pt-4 border-t border-emerald-200 space-y-2" onClick={e => e.stopPropagation()}>
+                                            <div className="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-800 space-y-2" onClick={e => e.stopPropagation()}>
                                                 {synthesizedInsights.immediate_actions.map((action, i) => (
-                                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-white border border-emerald-100">
+                                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--card)] border border-emerald-100 dark:border-emerald-800">
                                                         <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
-                                                        <span className="text-sm text-slate-700">{action}</span>
+                                                        <span className="text-sm text-[var(--foreground)]">{action}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -679,7 +636,7 @@ export default function SessionInsightsPage() {
                         )}
 
                         {synthesizedInsights && !expandedTab && (
-                            <p className="mt-3 text-xs text-slate-400 leading-relaxed">{synthesizedInsights.pattern_summary}</p>
+                            <p className="mt-3 text-xs text-[var(--muted-foreground)] leading-relaxed">{synthesizedInsights.pattern_summary}</p>
                         )}
                     </section>
                 )}
@@ -687,6 +644,18 @@ export default function SessionInsightsPage() {
                 <section>
                     {/* Mode Selector Tabs */}
                     <div className="flex items-center gap-2 mb-4">
+                        <Button
+                            variant={inputMode === 'all-sessions' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setInputMode('all-sessions')}
+                            className="gap-2"
+                        >
+                            <Database className="w-4 h-4" />
+                            All Sessions
+                            {dbSessionCount > 0 && (
+                                <Badge variant="secondary" className="ml-1 text-xs">{dbSessionCount}</Badge>
+                            )}
+                        </Button>
                         <Button
                             variant={inputMode === 'upload' ? 'default' : 'outline'}
                             size="sm"
@@ -707,6 +676,58 @@ export default function SessionInsightsPage() {
                         </Button>
                     </div>
 
+                    {/* All Sessions Mode */}
+                    {inputMode === 'all-sessions' && currentProjectId && (
+                        <>
+                            {/* User Filter Banner */}
+                            {distinctIdFilter && (
+                                <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <User className="w-4 h-4 text-indigo-500" />
+                                        <span className="text-sm text-[var(--foreground)]">
+                                            Filtering sessions for user: <span className="font-mono text-indigo-600 dark:text-indigo-400">{distinctIdFilter}</span>
+                                        </span>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.location.href = '/dashboard/session-insights'}
+                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-500/10"
+                                    >
+                                        <X className="w-4 h-4 mr-1" />
+                                        Clear filter
+                                    </Button>
+                                </div>
+                            )}
+                            <SessionList
+                                projectId={currentProjectId}
+                                onSelectSession={handleDbSessionSelect}
+                                selectedSessionId={dbSelectedSession?.id}
+                                onSessionsChange={() => setDbSessionCount(prev => Math.max(0, prev - 1))}
+                                distinctId={distinctIdFilter || undefined}
+                            />
+                        </>
+                    )}
+
+                    {inputMode === 'all-sessions' && !currentProjectId && (
+                        <Card className="border-2 border-dashed p-8 bg-[var(--card)]">
+                            <div className="flex flex-col items-center justify-center space-y-4">
+                                <div className="w-16 h-16 rounded-2xl bg-[var(--muted)] flex items-center justify-center">
+                                    <Database className="w-8 h-8 text-[var(--muted-foreground)]" />
+                                </div>
+                                <div className="text-center">
+                                    <h3 className="text-lg font-semibold text-[var(--foreground)]">No Project Selected</h3>
+                                    <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                                        Please select a project from the Projects page to view stored sessions
+                                    </p>
+                                </div>
+                                <Button onClick={() => window.location.href = '/dashboard/projects'}>
+                                    Go to Projects
+                                </Button>
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Upload Mode */}
                     {inputMode === 'upload' && (
                         <Uploader onUpload={handleUpload} isAnalyzing={isAnalyzing} analyzingCount={analyzingCount} />
@@ -714,29 +735,29 @@ export default function SessionInsightsPage() {
 
                     {/* Sync Mode */}
                     {inputMode === 'sync' && (
-                        <Card className="border-2 border-dashed p-8 bg-white">
+                        <Card className="border-2 border-dashed p-8 bg-[var(--card)]">
                             <div className="flex flex-col items-center justify-center space-y-6">
                                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                                     <Cloud className="w-8 h-8 text-white" />
                                 </div>
 
                                 <div className="text-center">
-                                    <h3 className="text-lg font-semibold text-slate-900">
+                                    <h3 className="text-lg font-semibold text-[var(--foreground)]">
                                         Sync Sessions from PostHog
                                     </h3>
-                                    <p className="text-sm text-slate-500 mt-1">
+                                    <p className="text-sm text-[var(--muted-foreground)] mt-1">
                                         Automatically fetch and analyze recent session recordings
                                     </p>
                                 </div>
 
                                 {/* Session Count Selector */}
                                 <div className="flex items-center gap-3">
-                                    <span className="text-sm text-slate-600">Fetch last</span>
+                                    <span className="text-sm text-[var(--muted-foreground)]">Fetch last</span>
                                     <select
                                         value={sessionCount}
                                         onChange={(e) => setSessionCount(Number(e.target.value))}
                                         disabled={syncProgress.status !== 'idle' && syncProgress.status !== 'error' && syncProgress.status !== 'complete'}
-                                        className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
                                         {SESSION_COUNT_OPTIONS.map((count) => (
                                             <option key={count} value={count}>
@@ -752,13 +773,13 @@ export default function SessionInsightsPage() {
                                         {/* Progress Bar */}
                                         {(syncProgress.status === 'fetching-sessions' || syncProgress.status === 'analyzing') && (
                                             <div className="mb-3">
-                                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-2 bg-[var(--muted)] rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-blue-500 transition-all duration-300"
                                                         style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
                                                     />
                                                 </div>
-                                                <p className="text-xs text-slate-500 mt-1 text-center">
+                                                <p className="text-xs text-[var(--muted-foreground)] mt-1 text-center">
                                                     {syncProgress.current} / {syncProgress.total}
                                                 </p>
                                             </div>
@@ -814,7 +835,7 @@ export default function SessionInsightsPage() {
                                     )}
                                 </Button>
 
-                                <p className="text-xs text-slate-400 text-center max-w-sm">
+                                <p className="text-xs text-[var(--muted-foreground)] text-center max-w-sm">
                                     Sessions will be fetched from your PostHog account and automatically analyzed using AI
                                 </p>
                             </div>
@@ -824,20 +845,111 @@ export default function SessionInsightsPage() {
 
                 {analyses.length > 0 && (
                     <section>
-                        <h2 className="text-xl font-semibold mb-4">Recent Analyses</h2>
+                        <h2 className="text-xl font-semibold mb-4 text-[var(--foreground)]">Recent Analyses</h2>
                         <AnalysisTable analyses={analyses} selectedId={selectedEntry?.id} onView={handleView} onDelete={handleDelete} />
+                    </section>
+                )}
+
+                {/* Database session detail view */}
+                {dbSelectedSession && dbSelectedSession.analysis && (
+                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 space-y-4">
+                            <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2 text-[var(--foreground)]">
+                                        <PlayCircle className="w-5 h-5 text-blue-500" />
+                                        Session Replay
+                                        <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{dbSelectedSession.name}</span>
+                                        <Badge variant="outline" className={dbSelectedSession.source === 'posthog' ? 'border-blue-200 text-blue-700' : 'border-emerald-200 text-emerald-700'}>
+                                            {dbSelectedSession.source === 'posthog' ? 'PostHog' : 'Upload'}
+                                        </Badge>
+                                    </CardTitle>
+                                    <Button variant="ghost" size="sm" onClick={handleCloseDetail}>
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </CardHeader>
+                                <div className="p-4 pt-0">
+                                    {dbSessionEvents && dbSessionEvents.length > 0 ? (
+                                        <SessionPlayer
+                                            key={dbSelectedSession.id}
+                                            events={dbSessionEvents}
+                                            autoPlay={false}
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center bg-[var(--muted)] rounded-lg border border-dashed border-[var(--border)] py-12 px-4">
+                                            <Loader2 className="w-12 h-12 text-[var(--muted-foreground)] mb-3 animate-spin" />
+                                            <p className="text-sm text-[var(--muted-foreground)] text-center">
+                                                Loading session replay...
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                            {dbSelectedSession.analysis.description && (
+                                <Card className="p-6 bg-[var(--card)] border-[var(--border)]">
+                                    <h3 className="font-semibold mb-2 text-[var(--foreground)]">Detailed Narrative</h3>
+                                    <p className="text-[var(--muted-foreground)] leading-relaxed">{dbSelectedSession.analysis.description}</p>
+                                </Card>
+                            )}
+                        </div>
+                        <div className="space-y-6">
+                            <Card className="bg-[var(--card)] border-[var(--border)]">
+                                <CardHeader><CardTitle className="text-[var(--foreground)]">User Intent</CardTitle></CardHeader>
+                                <CardContent>
+                                    <p className="text-lg font-medium text-blue-500">&ldquo;{dbSelectedSession.analysis.user_intent}&rdquo;</p>
+                                    <p className="text-sm text-[var(--muted-foreground)] mt-2">{dbSelectedSession.analysis.summary}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-[var(--card)] border-red-500/20 dark:border-red-500/30">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-red-500">
+                                        <AlertTriangle className="w-5 h-5" />
+                                        Friction Points
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <ScrollArea className="h-[200px] w-full px-6 pb-6">
+                                        <div className="space-y-3">
+                                            {dbSelectedSession.analysis.frustration_points?.map((pt: any, i: number) => (
+                                                <div key={i} onClick={() => jumpToTime(pt.timestamp)} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors group">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <Badge variant="outline" className="bg-[var(--card)] text-red-500 border-red-500/30 group-hover:border-red-500/50">{pt.timestamp}</Badge>
+                                                    </div>
+                                                    <p className="text-sm text-[var(--foreground)]">{pt.issue}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-[var(--card)] border-emerald-500/20 dark:border-emerald-500/30">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-emerald-500">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                        Went Well
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-[var(--muted-foreground)]">
+                                        {dbSelectedSession.analysis.went_well?.map((item: string, i: number) => (
+                                            <li key={i}>{item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </section>
                 )}
 
                 {selectedEntry && selectedEntry.analysis && !selectedEntry.analysis.error && (
                     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-4">
-                            <Card className="border-0 shadow-lg ring-1 ring-slate-200 bg-white">
+                            <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
                                 <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle className="flex items-center gap-2">
+                                    <CardTitle className="flex items-center gap-2 text-[var(--foreground)]">
                                         <PlayCircle className="w-5 h-5 text-blue-500" />
                                         Session Replay
-                                        <span className="text-sm font-normal text-slate-500 ml-2">{selectedEntry.fileName}</span>
+                                        <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{selectedEntry.fileName}</span>
                                     </CardTitle>
                                     <Button variant="ghost" size="sm" onClick={handleCloseDetail}>
                                         <X className="w-4 h-4" />
@@ -851,34 +963,34 @@ export default function SessionInsightsPage() {
                                             autoPlay={false}
                                         />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-200 py-12 px-4">
-                                            <PlayCircle className="w-12 h-12 text-slate-300 mb-3" />
-                                            <p className="text-sm text-slate-500 text-center">
+                                        <div className="flex flex-col items-center justify-center bg-[var(--muted)] rounded-lg border border-dashed border-[var(--border)] py-12 px-4">
+                                            <PlayCircle className="w-12 h-12 text-[var(--muted-foreground)] mb-3" />
+                                            <p className="text-sm text-[var(--muted-foreground)] text-center">
                                                 Session replay not available
                                             </p>
-                                            <p className="text-xs text-slate-400 text-center mt-1">
+                                            <p className="text-xs text-[var(--muted-foreground)] text-center mt-1">
                                                 Re-sync from PostHog to view replay
                                             </p>
                                         </div>
                                     )}
                                 </div>
                             </Card>
-                            <Card className="p-6">
-                                <h3 className="font-semibold mb-2">Detailed Narrative</h3>
-                                <p className="text-slate-600 leading-relaxed">{selectedEntry.analysis.description}</p>
+                            <Card className="p-6 bg-[var(--card)] border-[var(--border)]">
+                                <h3 className="font-semibold mb-2 text-[var(--foreground)]">Detailed Narrative</h3>
+                                <p className="text-[var(--muted-foreground)] leading-relaxed">{selectedEntry.analysis.description}</p>
                             </Card>
                         </div>
                         <div className="space-y-6">
-                            <Card>
-                                <CardHeader><CardTitle>User Intent</CardTitle></CardHeader>
+                            <Card className="bg-[var(--card)] border-[var(--border)]">
+                                <CardHeader><CardTitle className="text-[var(--foreground)]">User Intent</CardTitle></CardHeader>
                                 <CardContent>
-                                    <p className="text-lg font-medium text-blue-600">&ldquo;{selectedEntry.analysis.user_intent}&rdquo;</p>
-                                    <p className="text-sm text-slate-500 mt-2">{selectedEntry.analysis.summary}</p>
+                                    <p className="text-lg font-medium text-blue-500">&ldquo;{selectedEntry.analysis.user_intent}&rdquo;</p>
+                                    <p className="text-sm text-[var(--muted-foreground)] mt-2">{selectedEntry.analysis.summary}</p>
                                 </CardContent>
                             </Card>
-                            <Card className="border-red-100">
+                            <Card className="bg-[var(--card)] border-red-500/20 dark:border-red-500/30">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-red-600">
+                                    <CardTitle className="flex items-center gap-2 text-red-500">
                                         <AlertTriangle className="w-5 h-5" />
                                         Friction Points
                                     </CardTitle>
@@ -887,26 +999,26 @@ export default function SessionInsightsPage() {
                                     <ScrollArea className="h-[200px] w-full px-6 pb-6">
                                         <div className="space-y-3">
                                             {selectedEntry.analysis.frustration_points?.map((pt: any, i: number) => (
-                                                <div key={i} onClick={() => jumpToTime(pt.timestamp)} className="p-3 rounded-lg bg-red-50 border border-red-100 cursor-pointer hover:bg-red-100 transition-colors group">
+                                                <div key={i} onClick={() => jumpToTime(pt.timestamp)} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors group">
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <Badge variant="outline" className="bg-white text-red-500 border-red-200 group-hover:border-red-400">{pt.timestamp}</Badge>
+                                                        <Badge variant="outline" className="bg-[var(--card)] text-red-500 border-red-500/30 group-hover:border-red-500/50">{pt.timestamp}</Badge>
                                                     </div>
-                                                    <p className="text-sm text-slate-700">{pt.issue}</p>
+                                                    <p className="text-sm text-[var(--foreground)]">{pt.issue}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </ScrollArea>
                                 </CardContent>
                             </Card>
-                            <Card className="border-green-100">
+                            <Card className="bg-[var(--card)] border-emerald-500/20 dark:border-emerald-500/30">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-green-600">
+                                    <CardTitle className="flex items-center gap-2 text-emerald-500">
                                         <CheckCircle2 className="w-5 h-5" />
                                         Went Well
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <ul className="list-disc list-inside space-y-1 text-sm text-slate-600">
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-[var(--muted-foreground)]">
                                         {selectedEntry.analysis.went_well?.map((item: string, i: number) => (
                                             <li key={i}>{item}</li>
                                         ))}

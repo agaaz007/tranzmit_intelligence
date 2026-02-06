@@ -133,7 +133,7 @@ export default function HypothesesPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-slate-50 font-sans">
+    <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[var(--background)] font-sans">
       <div className="w-2/5 h-full relative z-10 shadow-xl">
         <ChatPanel
           messages={messages}
