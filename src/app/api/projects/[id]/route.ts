@@ -34,7 +34,7 @@ export async function GET(
 
 /**
  * PATCH /api/projects/[id] - Update project settings
- * Body: name?, posthogKey?, posthogHost?, posthogProjId?
+ * Body: name?, posthogKey?, posthogHost?, posthogProjId?, mixpanelKey?, mixpanelSecret?, mixpanelProjId?, mixpanelHost?
  */
 export async function PATCH(
   request: NextRequest,
@@ -54,13 +54,30 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, posthogKey, posthogHost, posthogProjId } = body;
+    const {
+      name,
+      posthogKey,
+      posthogHost,
+      posthogProjId,
+      mixpanelKey,
+      mixpanelSecret,
+      mixpanelProjId,
+      mixpanelHost,
+      elevenlabsAgentId,
+    } = body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (posthogKey !== undefined) updateData.posthogKey = posthogKey;
     if (posthogHost !== undefined) updateData.posthogHost = posthogHost;
     if (posthogProjId !== undefined) updateData.posthogProjId = posthogProjId;
+    // Mixpanel fields
+    if (mixpanelKey !== undefined) updateData.mixpanelKey = mixpanelKey;
+    if (mixpanelSecret !== undefined) updateData.mixpanelSecret = mixpanelSecret;
+    if (mixpanelProjId !== undefined) updateData.mixpanelProjId = mixpanelProjId;
+    if (mixpanelHost !== undefined) updateData.mixpanelHost = mixpanelHost;
+    // ElevenLabs
+    if (elevenlabsAgentId !== undefined) updateData.elevenlabsAgentId = elevenlabsAgentId;
 
     const project = await prisma.project.update({
       where: { id },

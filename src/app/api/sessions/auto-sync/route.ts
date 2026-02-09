@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncSessionsFromPostHog } from '@/lib/session-sync';
+import { syncSessionsFromMixpanel } from '@/lib/mixpanel-sync';
 import { analyzeSession } from '@/lib/session-analysis';
 import { synthesizeInsightsWithSessionLinkage } from '@/lib/session-synthesize';
 
-// POST: Auto-sync pipeline — sync from PostHog, analyze pending, re-synthesize
+// POST: Auto-sync pipeline — sync from PostHog or Mixpanel, analyze pending, re-synthesize
 export async function POST(req: NextRequest) {
   let projectId: string;
   try {
@@ -26,14 +27,40 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    // Step 1: Sync new sessions from PostHog
+    // Get project to check which integration is configured
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        posthogKey: true,
+        posthogProjId: true,
+        mixpanelKey: true,
+        mixpanelProjId: true,
+      },
+    });
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    const hasPostHog = project.posthogKey && project.posthogProjId;
+    const hasMixpanel = project.mixpanelKey && project.mixpanelProjId;
+
+    // Step 1: Sync new sessions from configured source
     console.log(`[Auto-Sync] Step 1: Syncing sessions for project ${projectId}`);
-    let syncResult;
+    let syncResult: { imported: number; skipped: number; failed: number; errors?: string[] } = { imported: 0, skipped: 0, failed: 0, errors: [] };
+
     try {
-      syncResult = await syncSessionsFromPostHog(projectId, 20);
+      if (hasMixpanel) {
+        console.log('[Auto-Sync] Using Mixpanel integration');
+        syncResult = await syncSessionsFromMixpanel(projectId, 7);
+      } else if (hasPostHog) {
+        console.log('[Auto-Sync] Using PostHog integration');
+        syncResult = await syncSessionsFromPostHog(projectId, 20);
+      } else {
+        console.log('[Auto-Sync] No integration configured, skipping sync');
+      }
     } catch (syncError) {
       console.error('[Auto-Sync] Sync failed:', syncError);
-      syncResult = { imported: 0, skipped: 0, failed: 0, errors: [] };
     }
 
     await prisma.synthesizedInsight.update({

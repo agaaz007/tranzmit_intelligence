@@ -24,7 +24,7 @@ const navItems = [
     { href: '/dashboard/funnels', icon: Target, label: 'Journey Map' },
     { href: '/dashboard/session-insights', icon: PlayCircle, label: 'Session Insights' },
     { href: '/dashboard/cohorts', icon: Users, label: 'Inactive Cohort' },
-    { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Studies' },
+    { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Qualitative' },
     { href: '/dashboard/interviews', icon: MessageCircle, label: 'Voice of Customer' },
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
 ];

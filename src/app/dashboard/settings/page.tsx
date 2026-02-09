@@ -2,14 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check } from 'lucide-react';
 
 interface ProjectSettings {
   id: string;
   name: string;
+  organizationId: string | null;
   posthogKey: string;
   posthogHost: string;
   posthogProjId: string;
+  mixpanelKey: string;
+  mixpanelSecret: string;
+  mixpanelProjId: string;
+  mixpanelHost: string;
+  elevenlabsAgentId: string;
 }
 
 export default function SettingsPage() {
@@ -20,6 +26,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [projectId, setProjectId] = useState<string>('');
   const [noProjectExists, setNoProjectExists] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -27,6 +34,11 @@ export default function SettingsPage() {
     posthogKey: '',
     posthogHost: 'https://us.posthog.com',
     posthogProjId: '',
+    mixpanelKey: '',
+    mixpanelSecret: '',
+    mixpanelProjId: '',
+    mixpanelHost: 'https://mixpanel.com',
+    elevenlabsAgentId: '',
   });
 
   useEffect(() => {
@@ -76,9 +88,14 @@ export default function SettingsPage() {
         setProject(data.project);
         setFormData({
           name: data.project.name,
-          posthogKey: data.project.posthogKey,
+          posthogKey: data.project.posthogKey || '',
           posthogHost: data.project.posthogHost || 'https://us.posthog.com',
-          posthogProjId: data.project.posthogProjId,
+          posthogProjId: data.project.posthogProjId || '',
+          mixpanelKey: data.project.mixpanelKey || '',
+          mixpanelSecret: data.project.mixpanelSecret || '',
+          mixpanelProjId: data.project.mixpanelProjId || '',
+          mixpanelHost: data.project.mixpanelHost || 'https://mixpanel.com',
+          elevenlabsAgentId: data.project.elevenlabsAgentId || '',
         });
         setNoProjectExists(false);
       } else {
@@ -123,8 +140,16 @@ export default function SettingsPage() {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.posthogKey || !formData.posthogProjId) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields' });
+    const hasPostHog = formData.posthogKey && formData.posthogProjId;
+    const hasMixpanel = formData.mixpanelKey && formData.mixpanelProjId;
+
+    if (!formData.name) {
+      setMessage({ type: 'error', text: 'Project name is required' });
+      return;
+    }
+
+    if (!hasPostHog && !hasMixpanel) {
+      setMessage({ type: 'error', text: 'Please configure at least one analytics integration (PostHog or Mixpanel)' });
       return;
     }
 
@@ -197,6 +222,44 @@ export default function SettingsPage() {
           </motion.div>
         )}
 
+        {/* Organization ID */}
+        {project?.organizationId && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="w-6 h-6 text-indigo-600" />
+              <h2 className="text-2xl font-bold text-slate-900">Organization ID</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Share this ID with team members so they can join your workspace.
+            </p>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono text-sm select-all">
+                {project.organizationId}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(project.organizationId!);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-600" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Project Settings */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
@@ -232,10 +295,14 @@ export default function SettingsPage() {
             <h2 className="text-2xl font-bold text-slate-900">PostHog Integration</h2>
           </div>
 
+          <p className="text-sm text-slate-500 mb-5 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+            Configure PostHog to sync session recordings. You only need <strong>either</strong> PostHog or Mixpanel, not both.
+          </p>
+
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                API Key <span className="text-red-500">*</span>
+                API Key
               </label>
               <input
                 type="password"
@@ -251,7 +318,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Project ID <span className="text-red-500">*</span>
+                Project ID
               </label>
               <input
                 type="text"
@@ -278,6 +345,113 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-slate-500 mt-2">
                 PostHog instance URL (default: https://us.posthog.com)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mixpanel Integration */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <Key className="w-6 h-6 text-orange-600" />
+            <h2 className="text-2xl font-bold text-slate-900">Mixpanel Integration</h2>
+          </div>
+
+          <p className="text-sm text-slate-500 mb-5 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+            Configure Mixpanel to sync user sessions. You only need <strong>either</strong> PostHog or Mixpanel, not both.
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                API Secret <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={formData.mixpanelKey}
+                onChange={(e) => handleInputChange('mixpanelKey', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="Your Mixpanel API Secret"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Found in Mixpanel → Project Settings → Project Details → API Secret
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Project ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.mixpanelProjId}
+                onChange={(e) => handleInputChange('mixpanelProjId', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="2195XXX"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Numeric Project ID (e.g., 2195XXX). Found in Mixpanel → Settings → Project Settings → Overview. <strong>Not</strong> the Project Token.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Service Account Secret
+              </label>
+              <input
+                type="password"
+                value={formData.mixpanelSecret}
+                onChange={(e) => handleInputChange('mixpanelSecret', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="Optional - only for Service Account auth"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Only needed if using Service Account instead of API Secret
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Host URL
+              </label>
+              <input
+                type="text"
+                value={formData.mixpanelHost}
+                onChange={(e) => handleInputChange('mixpanelHost', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="https://mixpanel.com"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Use https://eu.mixpanel.com for EU data residency
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ElevenLabs Integration */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <Bot className="w-6 h-6 text-violet-600" />
+            <h2 className="text-2xl font-bold text-slate-900">ElevenLabs Integration</h2>
+            <span className="ml-auto text-xs bg-violet-100 px-3 py-1 rounded-full font-semibold text-violet-700 border border-violet-300">
+              Optional
+            </span>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Agent ID
+              </label>
+              <input
+                type="text"
+                value={formData.elevenlabsAgentId}
+                onChange={(e) => handleInputChange('elevenlabsAgentId', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="agent_abc123..."
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Your ElevenLabs Conversational AI Agent ID. Used by the Qualitative tab to sync conversations.
               </p>
             </div>
           </div>

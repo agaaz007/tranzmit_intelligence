@@ -173,6 +173,43 @@ class ElevenLabsClient {
   }> {
     return this.request(`/convai/conversations/${callId}/transcript`);
   }
+
+  // List conversations for an agent (with optional call_successful filter)
+  async listConversations(agentId: string, callSuccessful?: 'success' | 'failure' | 'unknown'): Promise<{
+    conversations: Array<{
+      conversation_id: string;
+      agent_id: string;
+      status: string;
+      start_time: string;
+      end_time: string;
+      duration_seconds: number;
+      call_successful: string | null;
+      metadata: Record<string, unknown>;
+    }>;
+    cursor?: string;
+  }> {
+    const params = new URLSearchParams({ agent_id: agentId });
+    if (callSuccessful) {
+      params.set('call_successful', callSuccessful);
+    }
+    return this.request(`/convai/conversations?${params.toString()}`);
+  }
+
+  // Get full conversation detail with transcript and analysis
+  async getConversation(conversationId: string): Promise<{
+    conversation_id: string;
+    agent_id: string;
+    status: string;
+    start_time: string;
+    end_time: string;
+    duration_seconds: number;
+    call_successful: boolean | null;
+    transcript: Array<{ role: 'agent' | 'user'; message: string; timestamp: number }>;
+    analysis: Record<string, unknown> | null;
+    metadata: Record<string, unknown>;
+  }> {
+    return this.request(`/convai/conversations/${conversationId}`);
+  }
 }
 
 // Singleton instance

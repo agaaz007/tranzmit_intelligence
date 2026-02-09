@@ -25,10 +25,29 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, posthogKey, posthogHost, posthogProjId } = body;
+        const {
+            name,
+            posthogKey,
+            posthogHost,
+            posthogProjId,
+            mixpanelKey,
+            mixpanelSecret,
+            mixpanelProjId,
+            mixpanelHost,
+        } = body;
 
-        if (!name || !posthogKey || !posthogProjId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        // Require name and at least one analytics integration
+        const hasPostHog = posthogKey && posthogProjId;
+        const hasMixpanel = mixpanelKey && mixpanelProjId;
+
+        if (!name) {
+            return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
+        }
+
+        if (!hasPostHog && !hasMixpanel) {
+            return NextResponse.json({
+                error: 'At least one analytics integration (PostHog or Mixpanel) is required'
+            }, { status: 400 });
         }
 
         // Generate a random API key for the project
@@ -38,9 +57,15 @@ export async function POST(request: NextRequest) {
             data: {
                 name,
                 apiKey,
-                posthogKey,
+                // PostHog fields
+                posthogKey: posthogKey || null,
                 posthogHost: posthogHost || 'https://us.posthog.com',
-                posthogProjId,
+                posthogProjId: posthogProjId || null,
+                // Mixpanel fields
+                mixpanelKey: mixpanelKey || null,
+                mixpanelSecret: mixpanelSecret || null,
+                mixpanelProjId: mixpanelProjId || null,
+                mixpanelHost: mixpanelHost || 'https://mixpanel.com',
                 organizationId: orgData.organization.id,
             },
         });

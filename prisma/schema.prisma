@@ -64,8 +64,14 @@ model Project {
   posthogKey     String?
   posthogHost    String          @default("https://us.posthog.com")
   posthogProjId  String?
+  // Mixpanel integration
+  mixpanelKey    String?         // Mixpanel Service Account username or API Secret
+  mixpanelSecret String?         // Mixpanel Service Account secret (for service accounts)
+  mixpanelProjId String?         // Mixpanel Project ID
+  mixpanelHost   String          @default("https://mixpanel.com")
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  elevenlabsAgentId    String?   // ElevenLabs agent ID for auto-sync
   campaigns      Campaign[]
   frictionPoints FrictionPoint[]
   cohorts        Cohort[]
@@ -73,6 +79,7 @@ model Project {
   sessions             Session[]
   churnedUsers         ChurnedUser[]
   synthesizedInsight   SynthesizedInsight?
+  conversations        Conversation[]
 
   @@index([organizationId])
 }
@@ -347,4 +354,35 @@ model ChurnedUser {
   @@unique([projectId, email])
   @@index([projectId])
   @@index([projectId, outreachStatus])
+}
+
+// Conversations from ElevenLabs auto-fetch or manual transcript upload
+model Conversation {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  source            String    // 'elevenlabs' | 'manual'
+  externalId        String?   // ElevenLabs conversation_id (for dedup)
+
+  participantName   String?
+  participantEmail  String?
+  participantPhone  String?
+
+  status            String    @default("completed") // 'completed' | 'in_progress' | 'failed'
+  duration          Int?      // seconds
+
+  transcript        String?   @db.Text  // JSON: [{ role, message, timestamp }]
+  analysis          String?   @db.Text  // JSON: AI-generated analysis
+  analysisStatus    String    @default("pending") // 'pending' | 'analyzing' | 'completed' | 'failed'
+
+  metadata          String?   @db.Text  // JSON: agent_id, call_successful, etc.
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  conversedAt       DateTime? // When the actual conversation happened
+
+  @@unique([projectId, externalId])
+  @@index([projectId])
+  @@index([projectId, source])
 }
