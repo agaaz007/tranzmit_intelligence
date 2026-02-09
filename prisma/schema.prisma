@@ -70,8 +70,9 @@ model Project {
   frictionPoints FrictionPoint[]
   cohorts        Cohort[]
   interviews     Interview[]
-  sessions       Session[]
-  churnedUsers   ChurnedUser[]
+  sessions             Session[]
+  churnedUsers         ChurnedUser[]
+  synthesizedInsight   SynthesizedInsight?
 
   @@index([organizationId])
 }
@@ -290,6 +291,25 @@ model Session {
   @@unique([projectId, posthogSessionId])
   @@index([projectId])
   @@index([projectId, createdAt])
+}
+
+// Persisted synthesized insights per project (auto-sync results)
+model SynthesizedInsight {
+  id                String    @id @default(cuid())
+  projectId         String    @unique
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessionCount      Int       @default(0)
+  criticalIssues    String?   @db.Text  // JSON: enhanced issues with sessionIds per issue
+  patternSummary    String?   @db.Text
+  topUserGoals      String?   @db.Text  // JSON array
+  immediateActions  String?   @db.Text  // JSON array
+  lastSyncedAt      DateTime?
+  lastAnalyzedAt    DateTime?
+  lastSynthesizedAt DateTime?
+  syncStatus        String    @default("idle") // idle|syncing|analyzing|synthesizing|complete|error
+  syncError         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 // Churned users for recovery outreach campaigns

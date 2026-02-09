@@ -69,3 +69,36 @@ export interface SessionsListResponse {
   page: number;
   limit: number;
 }
+
+export interface EnhancedCriticalIssue {
+  title: string;
+  description: string;
+  frequency: string;
+  severity: 'critical' | 'high' | 'medium';
+  recommendation: string;
+  sessionIds: string[];
+  sessionNames: string[];
+}
+
+export interface SynthesizedInsightData {
+  id: string;
+  projectId: string;
+  sessionCount: number;
+  criticalIssues: EnhancedCriticalIssue[];
+  patternSummary: string;
+  topUserGoals: Array<{ goal: string; success_rate: string }>;
+  immediateActions: string[];
+  lastSyncedAt: string | null;
+  lastAnalyzedAt: string | null;
+  lastSynthesizedAt: string | null;
+  syncStatus: string;
+  syncError: string | null;
+}
+
+export interface AutoSyncResponse {
+  synced: number;
+  analyzed: number;
+  synthesized: boolean;
+  insight: SynthesizedInsightData | null;
+  error?: string;
+}

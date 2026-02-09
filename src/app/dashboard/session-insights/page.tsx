@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, Target, Sparkles, RefreshCw, ChevronDown, Upload, Cloud, Check, Trash2, Database, User } from 'lucide-react';
-import type { SessionListItem, RRWebEvent } from '@/types/session';
+import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, RefreshCw, Upload, Cloud, Check, Trash2, Database, User } from 'lucide-react';
+import { IssuesPanel } from '@/components/issues-panel';
+import type { SessionListItem, RRWebEvent, SynthesizedInsightData } from '@/types/session';
 
 type InputMode = 'upload' | 'sync' | 'all-sessions';
 type SyncStatus = 'idle' | 'fetching-list' | 'fetching-sessions' | 'analyzing' | 'complete' | 'error';
@@ -40,7 +41,6 @@ interface SynthesizedInsights {
     immediate_actions: string[];
 }
 
-type InsightTab = 'issues' | 'goals' | 'actions' | null;
 
 const SESSION_COUNT_OPTIONS = [5, 10, 20, 30, 40, 50] as const;
 const STORAGE_KEY = 'session-insights-data';
@@ -144,7 +144,6 @@ function SessionInsightsContent() {
     const [synthesizedInsights, setSynthesizedInsights] = useState<SynthesizedInsights | null>(null);
     const [isSynthesizing, setIsSynthesizing] = useState(false);
     const [lastSynthesizedCount, setLastSynthesizedCount] = useState(0);
-    const [expandedTab, setExpandedTab] = useState<InsightTab>(null);
     const [isHydrated, setIsHydrated] = useState(false);
 
     // New state for input mode
@@ -163,6 +162,13 @@ function SessionInsightsContent() {
     const [dbSessionEvents, setDbSessionEvents] = useState<RRWebEvent[]>([]);
     const [dbSessionCount, setDbSessionCount] = useState(0);
 
+    // Auto-sync state
+    const [persistedInsights, setPersistedInsights] = useState<SynthesizedInsightData | null>(null);
+    const [isLoadingInsights, setIsLoadingInsights] = useState(true);
+    const [autoSyncStatus, setAutoSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+    const [sessionListRefreshKey, setSessionListRefreshKey] = useState(0);
+
     // Get distinctId from URL params (for filtering by user from Recovery tab)
     const searchParams = useSearchParams();
     const distinctIdFilter = searchParams.get('distinctId');
@@ -172,6 +178,106 @@ function SessionInsightsContent() {
         const projectId = localStorage.getItem('currentProjectId');
         setCurrentProjectId(projectId);
     }, []);
+
+    // Load persisted insights from database on mount
+    useEffect(() => {
+        if (!currentProjectId) {
+            setIsLoadingInsights(false);
+            return;
+        }
+
+        async function loadInsights() {
+            setIsLoadingInsights(true);
+            try {
+                const res = await fetch(`/api/sessions/insights?projectId=${currentProjectId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        setPersistedInsights(data);
+                        if (data.lastSyncedAt) setLastSyncTime(new Date(data.lastSyncedAt));
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load insights:', err);
+            } finally {
+                setIsLoadingInsights(false);
+            }
+        }
+
+        loadInsights();
+    }, [currentProjectId]);
+
+    // Auto-sync trigger
+    const triggerAutoSync = useCallback(async () => {
+        if (!currentProjectId || autoSyncStatus === 'syncing') return;
+
+        setAutoSyncStatus('syncing');
+        try {
+            const res = await fetch('/api/sessions/auto-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: currentProjectId }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.insight) {
+                    setPersistedInsights(data.insight);
+                }
+                setLastSyncTime(new Date());
+                setAutoSyncStatus('idle');
+                setSessionListRefreshKey(prev => prev + 1);
+            } else {
+                setAutoSyncStatus('error');
+            }
+        } catch {
+            setAutoSyncStatus('error');
+        }
+    }, [currentProjectId, autoSyncStatus]);
+
+    // Hourly auto-sync interval
+    useEffect(() => {
+        if (!currentProjectId) return;
+
+        // Sync on mount if never synced or synced more than 1 hour ago
+        const shouldSyncNow = !lastSyncTime || (Date.now() - lastSyncTime.getTime() > 60 * 60 * 1000);
+        if (shouldSyncNow) {
+            triggerAutoSync();
+        }
+
+        const intervalId = setInterval(triggerAutoSync, 60 * 60 * 1000);
+        return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentProjectId]);
+
+    // Handler for clicking a session from the issues panel
+    const handleIssueSessionClick = useCallback(async (sessionId: string) => {
+        if (!currentProjectId) return;
+
+        try {
+            const res = await fetch(`/api/sessions/${sessionId}/events`);
+            if (res.ok) {
+                const { events } = await res.json();
+                // We need to fetch session metadata too
+                const metaRes = await fetch(`/api/sessions?projectId=${currentProjectId}&page=1&limit=100`);
+                if (metaRes.ok) {
+                    const metaData = await metaRes.json();
+                    const session = metaData.sessions?.find((s: SessionListItem) => s.id === sessionId);
+                    if (session) {
+                        handleDbSessionSelect(session, events || []);
+                        // Scroll to detail area
+                        setTimeout(() => {
+                            document.getElementById('session-detail-area')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                        return;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load session from issue click:', err);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentProjectId]);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -501,145 +607,49 @@ function SessionInsightsContent() {
                         <div className="text-[var(--muted-foreground)] text-sm mb-0.5">Tranzmit / Session Insights</div>
                         <h1 className="text-2xl font-semibold text-[var(--foreground)]">Session Insights</h1>
                     </div>
-                    {analyses.length > 0 && (
-                        <div className="flex items-center gap-3">
-                            <Badge variant="secondary" className="text-sm">
-                                {analyses.length} session{analyses.length !== 1 ? 's' : ''} analyzed
-                            </Badge>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleClearAll}
-                                className="text-slate-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                                <Trash2 className="w-4 h-4 mr-1" />
-                                Clear All
-                            </Button>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                        {autoSyncStatus === 'syncing' && (
+                            <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Syncing...
+                            </div>
+                        )}
+                        {lastSyncTime && autoSyncStatus !== 'syncing' && (
+                            <span className="text-xs text-[var(--muted-foreground)]">
+                                Last synced: {(() => { const mins = Math.floor((Date.now() - lastSyncTime.getTime()) / 60000); if (mins < 1) return 'just now'; if (mins < 60) return `${mins}m ago`; const hours = Math.floor(mins / 60); return `${hours}h ${mins % 60}m ago`; })()}
+                            </span>
+                        )}
+                        {analyses.length > 0 && (
+                            <>
+                                <Badge variant="secondary" className="text-sm">
+                                    {analyses.length} session{analyses.length !== 1 ? 's' : ''} analyzed
+                                </Badge>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleClearAll}
+                                    className="text-slate-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Clear All
+                                </Button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
             <div className="p-8 max-w-7xl mx-auto space-y-8">
 
-                {(synthesizedInsights || isSynthesizing) && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-                                    <Sparkles className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Synthesized Insights</h2>
-                                    <p className="text-xs text-[var(--muted-foreground)]">{aggregatedInsights?.totalSessions || 0} sessions analyzed</p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={synthesizeInsights} disabled={isSynthesizing} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-                                <RefreshCw className={`w-3.5 h-3.5 ${isSynthesizing ? 'animate-spin' : ''}`} />
-                            </Button>
-                        </div>
-
-                        {isSynthesizing && !synthesizedInsights && (
-                            <div className="h-32 flex items-center justify-center border border-dashed border-[var(--border)] rounded-xl bg-[var(--card)]">
-                                <Loader2 className="w-5 h-5 animate-spin text-[var(--muted-foreground)] mr-2" />
-                                <span className="text-sm text-[var(--muted-foreground)]">Synthesizing...</span>
-                            </div>
-                        )}
-
-                        {synthesizedInsights && (
-                            <div className="grid grid-cols-3 gap-3">
-                                <div onClick={() => setExpandedTab(expandedTab === 'issues' ? null : 'issues')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'issues' ? 'col-span-3 border-red-200 bg-red-50/50 dark:bg-red-950/30 dark:border-red-800' : 'border-[var(--border)] hover:border-red-200 hover:bg-red-50/30 dark:hover:bg-red-950/20 dark:hover:border-red-800 bg-[var(--card)]'}`}>
-                                    <div className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
-                                                    <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                                                </div>
-                                                <span className="font-medium text-sm text-[var(--foreground)]">Critical Issues</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl font-bold text-red-600">{synthesizedInsights.critical_issues.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'issues' ? 'rotate-180' : ''}`} />
-                                            </div>
-                                        </div>
-                                        {expandedTab === 'issues' && (
-                                            <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800 space-y-3" onClick={e => e.stopPropagation()}>
-                                                {synthesizedInsights.critical_issues.map((issue, i) => (
-                                                    <div key={i} className="p-3 rounded-lg bg-[var(--card)] border border-red-100 dark:border-red-800">
-                                                        <div className="flex items-start justify-between gap-2 mb-1">
-                                                            <span className="font-medium text-sm text-[var(--foreground)]">{issue.title}</span>
-                                                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wide ${issue.severity === 'critical' ? 'bg-red-100 text-red-700' : issue.severity === 'high' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'}`}>{issue.severity}</span>
-                                                        </div>
-                                                        <p className="text-xs text-[var(--muted-foreground)] mb-2">{issue.description}</p>
-                                                        <p className="text-xs text-emerald-600">→ {issue.recommendation}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div onClick={() => setExpandedTab(expandedTab === 'goals' ? null : 'goals')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'goals' ? 'col-span-3 border-blue-200 bg-blue-50/50 dark:bg-blue-950/30 dark:border-blue-800' : expandedTab === 'issues' ? 'hidden' : 'border-[var(--border)] hover:border-blue-200 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 dark:hover:border-blue-800 bg-[var(--card)]'}`}>
-                                    <div className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                                                    <Target className="w-3.5 h-3.5 text-blue-600" />
-                                                </div>
-                                                <span className="font-medium text-sm text-[var(--foreground)]">User Goals</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl font-bold text-blue-600">{synthesizedInsights.top_user_goals.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'goals' ? 'rotate-180' : ''}`} />
-                                            </div>
-                                        </div>
-                                        {expandedTab === 'goals' && (
-                                            <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800 space-y-2" onClick={e => e.stopPropagation()}>
-                                                {synthesizedInsights.top_user_goals.map((goal, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--card)] border border-blue-100 dark:border-blue-800">
-                                                        <span className="text-sm text-[var(--foreground)]">{goal.goal}</span>
-                                                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${goal.success_rate.toLowerCase().includes('fail') || goal.success_rate.toLowerCase().includes('low') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{goal.success_rate}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div onClick={() => setExpandedTab(expandedTab === 'actions' ? null : 'actions')} className={`group cursor-pointer rounded-xl border transition-all duration-200 ${expandedTab === 'actions' ? 'col-span-3 border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/30 dark:border-emerald-800' : (expandedTab === 'issues' || expandedTab === 'goals') ? 'hidden' : 'border-[var(--border)] hover:border-emerald-200 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 dark:hover:border-emerald-800 bg-[var(--card)]'}`}>
-                                    <div className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                                </div>
-                                                <span className="font-medium text-sm text-[var(--foreground)]">Actions</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl font-bold text-emerald-600">{synthesizedInsights.immediate_actions.length}</span>
-                                                <ChevronDown className={`w-4 h-4 text-[var(--muted-foreground)] transition-transform ${expandedTab === 'actions' ? 'rotate-180' : ''}`} />
-                                            </div>
-                                        </div>
-                                        {expandedTab === 'actions' && (
-                                            <div className="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-800 space-y-2" onClick={e => e.stopPropagation()}>
-                                                {synthesizedInsights.immediate_actions.map((action, i) => (
-                                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--card)] border border-emerald-100 dark:border-emerald-800">
-                                                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
-                                                        <span className="text-sm text-[var(--foreground)]">{action}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {synthesizedInsights && !expandedTab && (
-                            <p className="mt-3 text-xs text-[var(--muted-foreground)] leading-relaxed">{synthesizedInsights.pattern_summary}</p>
-                        )}
-                    </section>
-                )}
+                {/* Issues Panel - powered by persisted insights from auto-sync */}
+                <IssuesPanel
+                    insights={persistedInsights}
+                    isLoading={isLoadingInsights}
+                    onSessionClick={handleIssueSessionClick}
+                    onRefresh={triggerAutoSync}
+                    isRefreshing={autoSyncStatus === 'syncing'}
+                    lastSyncTime={lastSyncTime}
+                />
 
                 <section>
                     {/* Mode Selector Tabs */}
@@ -700,6 +710,7 @@ function SessionInsightsContent() {
                                 </div>
                             )}
                             <SessionList
+                                key={sessionListRefreshKey}
                                 projectId={currentProjectId}
                                 onSelectSession={handleDbSessionSelect}
                                 selectedSessionId={dbSelectedSession?.id}
@@ -852,7 +863,7 @@ function SessionInsightsContent() {
 
                 {/* Database session detail view */}
                 {dbSelectedSession && dbSelectedSession.analysis && (
-                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <section id="session-detail-area" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-4">
                             <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
                                 <CardHeader className="flex flex-row items-center justify-between">
