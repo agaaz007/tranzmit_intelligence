@@ -8,7 +8,7 @@ import {
     Users,
     Settings,
     Lightbulb,
-    Home,
+    LayoutDashboard,
     Radio,
     MessageCircle,
     Target,
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-    { href: '/dashboard', icon: Home, label: 'Overview', exact: true },
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/dashboard/funnels', icon: Target, label: 'Journey Map' },
     { href: '/dashboard/session-insights', icon: PlayCircle, label: 'Session Insights' },
     { href: '/dashboard/cohorts', icon: Users, label: 'Inactive Cohort' },

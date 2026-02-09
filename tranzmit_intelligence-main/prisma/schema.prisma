@@ -1,0 +1,350 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTHENTICATION & MULTI-TENANCY ====================
+
+// User model - synced from Clerk via webhook
+model User {
+  id                String               @id @default(cuid())
+  clerkId           String               @unique // Clerk user ID
+  email             String               @unique
+  firstName         String?
+  lastName          String?
+  imageUrl          String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  memberships       OrganizationMember[]
+}
+
+// Organization (workspace/company) - each user gets a default org on signup
+model Organization {
+  id               String               @id @default(cuid())
+  name             String
+  slug             String               @unique // URL-friendly name
+  imageUrl         String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  members          OrganizationMember[]
+  projects         Project[]
+}
+
+// Organization membership - links users to organizations with roles
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String       @default("member") // 'owner', 'admin', 'member'
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+// ==================== PROJECT & DATA MODELS ====================
+
+model Project {
+  id             String          @id @default(cuid())
+  organizationId String?
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  apiKey         String          @unique // Internal API key for Tranzmit
+  posthogKey     String?
+  posthogHost    String          @default("https://us.posthog.com")
+  posthogProjId  String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  campaigns      Campaign[]
+  frictionPoints FrictionPoint[]
+  cohorts        Cohort[]
+  interviews     Interview[]
+  sessions             Session[]
+  churnedUsers         ChurnedUser[]
+  synthesizedInsight   SynthesizedInsight?
+
+  @@index([organizationId])
+}
+
+model Campaign {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id])
+  name        String
+  status      String // 'active', 'completed', 'paused'
+  triggerType String // 'manual', 'automatic_dropoff'
+  funnelId    String?
+  stepId      String?
+  config      String? // JSON string for campaign specific settings
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  jobs        Job[]
+  interviews  Interview[]
+}
+
+model Job {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  type       String // 'ANALYZE_FUNNEL', 'CREATE_COHORT'
+  status     String // 'pending', 'processing', 'completed', 'failed'
+  result     String? // JSON result
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model FrictionPoint {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id])
+  funnelId          String
+  funnelName        String
+  stepId            String
+  stepName          String
+  stepOrder         Int
+  dropOffRate       Float
+  dropOffCount      Int
+  avgTimeToConvert  Float? // Average time in seconds
+  severity          String // 'critical', 'high', 'medium', 'low'
+  insights          String? // JSON: { reasons: [], recommendations: [], affectedSegments: [] }
+  sessionRecordings String? // JSON: [{ recordingId, userId, ... }]
+  status            String @default("active") // 'active', 'resolved', 'investigating'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([projectId, funnelId, stepId])
+}
+
+model Cohort {
+  id               String          @id @default(cuid())
+  projectId        String
+  project          Project         @relation(fields: [projectId], references: [id])
+  posthogCohortId  String? // PostHog cohort ID
+  name             String
+  description      String?
+  type             String          @default("manual") // 'manual', 'funnel_dropoff', 'churn_risk', 'low_engagement', 'high_errors'
+  size             Int             @default(0)
+  criteria         String? // JSON: cohort definition criteria
+  status           String          @default("active") // 'active', 'archived'
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  analyses         CohortAnalysis[]
+  interviews       Interview[]
+  members          CohortMember[]
+  hypotheses       Hypothesis[]
+}
+
+// Individual users within a cohort with their behavioral signals
+model CohortMember {
+  id              String        @id @default(cuid())
+  cohortId        String
+  cohort          Cohort        @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  distinctId      String        // PostHog distinct_id
+  email           String?
+  name            String?
+  properties      String?       // JSON: user properties from PostHog
+  priorityScore   Int           @default(0) // 0-100 priority for interviews
+  signals         String?       // JSON: array of behavioral signals
+  signalSummary   String?       // Human-readable signal summary
+  interviewStatus String        @default("pending") // 'pending', 'scheduled', 'completed', 'skipped'
+  metadata        String?       // JSON: enriched profile data (geo, device, acquisition, engagement)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([cohortId, distinctId])
+}
+
+// AI-generated hypotheses for cohorts
+model Hypothesis {
+  id              String              @id @default(cuid())
+  cohortId        String
+  cohort          Cohort              @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  title           String              // Brief hypothesis title
+  description     String              // Detailed hypothesis explanation
+  behaviorPattern String?             // JSON: the behavioral pattern this hypothesis addresses
+  confidence      Float               @default(0.5) // 0-1 confidence score
+  evidence        String?             // JSON: supporting evidence from data
+  status          String              @default("active") // 'active', 'validated', 'invalidated'
+  validationNotes String?             // Notes from validation
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  questions       InterviewQuestion[]
+}
+
+// Suggested interview questions linked to hypotheses
+model InterviewQuestion {
+  id           String     @id @default(cuid())
+  hypothesisId String
+  hypothesis   Hypothesis @relation(fields: [hypothesisId], references: [id], onDelete: Cascade)
+  question     String     // The interview question
+  purpose      String?    // Why this question matters
+  category     String?    // 'opening', 'discovery', 'pain_point', 'solution', 'closing'
+  priority     Int        @default(1) // 1-5, higher = more important
+  createdAt    DateTime   @default(now())
+}
+
+model CohortAnalysis {
+  id                  String   @id @default(cuid())
+  cohortId            String
+  cohort              Cohort   @relation(fields: [cohortId], references: [id])
+  analysisType        String // 'behavior', 'conversion', 'retention', 'engagement'
+  metrics             String // JSON: { metric1: value1, metric2: value2, ... }
+  insights            String? // JSON: { summary, trends, anomalies, recommendations }
+  dateRange           String // JSON: { from, to }
+  createdAt           DateTime @default(now())
+}
+
+model Interview {
+  id              String            @id @default(cuid())
+  campaignId      String?
+  campaign        Campaign?         @relation(fields: [campaignId], references: [id])
+  cohortId        String?
+  cohort          Cohort?           @relation(fields: [cohortId], references: [id])
+  projectId       String
+  project         Project           @relation(fields: [projectId], references: [id])
+  userId          String // PostHog distinct ID
+  userEmail       String?
+  userName        String?
+  status          String // 'scheduled', 'in_progress', 'completed', 'failed', 'cancelled'
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  transcript      String? // JSON: [{ speaker, text, timestamp }]
+  notes           String? // Free-form notes
+  metadata        String? // JSON: additional metadata
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  insights        InterviewInsight[]
+}
+
+model InterviewInsight {
+  id           String   @id @default(cuid())
+  interviewId  String
+  interview    Interview @relation(fields: [interviewId], references: [id])
+  painPoints   String? // JSON: [{ point, severity, context }]
+  suggestions  String? // JSON: [{ suggestion, priority, category }]
+  sentiment    String? // 'positive', 'neutral', 'negative', 'mixed'
+  themes       String? // JSON: [{ theme, mentions, quotes }]
+  satisfaction Float? // 0-10 score
+  summary      String? // AI-generated summary
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Manually uploaded users for interview invitations
+model UploadedUser {
+  id           String   @id @default(cuid())
+  projectId    String
+  name         String?
+  email        String
+  phone        String?
+  cohort       String?  // Optional cohort name from CSV
+  inviteStatus String   @default("pending") // 'pending', 'invited', 'failed'
+  invitedAt    DateTime?
+  messageId    String?  // Email message ID for tracking (Resend)
+  source       String   @default("csv") // 'csv', 'manual'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([projectId, email])
+  @@index([projectId])
+}
+
+// Session recordings from manual uploads or PostHog syncs
+model Session {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  source            String    // 'upload' | 'posthog'
+  posthogSessionId  String?   // PostHog session ID (for deduplication)
+
+  name              String    // Display name (filename for uploads, formatted name for PostHog)
+  distinctId        String?   // User identifier from PostHog
+  startTime         DateTime?
+  endTime           DateTime?
+  duration          Int?      // Duration in seconds
+
+  events            String?   @db.Text  // JSON rrweb events (loaded on-demand for replay)
+  eventCount        Int       @default(0)
+
+  analysis          String?   @db.Text  // JSON analysis results
+  analysisStatus    String    @default("pending") // 'pending' | 'analyzing' | 'completed' | 'failed'
+  analyzedAt        DateTime?
+
+  metadata          String?   // JSON: additional metadata (viewport, behavioral signals, etc.)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([projectId, posthogSessionId])
+  @@index([projectId])
+  @@index([projectId, createdAt])
+}
+
+// Persisted synthesized insights per project (auto-sync results)
+model SynthesizedInsight {
+  id                String    @id @default(cuid())
+  projectId         String    @unique
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessionCount      Int       @default(0)
+  criticalIssues    String?   @db.Text  // JSON: enhanced issues with sessionIds per issue
+  patternSummary    String?   @db.Text
+  topUserGoals      String?   @db.Text  // JSON array
+  immediateActions  String?   @db.Text  // JSON array
+  lastSyncedAt      DateTime?
+  lastAnalyzedAt    DateTime?
+  lastSynthesizedAt DateTime?
+  syncStatus        String    @default("idle") // idle|syncing|analyzing|synthesizing|complete|error
+  syncError         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Churned users for recovery outreach campaigns
+model ChurnedUser {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // User info (from CSV)
+  name              String?
+  email             String
+  phone             String?
+  posthogDistinctId String?   // PostHog distinct_id for session lookup
+
+  // Session analysis
+  sessionCount      Int       @default(0)
+  analysisStatus    String    @default("pending") // pending|analyzing|completed|failed
+  analysisResult    String?   @db.Text  // JSON: frustration points, behavior patterns, etc.
+  analyzedAt        DateTime?
+
+  // Generated outreach content
+  recoveryEmail     String?   @db.Text  // JSON: {subject, body, tone}
+  callScript        String?   @db.Text  // JSON: {openingLine, keyPoints, objectionHandlers, closingCTA}
+
+  // Outreach tracking
+  outreachStatus    String    @default("pending") // pending|email_sent|called|recovered|unresponsive
+  emailSentAt       DateTime?
+  emailMessageId    String?   // Resend message ID for tracking
+  callCompletedAt   DateTime?
+  callNotes         String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([projectId, email])
+  @@index([projectId])
+  @@index([projectId, outreachStatus])
+}

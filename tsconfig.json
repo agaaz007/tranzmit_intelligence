@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "Tranzmit"]
+  "exclude": ["node_modules", "Tranzmit", "tranzmit_intelligence-main"]
 }

@@ -52,26 +52,26 @@ function IssueCard({ issue, onSessionClick }: {
             <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">→ {issue.recommendation}</p>
           </div>
         </div>
-        {issue.sessionIds.length > 0 && (
+        {(issue.sessionIds?.length || 0) > 0 && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium shrink-0 flex items-center gap-1"
           >
-            {issue.sessionIds.length} session{issue.sessionIds.length !== 1 ? 's' : ''}
+            {issue.sessionIds?.length || 0} session{(issue.sessionIds?.length || 0) !== 1 ? 's' : ''}
             <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
         )}
       </div>
 
-      {isExpanded && issue.sessionIds.length > 0 && (
+      {isExpanded && (issue.sessionIds?.length || 0) > 0 && (
         <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap gap-2">
-          {issue.sessionIds.map((sid, i) => (
+          {(issue.sessionIds || []).map((sid, i) => (
             <button
               key={sid}
               onClick={() => onSessionClick(sid)}
               className="text-xs px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors border border-blue-200 dark:border-blue-800"
             >
-              {issue.sessionNames[i] || sid.substring(0, 8)}
+              {issue.sessionNames?.[i] || sid.substring(0, 8)}
             </button>
           ))}
         </div>
