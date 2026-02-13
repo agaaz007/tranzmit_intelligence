@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncSessionsFromPostHog } from '@/lib/session-sync';
-import { syncSessionsFromMixpanel } from '@/lib/mixpanel-sync';
+import { syncSessionsFromMixpanel } from '@/lib/mixpanel';
+import { syncSessionsFromAmplitude } from '@/lib/amplitude';
 
 // POST: Batch import sessions from PostHog or Mixpanel
 export async function POST(req: NextRequest) {
@@ -21,6 +22,9 @@ export async function POST(req: NextRequest) {
         posthogProjId: true,
         mixpanelKey: true,
         mixpanelProjId: true,
+        amplitudeKey: true,
+        amplitudeSecret: true,
+        amplitudeProjId: true,
       },
     });
 
@@ -30,17 +34,24 @@ export async function POST(req: NextRequest) {
 
     const hasPostHog = project.posthogKey && project.posthogProjId;
     const hasMixpanel = project.mixpanelKey && project.mixpanelProjId;
+    const hasAmplitude = project.amplitudeKey && project.amplitudeSecret && project.amplitudeProjId;
 
     let result;
     let usedSource: string;
 
     // Use explicit source if provided, otherwise auto-detect
-    if (source === 'mixpanel' || (!source && hasMixpanel && !hasPostHog)) {
+    if (source === 'mixpanel' || (!source && hasMixpanel && !hasPostHog && !hasAmplitude)) {
       if (!hasMixpanel) {
         return NextResponse.json({ error: 'Mixpanel not configured for this project' }, { status: 400 });
       }
       result = await syncSessionsFromMixpanel(projectId, daysBack);
       usedSource = 'mixpanel';
+    } else if (source === 'amplitude' || (!source && hasAmplitude && !hasPostHog)) {
+      if (!hasAmplitude) {
+        return NextResponse.json({ error: 'Amplitude not configured for this project' }, { status: 400 });
+      }
+      result = await syncSessionsFromAmplitude(projectId, daysBack);
+      usedSource = 'amplitude';
     } else if (source === 'posthog' || (!source && hasPostHog)) {
       if (!hasPostHog) {
         return NextResponse.json({ error: 'PostHog not configured for this project' }, { status: 400 });
@@ -48,7 +59,7 @@ export async function POST(req: NextRequest) {
       result = await syncSessionsFromPostHog(projectId, count);
       usedSource = 'posthog';
     } else {
-      return NextResponse.json({ error: 'No analytics integration configured. Please configure PostHog or Mixpanel in Settings.' }, { status: 400 });
+      return NextResponse.json({ error: 'No analytics integration configured. Please configure PostHog, Mixpanel, or Amplitude in Settings.' }, { status: 400 });
     }
 
     return NextResponse.json({ ...result, source: usedSource });

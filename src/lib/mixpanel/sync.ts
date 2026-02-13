@@ -29,14 +29,19 @@ async function fetchMixpanelEvents(
   }
   const exportUrl = `${dataHost}/api/2.0/export`;
 
-  // Always include project_id - required by Mixpanel Export API
+  // project_id is ONLY allowed with Service Account auth (username:secret)
+  // If using API Secret auth (secret only), do NOT include project_id
   const params = new URLSearchParams({
     from_date: fromDate,
     to_date: toDate,
-    project_id: projectToken, // Use the numeric project ID directly
   });
 
-  console.log(`[Mixpanel] Fetching events from ${fromDate} to ${toDate} (project: ${projectToken})`);
+  if (isServiceAccount) {
+    // Service Account auth requires project_id
+    params.set('project_id', projectToken);
+  }
+
+  console.log(`[Mixpanel] Fetching events from ${fromDate} to ${toDate} (project: ${projectToken}, serviceAccount: ${isServiceAccount})`);
 
   try {
     const response = await fetch(`${exportUrl}?${params}`, {

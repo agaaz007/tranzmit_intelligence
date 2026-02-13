@@ -34,19 +34,23 @@ export async function POST(request: NextRequest) {
             mixpanelSecret,
             mixpanelProjId,
             mixpanelHost,
+            amplitudeKey,
+            amplitudeSecret,
+            amplitudeProjId,
         } = body;
 
         // Require name and at least one analytics integration
         const hasPostHog = posthogKey && posthogProjId;
         const hasMixpanel = mixpanelKey && mixpanelProjId;
+        const hasAmplitude = amplitudeKey && amplitudeSecret && amplitudeProjId;
 
         if (!name) {
             return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
         }
 
-        if (!hasPostHog && !hasMixpanel) {
+        if (!hasPostHog && !hasMixpanel && !hasAmplitude) {
             return NextResponse.json({
-                error: 'At least one analytics integration (PostHog or Mixpanel) is required'
+                error: 'At least one analytics integration (PostHog, Mixpanel, or Amplitude) is required'
             }, { status: 400 });
         }
 
@@ -66,6 +70,10 @@ export async function POST(request: NextRequest) {
                 mixpanelSecret: mixpanelSecret || null,
                 mixpanelProjId: mixpanelProjId || null,
                 mixpanelHost: mixpanelHost || 'https://mixpanel.com',
+                // Amplitude fields
+                amplitudeKey: amplitudeKey || null,
+                amplitudeSecret: amplitudeSecret || null,
+                amplitudeProjId: amplitudeProjId || null,
                 organizationId: orgData.organization.id,
             },
         });

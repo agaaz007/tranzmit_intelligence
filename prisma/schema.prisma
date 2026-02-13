@@ -69,6 +69,10 @@ model Project {
   mixpanelSecret String?         // Mixpanel Service Account secret (for service accounts)
   mixpanelProjId String?         // Mixpanel Project ID
   mixpanelHost   String          @default("https://mixpanel.com")
+  // Amplitude integration
+  amplitudeKey    String?        // Amplitude API Key
+  amplitudeSecret String?        // Amplitude Secret Key
+  amplitudeProjId String?        // Amplitude Project ID
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   elevenlabsAgentId    String?   // ElevenLabs agent ID for auto-sync

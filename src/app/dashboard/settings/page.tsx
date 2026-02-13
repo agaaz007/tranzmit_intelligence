@@ -15,6 +15,9 @@ interface ProjectSettings {
   mixpanelSecret: string;
   mixpanelProjId: string;
   mixpanelHost: string;
+  amplitudeKey: string;
+  amplitudeSecret: string;
+  amplitudeProjId: string;
   elevenlabsAgentId: string;
 }
 
@@ -38,6 +41,9 @@ export default function SettingsPage() {
     mixpanelSecret: '',
     mixpanelProjId: '',
     mixpanelHost: 'https://mixpanel.com',
+    amplitudeKey: '',
+    amplitudeSecret: '',
+    amplitudeProjId: '',
     elevenlabsAgentId: '',
   });
 
@@ -95,6 +101,9 @@ export default function SettingsPage() {
           mixpanelSecret: data.project.mixpanelSecret || '',
           mixpanelProjId: data.project.mixpanelProjId || '',
           mixpanelHost: data.project.mixpanelHost || 'https://mixpanel.com',
+          amplitudeKey: data.project.amplitudeKey || '',
+          amplitudeSecret: data.project.amplitudeSecret || '',
+          amplitudeProjId: data.project.amplitudeProjId || '',
           elevenlabsAgentId: data.project.elevenlabsAgentId || '',
         });
         setNoProjectExists(false);
@@ -142,14 +151,15 @@ export default function SettingsPage() {
   const handleCreate = async () => {
     const hasPostHog = formData.posthogKey && formData.posthogProjId;
     const hasMixpanel = formData.mixpanelKey && formData.mixpanelProjId;
+    const hasAmplitude = formData.amplitudeKey && formData.amplitudeSecret && formData.amplitudeProjId;
 
     if (!formData.name) {
       setMessage({ type: 'error', text: 'Project name is required' });
       return;
     }
 
-    if (!hasPostHog && !hasMixpanel) {
-      setMessage({ type: 'error', text: 'Please configure at least one analytics integration (PostHog or Mixpanel)' });
+    if (!hasPostHog && !hasMixpanel && !hasAmplitude) {
+      setMessage({ type: 'error', text: 'Please configure at least one analytics integration (PostHog, Mixpanel, or Amplitude)' });
       return;
     }
 
@@ -423,6 +433,68 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-slate-500 mt-2">
                 Use https://eu.mixpanel.com for EU data residency
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Amplitude Integration */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <Key className="w-6 h-6 text-blue-600" />
+            <h2 className="text-2xl font-bold text-slate-900">Amplitude Integration</h2>
+          </div>
+
+          <p className="text-sm text-slate-500 mb-5 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+            Configure Amplitude to sync session events. You only need <strong>one</strong> analytics integration (PostHog, Mixpanel, or Amplitude).
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                API Key <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={formData.amplitudeKey}
+                onChange={(e) => handleInputChange('amplitudeKey', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="Your Amplitude API Key"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Found in Amplitude → Settings → Projects → Your Project → General
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Secret Key <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={formData.amplitudeSecret}
+                onChange={(e) => handleInputChange('amplitudeSecret', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="Your Amplitude Secret Key"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Found in Amplitude → Settings → Projects → Your Project → General (next to API Key)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Project ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.amplitudeProjId}
+                onChange={(e) => handleInputChange('amplitudeProjId', e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                placeholder="123456"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Numeric Project ID found in Amplitude → Settings → Projects → Your Project
               </p>
             </div>
           </div>

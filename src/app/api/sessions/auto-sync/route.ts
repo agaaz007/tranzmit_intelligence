@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncSessionsFromPostHog } from '@/lib/session-sync';
-import { syncSessionsFromMixpanel } from '@/lib/mixpanel-sync';
+import { syncSessionsFromMixpanel } from '@/lib/mixpanel';
+import { syncSessionsFromAmplitude } from '@/lib/amplitude';
 import { analyzeSession } from '@/lib/session-analysis';
 import { synthesizeInsightsWithSessionLinkage } from '@/lib/session-synthesize';
 
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest) {
         posthogProjId: true,
         mixpanelKey: true,
         mixpanelProjId: true,
+        amplitudeKey: true,
+        amplitudeSecret: true,
+        amplitudeProjId: true,
       },
     });
 
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
 
     const hasPostHog = project.posthogKey && project.posthogProjId;
     const hasMixpanel = project.mixpanelKey && project.mixpanelProjId;
+    const hasAmplitude = project.amplitudeKey && project.amplitudeSecret && project.amplitudeProjId;
 
     // Step 1: Sync new sessions from configured source
     console.log(`[Auto-Sync] Step 1: Syncing sessions for project ${projectId}`);
@@ -52,7 +57,10 @@ export async function POST(req: NextRequest) {
     try {
       if (hasMixpanel) {
         console.log('[Auto-Sync] Using Mixpanel integration');
-        syncResult = await syncSessionsFromMixpanel(projectId, 7);
+        syncResult = await syncSessionsFromMixpanel(projectId, 3, 5);
+      } else if (hasAmplitude) {
+        console.log('[Auto-Sync] Using Amplitude integration');
+        syncResult = await syncSessionsFromAmplitude(projectId, 7);
       } else if (hasPostHog) {
         console.log('[Auto-Sync] Using PostHog integration');
         syncResult = await syncSessionsFromPostHog(projectId, 20);

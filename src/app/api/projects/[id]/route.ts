@@ -34,7 +34,7 @@ export async function GET(
 
 /**
  * PATCH /api/projects/[id] - Update project settings
- * Body: name?, posthogKey?, posthogHost?, posthogProjId?, mixpanelKey?, mixpanelSecret?, mixpanelProjId?, mixpanelHost?
+ * Body: name?, posthogKey?, posthogHost?, posthogProjId?, mixpanelKey?, mixpanelSecret?, mixpanelProjId?, mixpanelHost?, amplitudeKey?, amplitudeSecret?
  */
 export async function PATCH(
   request: NextRequest,
@@ -63,6 +63,9 @@ export async function PATCH(
       mixpanelSecret,
       mixpanelProjId,
       mixpanelHost,
+      amplitudeKey,
+      amplitudeSecret,
+      amplitudeProjId,
       elevenlabsAgentId,
     } = body;
 
@@ -76,6 +79,10 @@ export async function PATCH(
     if (mixpanelSecret !== undefined) updateData.mixpanelSecret = mixpanelSecret;
     if (mixpanelProjId !== undefined) updateData.mixpanelProjId = mixpanelProjId;
     if (mixpanelHost !== undefined) updateData.mixpanelHost = mixpanelHost;
+    // Amplitude
+    if (amplitudeKey !== undefined) updateData.amplitudeKey = amplitudeKey;
+    if (amplitudeSecret !== undefined) updateData.amplitudeSecret = amplitudeSecret;
+    if (amplitudeProjId !== undefined) updateData.amplitudeProjId = amplitudeProjId;
     // ElevenLabs
     if (elevenlabsAgentId !== undefined) updateData.elevenlabsAgentId = elevenlabsAgentId;
 

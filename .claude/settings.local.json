@@ -22,7 +22,8 @@
       "Bash(npx ts-node:*)",
       "Bash(find:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx prisma validate:*)"
+      "Bash(npx prisma validate:*)",
+      "Bash(git -C /Users/Agaaz/voicejourneys log --oneline -10)"
     ]
   }
 }
