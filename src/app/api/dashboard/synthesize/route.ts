@@ -211,12 +211,32 @@ export async function GET(request: NextRequest) {
       ? convoSatisfaction.reduce((a, b) => a + b, 0) / convoSatisfaction.length
       : null;
 
+    // Build transcripts section - include actual conversation text for grounding
+    const transcriptsWithContent = conversationData
+      .filter(c => c.transcript && c.transcript.length > 50)
+      .slice(0, 8); // Limit to 8 conversations to manage token usage
+
+    const transcriptsSection = transcriptsWithContent.length > 0
+      ? transcriptsWithContent.map((c, idx) => {
+          // Truncate long transcripts to ~2000 chars
+          const truncatedTranscript = c.transcript!.length > 2000
+            ? c.transcript!.substring(0, 2000) + '...[truncated]'
+            : c.transcript;
+          return `--- Conversation ${idx + 1}: ${c.name} ---\n${truncatedTranscript}`;
+        }).join('\n\n')
+      : 'No transcripts available';
+
     // Build prompt for AI synthesis
     const systemPrompt = `You are an AI Product Team Lead synthesizing user research data.
 Your job is to identify the MOST IMPORTANT issues and opportunities from both quantitative (session replays) and qualitative (user conversations) data.
 
 Think like a PM: prioritize by impact, be specific, and give actionable recommendations.
-DO NOT hallucinate - only reference patterns that appear in the data provided.`;
+
+CRITICAL INSTRUCTIONS:
+- DO NOT hallucinate - only reference patterns that appear in the data provided
+- For sample_quotes, you MUST extract EXACT verbatim quotes from the provided transcripts
+- Quotes must be real sentences spoken by users, copied exactly as written
+- If you cannot find a relevant verbatim quote, use a friction point description instead`;
 
     const userPrompt = `Synthesize these findings into a unified product insight report:
 
@@ -261,10 +281,10 @@ ${Array.from(featureRequests.entries())
   .map(([fr, count]) => `- "${fr}" (${count}x)`)
   .join('\n') || 'None'}
 
-DIRECT USER QUOTES:
-${convoQuotes.slice(0, 5).map(q => `- "${q}"`).join('\n') || 'None available'}
-
 Average Satisfaction: ${avgConvoSatisfaction?.toFixed(1) || 'N/A'}/10
+
+=== RAW CONVERSATION TRANSCRIPTS (use for verbatim quotes) ===
+${transcriptsSection}
 
 === TASK ===
 Create a unified product insight report that:
@@ -272,6 +292,7 @@ Create a unified product insight report that:
 2. Prioritizes by impact (frequency × severity × evidence strength)
 3. Provides specific, actionable recommendations
 4. Identifies quick wins (low effort, high impact)
+5. IMPORTANT: Extract sample_quotes as EXACT verbatim text from the transcripts above
 
 Be specific and reference the actual data. Don't be generic.`;
 

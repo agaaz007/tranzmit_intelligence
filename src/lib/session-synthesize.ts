@@ -132,7 +132,7 @@ ${tagPrompt}
 Identify the most serious issues that need immediate attention and provide actionable recommendations.`;
 
   const { object } = await generateObject({
-    model: openai('gpt-4o'),
+    model: openai('gpt-5.2-chat-latest'),
     schema: SynthesizedInsightsSchema,
     system: systemPrompt,
     prompt: userPrompt,
