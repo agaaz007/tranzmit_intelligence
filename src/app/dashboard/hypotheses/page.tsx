@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -35,6 +36,9 @@ interface ConversationDetail extends ConversationSummary {
 }
 
 export default function QualitativePage() {
+  const searchParams = useSearchParams();
+  const conversationIdParam = searchParams.get('conversationId');
+
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'elevenlabs' | 'manual'>('all');
@@ -83,6 +87,28 @@ export default function QualitativePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-open conversation from URL parameter (deep linking from dashboard)
+  useEffect(() => {
+    if (!conversationIdParam) return;
+
+    const loadConversationFromParam = async () => {
+      setDetailLoading(true);
+      try {
+        const res = await fetch(`/api/conversations/${conversationIdParam}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSelectedConversation(data.conversation);
+        }
+      } catch (error) {
+        console.error('Failed to load conversation from URL param:', error);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
+    loadConversationFromParam();
+  }, [conversationIdParam]);
 
   const handleSync = async (agentId?: string) => {
     const projectId = localStorage.getItem('currentProjectId');

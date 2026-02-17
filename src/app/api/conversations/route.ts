@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProjectWithAccess } from '@/lib/auth';
+import { junoHardcodedConversations } from '@/lib/hardcoded-conversations-juno';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +11,15 @@ export async function GET(request: NextRequest) {
 
     if (!projectId) {
       return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
+    }
+
+    // Return hardcoded conversations for juno-demo
+    if (projectId === 'juno-demo') {
+      const conversations = junoHardcodedConversations.map(({ transcript, analysis, ...rest }) => ({
+        ...rest,
+        // Don't include full transcript in list view
+      }));
+      return NextResponse.json({ conversations });
     }
 
     const projectAccess = await getProjectWithAccess(projectId);

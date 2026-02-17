@@ -4,6 +4,7 @@ import { getProjectWithAccess } from '@/lib/auth';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
+import { junoHardcodedInsights } from '@/lib/hardcoded-insights-juno';
 
 // Schema for unified AI Product Team insights
 const UnifiedInsightsSchema = z.object({
@@ -73,8 +74,117 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
   }
 
+  // Return hardcoded Juno insights for juno-demo (bypass auth for demo)
+  if (projectId === 'juno-demo') {
+      // Transform hardcoded insights to dashboard format
+      const transformedIssues = junoHardcodedInsights.criticalIssues.map((issue, idx) => {
+        // Extract sample quotes from the description (look for DIRECT QUOTE patterns)
+        const quoteMatches = issue.description.match(/DIRECT QUOTE[S]?:\n?"([^"]+)"/g) || [];
+        const sampleQuotes = quoteMatches
+          .map(q => q.replace(/DIRECT QUOTE[S]?:\n?"/, '').replace(/"$/, ''))
+          .slice(0, 3);
+
+        // If no quotes found, extract from the description
+        if (sampleQuotes.length === 0) {
+          const descQuotes = issue.description.match(/"([^"]{20,200})"/g) || [];
+          sampleQuotes.push(...descQuotes.slice(0, 3).map(q => q.replace(/^"|"$/g, '')));
+        }
+
+        // Determine category from title/description
+        let category: 'ux_friction' | 'feature_gap' | 'bug' | 'confusion' | 'performance' | 'onboarding' | 'retention' = 'ux_friction';
+        const titleLower = issue.title.toLowerCase();
+        if (titleLower.includes('bug') || titleLower.includes('reset') || titleLower.includes('lose') || titleLower.includes('lost')) {
+          category = 'bug';
+        } else if (titleLower.includes('no way') || titleLower.includes('want') || titleLower.includes('feature')) {
+          category = 'feature_gap';
+        } else if (titleLower.includes('reminder') || titleLower.includes('forget')) {
+          category = 'retention';
+        } else if (titleLower.includes('price') || titleLower.includes('subscription')) {
+          category = 'retention';
+        }
+
+        // Determine effort from recommendation
+        let effort: 'low' | 'medium' | 'high' = 'medium';
+        const recLower = issue.recommendation.toLowerCase();
+        if (recLower.includes('week 1') || recLower.includes('immediate') || recLower.includes('1-day') || recLower.includes('quick')) {
+          effort = 'low';
+        } else if (recLower.includes('month') || recLower.includes('strategic') || recLower.includes('medium-term')) {
+          effort = 'high';
+        }
+
+        // Parse frequency for counts
+        const freqMatch = issue.frequency.match(/(\d+)\s*of\s*(\d+)/);
+        const sessionCount = freqMatch ? parseInt(freqMatch[1]) : 1;
+
+        return {
+          id: `juno-issue-${idx}`,
+          title: issue.title,
+          description: issue.description.split('\n\nKEY EVIDENCE')[0] || issue.description.substring(0, 500),
+          severity: issue.severity,
+          priority_score: issue.severity === 'critical' ? 95 - idx * 5 : issue.severity === 'high' ? 75 - idx * 3 : 50 - idx * 2,
+          category,
+          evidence: {
+            session_count: sessionCount,
+            conversation_count: issue.sessionIds?.length || 1,
+            sample_quotes: sampleQuotes.length > 0 ? sampleQuotes : [issue.description.substring(0, 150) + '...'],
+          },
+          recommendation: issue.recommendation.split('\n')[0] || issue.recommendation.substring(0, 300),
+          effort,
+          linked_sessions: issue.sessionIds || [],
+          linked_conversations: issue.sessionIds || [],
+        };
+      });
+
+      // Transform user goals
+      const transformedGoals = junoHardcodedInsights.topUserGoals.map(goal => ({
+        goal: goal.goal,
+        success_rate: goal.success_rate,
+        blockers: [], // Extract blockers from the goal description if present
+      }));
+
+      // Transform immediate actions to quick wins (take first 5 low-effort ones)
+      const quickWins = junoHardcodedInsights.immediateActions
+        .filter(action => action.includes('P0') || action.includes('P1') || action.includes('P2'))
+        .slice(0, 5)
+        .map(action => {
+          const cleanAction = action.replace(/^[🚨🔴🟡🟢]\s*P\d\s*[—-]\s*/, '').split(':')[0];
+          return {
+            action: cleanAction,
+            impact: 'Directly addresses user churn or friction',
+            effort: action.includes('P0') || action.includes('P1') ? 'low' as const : 'medium' as const,
+          };
+        });
+
+      // Extract product health from pattern summary
+      const patternLower = junoHardcodedInsights.patternSummary.toLowerCase();
+      const isImproving = patternLower.includes('improving') || patternLower.includes('recoverable');
+      const isDeclining = patternLower.includes('declining') || patternLower.includes('churn');
+
+      return NextResponse.json({
+        insights: {
+          prioritized_issues: transformedIssues,
+          user_goals: transformedGoals,
+          quick_wins: quickWins,
+          product_health: {
+            overall_score: 6, // Based on 75% win-back rate mentioned in summary
+            sentiment_trend: isImproving ? 'improving' : isDeclining ? 'declining' : 'stable',
+            top_strength: 'Strong emotional connection - users describe Juno as "a friend" and feel genuinely understood',
+            top_risk: 'UX execution failures causing preventable churn - 50% of churn directly recoverable with bug fixes',
+          },
+          executive_summary: 'Churn is overwhelmingly driven by UX execution failures, NOT lack of product-market fit. The core value proposition ("a companion that really gets you") is working powerfully. 75% of churned users accepted win-back offers. Fix the generic question bug and data loss issues to recover 50% of churn.',
+        },
+        stats: {
+          sessions_analyzed: junoHardcodedInsights.sessionCount,
+          conversations_analyzed: junoHardcodedInsights.sessionCount,
+          avg_session_rating: 7.2,
+          avg_conversation_satisfaction: 6.8,
+          last_updated: junoHardcodedInsights.lastSynthesizedAt,
+        },
+      });
+  }
+
   try {
-    // Verify access
+    // Verify access for non-Juno projects
     const projectAccess = await getProjectWithAccess(projectId);
     if (!projectAccess) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

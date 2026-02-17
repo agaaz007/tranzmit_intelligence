@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProjectWithAccess } from '@/lib/auth';
+import { getJunoConversationById } from '@/lib/hardcoded-conversations-juno';
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +9,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // Check for hardcoded juno-demo conversations first
+    const junoConversation = getJunoConversationById(id);
+    if (junoConversation) {
+      return NextResponse.json({
+        conversation: junoConversation,
+      });
+    }
 
     const conversation = await prisma.conversation.findUnique({
       where: { id },
