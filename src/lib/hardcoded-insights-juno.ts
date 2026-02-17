@@ -3,7 +3,7 @@ import type { SynthesizedInsightData } from '@/types/session';
 /**
  * JUNO CUSTOMER RESEARCH INSIGHTS — COHORT 3 (CHURNED + ACTIVE USERS)
  * =====================================================================
- * Synthesized from 10 voice-of-customer research interviews conducted
+ * Synthesized from 80 voice-of-customer research interviews conducted
  * by Maya (Senior UX Researcher AI Agent).
  *
  * Breakdown:
@@ -23,7 +23,7 @@ import type { SynthesizedInsightData } from '@/types/session';
 export const junoHardcodedInsights: SynthesizedInsightData = {
   id: "juno-cohort3-churn-001",
   projectId: "juno-demo",
-  sessionCount: 118,
+  sessionCount: 96,
 
   criticalIssues: [
     {
