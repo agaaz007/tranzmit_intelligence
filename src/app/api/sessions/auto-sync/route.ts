@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         amplitudeKey: true,
         amplitudeSecret: true,
         amplitudeProjId: true,
+        replaySource: true,
       },
     });
 
@@ -50,19 +51,30 @@ export async function POST(req: NextRequest) {
     const hasMixpanel = project.mixpanelKey && project.mixpanelProjId;
     const hasAmplitude = project.amplitudeKey && project.amplitudeSecret && project.amplitudeProjId;
 
-    // Step 1: Sync new sessions from configured source
-    console.log(`[Auto-Sync] Step 1: Syncing sessions for project ${projectId}`);
+    // Step 1: Sync new sessions from preferred source (or auto-detect)
+    console.log(`[Auto-Sync] Step 1: Syncing sessions for project ${projectId} (preferred: ${project.replaySource || 'auto'})`);
     let syncResult: { imported: number; skipped: number; failed: number; errors?: string[] } = { imported: 0, skipped: 0, failed: 0, errors: [] };
 
+    const preferred = project.replaySource;
+
     try {
-      if (hasMixpanel) {
-        console.log('[Auto-Sync] Using Mixpanel integration');
+      if (preferred === 'posthog' && hasPostHog) {
+        console.log('[Auto-Sync] Using PostHog integration (user preference)');
+        syncResult = await syncSessionsFromPostHog(projectId, 20);
+      } else if (preferred === 'mixpanel' && hasMixpanel) {
+        console.log('[Auto-Sync] Using Mixpanel integration (user preference)');
+        syncResult = await syncSessionsFromMixpanel(projectId, 3, 5);
+      } else if (preferred === 'amplitude' && hasAmplitude) {
+        console.log('[Auto-Sync] Using Amplitude integration (user preference)');
+        syncResult = await syncSessionsFromAmplitude(projectId, 7);
+      } else if (hasMixpanel) {
+        console.log('[Auto-Sync] Using Mixpanel integration (auto-detected)');
         syncResult = await syncSessionsFromMixpanel(projectId, 3, 5);
       } else if (hasAmplitude) {
-        console.log('[Auto-Sync] Using Amplitude integration');
+        console.log('[Auto-Sync] Using Amplitude integration (auto-detected)');
         syncResult = await syncSessionsFromAmplitude(projectId, 7);
       } else if (hasPostHog) {
-        console.log('[Auto-Sync] Using PostHog integration');
+        console.log('[Auto-Sync] Using PostHog integration (auto-detected)');
         syncResult = await syncSessionsFromPostHog(projectId, 20);
       } else {
         console.log('[Auto-Sync] No integration configured, skipping sync');

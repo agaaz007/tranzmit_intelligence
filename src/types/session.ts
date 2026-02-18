@@ -4,7 +4,7 @@ export interface SessionListItem {
   id: string;
   projectId: string;
   name: string;
-  source: 'upload' | 'posthog';
+  source: 'upload' | 'posthog' | 'mixpanel' | 'amplitude';
   posthogSessionId?: string;
   distinctId?: string;
   startTime?: string;
@@ -54,7 +54,7 @@ export interface CreateSessionInput {
   projectId: string;
   name: string;
   events: RRWebEvent[];
-  source: 'upload' | 'posthog';
+  source: 'upload' | 'posthog' | 'mixpanel' | 'amplitude';
   posthogSessionId?: string;
   distinctId?: string;
   startTime?: string;

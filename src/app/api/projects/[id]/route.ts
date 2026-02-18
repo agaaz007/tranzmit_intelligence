@@ -67,6 +67,7 @@ export async function PATCH(
       amplitudeSecret,
       amplitudeProjId,
       elevenlabsAgentId,
+      replaySource,
     } = body;
 
     const updateData: any = {};
@@ -85,6 +86,8 @@ export async function PATCH(
     if (amplitudeProjId !== undefined) updateData.amplitudeProjId = amplitudeProjId;
     // ElevenLabs
     if (elevenlabsAgentId !== undefined) updateData.elevenlabsAgentId = elevenlabsAgentId;
+    // Replay source preference
+    if (replaySource !== undefined) updateData.replaySource = replaySource;
 
     const project = await prisma.project.update({
       where: { id },

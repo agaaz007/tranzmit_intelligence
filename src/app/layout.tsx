@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { PostHogProvider } from "@/components/PostHogProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,9 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)]`}
       >
         <ClerkProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
+          <PostHogProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </PostHogProvider>
         </ClerkProvider>
       </body>
     </html>

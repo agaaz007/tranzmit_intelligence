@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         amplitudeKey: true,
         amplitudeSecret: true,
         amplitudeProjId: true,
+        replaySource: true,
       },
     });
 
@@ -39,20 +40,22 @@ export async function POST(req: NextRequest) {
     let result;
     let usedSource: string;
 
-    // Use explicit source if provided, otherwise auto-detect
-    if (source === 'mixpanel' || (!source && hasMixpanel && !hasPostHog && !hasAmplitude)) {
+    // Use explicit source if provided, then user preference, then auto-detect
+    const effectiveSource = source || project.replaySource || null;
+
+    if (effectiveSource === 'mixpanel' || (!effectiveSource && hasMixpanel && !hasPostHog && !hasAmplitude)) {
       if (!hasMixpanel) {
         return NextResponse.json({ error: 'Mixpanel not configured for this project' }, { status: 400 });
       }
       result = await syncSessionsFromMixpanel(projectId, daysBack);
       usedSource = 'mixpanel';
-    } else if (source === 'amplitude' || (!source && hasAmplitude && !hasPostHog)) {
+    } else if (effectiveSource === 'amplitude' || (!effectiveSource && hasAmplitude && !hasPostHog)) {
       if (!hasAmplitude) {
         return NextResponse.json({ error: 'Amplitude not configured for this project' }, { status: 400 });
       }
       result = await syncSessionsFromAmplitude(projectId, daysBack);
       usedSource = 'amplitude';
-    } else if (source === 'posthog' || (!source && hasPostHog)) {
+    } else if (effectiveSource === 'posthog' || (!effectiveSource && hasPostHog)) {
       if (!hasPostHog) {
         return NextResponse.json({ error: 'PostHog not configured for this project' }, { status: 400 });
       }

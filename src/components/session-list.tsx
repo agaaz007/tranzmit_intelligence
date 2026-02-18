@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import type { SessionListItem, SessionsListResponse, RRWebEvent } from '@/types/session';
 
 interface SessionListProps {
@@ -22,7 +22,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
   const [loading, setLoading] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState<string | null>(null);
   const [eventsCache, setEventsCache] = useState<Map<string, RRWebEvent[]>>(new Map());
-  const [filter, setFilter] = useState<'all' | 'upload' | 'posthog'>('all');
+  const [filter, setFilter] = useState<'all' | 'upload' | 'posthog' | 'mixpanel'>('all');
   const limit = 20;
 
   const fetchSessions = useCallback(async () => {
@@ -181,6 +181,15 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
             <Cloud className="w-3 h-3" />
             PostHog
           </Button>
+          <Button
+            variant={filter === 'mixpanel' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setFilter('mixpanel'); setPage(1); }}
+            className="gap-1"
+          >
+            <BarChart3 className="w-3 h-3" />
+            Mixpanel
+          </Button>
         </div>
         <Button
           variant="ghost"
@@ -228,9 +237,18 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant="outline" className={session.source === 'posthog' ? 'border-blue-200 text-blue-700' : 'border-emerald-200 text-emerald-700'}>
+                  <Badge variant="outline" className={
+                    session.source === 'posthog' ? 'border-blue-200 text-blue-700' :
+                    session.source === 'mixpanel' ? 'border-orange-200 text-orange-700' :
+                    session.source === 'amplitude' ? 'border-violet-200 text-violet-700' :
+                    'border-emerald-200 text-emerald-700'
+                  }>
                     {session.source === 'posthog' ? (
                       <><Cloud className="w-3 h-3 mr-1" />PostHog</>
+                    ) : session.source === 'mixpanel' ? (
+                      <><BarChart3 className="w-3 h-3 mr-1" />Mixpanel</>
+                    ) : session.source === 'amplitude' ? (
+                      <><BarChart3 className="w-3 h-3 mr-1" />Amplitude</>
                     ) : (
                       <><Upload className="w-3 h-3 mr-1" />Upload</>
                     )}

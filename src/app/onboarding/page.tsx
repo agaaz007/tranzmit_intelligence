@@ -125,6 +125,31 @@ export default function OnboardingPage() {
               )}
             </button>
           </form>
+
+          {/* Demo divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400 font-medium">OR</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          {/* Try Demo button */}
+          <button
+            type="button"
+            onClick={() => {
+              setOrgId('juno-demo');
+              // Auto-submit after setting
+              setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) form.requestSubmit();
+              }, 100);
+            }}
+            disabled={isJoining}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-50 font-medium transition-all border border-slate-200"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            Try Demo (Juno Health Companion)
+          </button>
         </div>
 
         {/* Skip link */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Calendar,
@@ -23,6 +24,8 @@ import {
     Quote,
     Target,
     BarChart3,
+    Phone,
+    Clock,
 } from 'lucide-react';
 import { parseHTMLReport, type ParsedReport, type ParsedIssue } from '@/lib/report-parser';
 
@@ -50,7 +53,34 @@ interface UploadedReport {
   parsed: ParsedReport;
 }
 
+interface Conversation {
+  id: string;
+  participantName: string;
+  status: string;
+  duration: number;
+  analysisStatus: string;
+  metadata?: {
+    call_number?: number;
+    user_type?: string;
+    conditions?: string[];
+  };
+  analysis?: {
+    summary: string;
+    sentiment: string;
+    pain_points: string[];
+    feature_requests: string[];
+    key_quotes: string[];
+    churn_status: 'churned' | 'active';
+    winback_outcome?: 'accepted' | 'declined';
+  };
+  transcript?: Array<{ role: 'agent' | 'user'; message: string }>;
+  conversedAt: string;
+}
+
 export default function InterviewsPage() {
+  const searchParams = useSearchParams();
+  const conversationIdParam = searchParams.get('conversationId');
+
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [projectId, setProjectId] = useState<string>('');
@@ -59,8 +89,13 @@ export default function InterviewsPage() {
   const [uploadedReports, setUploadedReports] = useState<UploadedReport[]>([]);
   const [viewingReport, setViewingReport] = useState<UploadedReport | null>(null);
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'interviews'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'interviews' | 'conversations'>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Conversations state
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
   useEffect(() => {
     const initializeProject = async () => {
@@ -89,6 +124,50 @@ export default function InterviewsPage() {
 
     initializeProject();
   }, []);
+
+  // Load conversations when project is set
+  useEffect(() => {
+    if (!projectId) return;
+
+    const loadConversations = async () => {
+      setIsLoadingConversations(true);
+      try {
+        const response = await fetch(`/api/conversations?projectId=${projectId}`);
+        const data = await response.json();
+        setConversations(data.conversations || []);
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+
+    loadConversations();
+  }, [projectId]);
+
+  // Handle conversationId URL parameter - auto-open the conversation
+  useEffect(() => {
+    if (!conversationIdParam) return;
+
+    // Switch to conversations tab
+    setActiveTab('conversations');
+
+    const loadConversationFromParam = async () => {
+      try {
+        const response = await fetch(`/api/conversations/${conversationIdParam}`);
+        if (response.ok) {
+          const { conversation } = await response.json();
+          if (conversation) {
+            setSelectedConversation(conversation);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load conversation from URL param:', error);
+      }
+    };
+
+    loadConversationFromParam();
+  }, [conversationIdParam]);
 
   const loadInterviews = async (projId: string, status?: string) => {
     setIsLoading(true);
@@ -252,6 +331,16 @@ export default function InterviewsPage() {
             }`}
           >
             <span className="flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Insights Dashboard</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('conversations')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'conversations'
+                ? 'bg-[#1a56db] text-white'
+                : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
+            }`}
+          >
+            <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> Conversations {conversations.length > 0 && <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-white/20">{conversations.length}</span>}</span>
           </button>
           <button
             onClick={() => setActiveTab('interviews')}
@@ -515,6 +604,186 @@ export default function InterviewsPage() {
                     ))}
                   </div>
                 </div>
+              </>
+            )}
+          </>
+        ) : activeTab === 'conversations' ? (
+          /* Conversations Tab - Qualitative Research Transcripts */
+          <>
+            {selectedConversation ? (
+              /* Full Transcript View */
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Transcript */}
+                <div className="lg:col-span-2">
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-[#1a56db]" />
+                        <div>
+                          <h3 className="font-semibold text-[var(--foreground)]">{selectedConversation.participantName}</h3>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {selectedConversation.metadata?.user_type || 'Interview'} &middot; {Math.floor(selectedConversation.duration / 60)}m {selectedConversation.duration % 60}s
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedConversation(null)}
+                        className="p-2 rounded-lg hover:bg-[var(--muted)] text-[var(--muted-foreground)]"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="p-6 max-h-[600px] overflow-y-auto">
+                      <div className="space-y-4">
+                        {selectedConversation.transcript?.map((msg, i) => (
+                          <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-start' : 'justify-end'}`}>
+                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                              msg.role === 'agent'
+                                ? 'bg-[var(--muted)] text-[var(--foreground)]'
+                                : 'bg-[#1a56db] text-white'
+                            }`}>
+                              <p className="text-xs font-semibold mb-1 opacity-70">
+                                {msg.role === 'agent' ? 'Maya (Researcher)' : 'User'}
+                              </p>
+                              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Analysis Sidebar */}
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5">
+                    <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3">Summary</h4>
+                    <p className="text-sm text-[var(--foreground)] leading-relaxed">{selectedConversation.analysis?.summary}</p>
+                    <div className="flex items-center gap-2 mt-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedConversation.analysis?.churn_status === 'churned'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                      }`}>
+                        {selectedConversation.analysis?.churn_status === 'churned' ? 'Churned' : 'Active'}
+                      </span>
+                      {selectedConversation.analysis?.winback_outcome && (
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          selectedConversation.analysis.winback_outcome === 'accepted'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                        }`}>
+                          Win-back: {selectedConversation.analysis.winback_outcome}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pain Points */}
+                  {selectedConversation.analysis?.pain_points && selectedConversation.analysis.pain_points.length > 0 && (
+                    <div className="bg-[var(--card)] border border-red-200 dark:border-red-800 rounded-xl p-5">
+                      <h4 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Pain Points
+                      </h4>
+                      <ul className="space-y-2">
+                        {selectedConversation.analysis.pain_points.map((point, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground)]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Key Quotes */}
+                  {selectedConversation.analysis?.key_quotes && selectedConversation.analysis.key_quotes.length > 0 && (
+                    <div className="bg-[var(--card)] border border-[#1a56db]/20 rounded-xl p-5">
+                      <h4 className="text-xs font-semibold text-[#1a56db] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                        <Quote className="w-3.5 h-3.5" /> Key Quotes
+                      </h4>
+                      <div className="space-y-3">
+                        {selectedConversation.analysis.key_quotes.map((quote, i) => (
+                          <blockquote key={i} className="border-l-2 border-[#1a56db] pl-3 italic text-sm text-[var(--muted-foreground)]">
+                            &ldquo;{quote}&rdquo;
+                          </blockquote>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Feature Requests */}
+                  {selectedConversation.analysis?.feature_requests && selectedConversation.analysis.feature_requests.length > 0 && (
+                    <div className="bg-[var(--card)] border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+                      <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                        <Lightbulb className="w-3.5 h-3.5" /> Feature Requests
+                      </h4>
+                      <ul className="space-y-2">
+                        {selectedConversation.analysis.feature_requests.map((fr, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground)]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                            {fr}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Conversations List */
+              <>
+                {isLoadingConversations ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#1a56db]" />
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div className="text-center py-20 bg-[var(--card)] rounded-xl border border-[var(--border)]">
+                    <Phone className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
+                    <p className="text-[var(--foreground)] font-medium mb-2">No conversations yet</p>
+                    <p className="text-[var(--muted-foreground)] text-sm">Conversations from voice research calls will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {conversations.map(convo => (
+                      <button
+                        key={convo.id}
+                        onClick={async () => {
+                          const response = await fetch(`/api/conversations/${convo.id}`);
+                          if (response.ok) {
+                            const { conversation } = await response.json();
+                            setSelectedConversation(conversation);
+                          }
+                        }}
+                        className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[#1a56db] hover:shadow-sm transition-all text-left group"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-[var(--muted)] flex items-center justify-center shrink-0">
+                              <Phone className="w-5 h-5 text-[var(--muted-foreground)]" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-[var(--foreground)] group-hover:text-[#1a56db] transition-colors">
+                                {convo.participantName}
+                              </h3>
+                              <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                                {convo.metadata?.user_type || 'Interview'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                              <Clock className="w-3.5 h-3.5" />
+                              {Math.floor(convo.duration / 60)}m
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-[var(--muted-foreground)] group-hover:text-[#1a56db] transition-colors" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </>

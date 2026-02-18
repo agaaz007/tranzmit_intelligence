@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, RefreshCw, Upload, Cloud, Check, Trash2, Database, User } from 'lucide-react';
+import { Loader2, PlayCircle, AlertTriangle, CheckCircle2, X, RefreshCw, Upload, Cloud, Check, Trash2, Database, User, BarChart3, MessageCircle, Quote } from 'lucide-react';
 import { IssuesPanel } from '@/components/issues-panel';
 import type { SessionListItem, RRWebEvent, SynthesizedInsightData } from '@/types/session';
 
@@ -162,6 +162,12 @@ function SessionInsightsContent() {
     const [dbSessionEvents, setDbSessionEvents] = useState<RRWebEvent[]>([]);
     const [dbSessionCount, setDbSessionCount] = useState(0);
 
+    // State for conversation transcripts (qualitative data)
+    const [selectedConversation, setSelectedConversation] = useState<any>(null);
+
+    // Project replay source preference
+    const [replaySource, setReplaySource] = useState<string | null>(null);
+
     // Auto-sync state
     const [persistedInsights, setPersistedInsights] = useState<SynthesizedInsightData | null>(null);
     const [isLoadingInsights, setIsLoadingInsights] = useState(true);
@@ -169,14 +175,26 @@ function SessionInsightsContent() {
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [sessionListRefreshKey, setSessionListRefreshKey] = useState(0);
 
-    // Get distinctId from URL params (for filtering by user from Recovery tab)
+    // Get URL params (for filtering by user from Recovery tab, or loading specific conversation)
     const searchParams = useSearchParams();
     const distinctIdFilter = searchParams.get('distinctId');
+    const conversationIdParam = searchParams.get('conversationId');
 
-    // Load current project ID
+    // Load current project ID and replay source preference
     useEffect(() => {
         const projectId = localStorage.getItem('currentProjectId');
         setCurrentProjectId(projectId);
+
+        if (projectId) {
+            fetch(`/api/projects/${projectId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.project?.replaySource) {
+                        setReplaySource(data.project.replaySource);
+                    }
+                })
+                .catch(() => {});
+        }
     }, []);
 
     // Load persisted insights from database on mount
@@ -206,6 +224,33 @@ function SessionInsightsContent() {
 
         loadInsights();
     }, [currentProjectId]);
+
+    // Load conversation from URL parameter (for deep linking from dashboard)
+    useEffect(() => {
+        if (!conversationIdParam) return;
+
+        const loadConversationFromParam = async () => {
+            try {
+                const convoRes = await fetch(`/api/conversations/${conversationIdParam}`);
+                if (convoRes.ok) {
+                    const { conversation } = await convoRes.json();
+                    if (conversation) {
+                        setDbSelectedSession(null);
+                        setDbSessionEvents([]);
+                        setSelectedConversation(conversation);
+                        // Scroll to detail area after a short delay
+                        setTimeout(() => {
+                            document.getElementById('conversation-detail-area')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 300);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load conversation from URL param:', err);
+            }
+        };
+
+        loadConversationFromParam();
+    }, [conversationIdParam]);
 
     // Auto-sync trigger
     const triggerAutoSync = useCallback(async () => {
@@ -254,7 +299,11 @@ function SessionInsightsContent() {
     const handleIssueSessionClick = useCallback(async (sessionId: string) => {
         if (!currentProjectId) return;
 
+        // Clear any previous selection
+        setSelectedConversation(null);
+
         try {
+            // First try loading as a session
             const res = await fetch(`/api/sessions/${sessionId}/events`);
             if (res.ok) {
                 const { events } = await res.json();
@@ -273,8 +322,24 @@ function SessionInsightsContent() {
                     }
                 }
             }
+
+            // If session not found, try loading as a conversation (for qualitative data like Juno demo)
+            const convoRes = await fetch(`/api/conversations/${sessionId}`);
+            if (convoRes.ok) {
+                const { conversation } = await convoRes.json();
+                if (conversation) {
+                    setDbSelectedSession(null);
+                    setDbSessionEvents([]);
+                    setSelectedConversation(conversation);
+                    // Scroll to detail area
+                    setTimeout(() => {
+                        document.getElementById('conversation-detail-area')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                    return;
+                }
+            }
         } catch (err) {
-            console.error('Failed to load session from issue click:', err);
+            console.error('Failed to load session/conversation from issue click:', err);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentProjectId]);
@@ -487,6 +552,7 @@ function SessionInsightsContent() {
         setSelectedEntry(null);
         setDbSelectedSession(null);
         setDbSessionEvents([]);
+        setSelectedConversation(null);
     };
 
     // Handler for selecting a session from the database list
@@ -681,8 +747,10 @@ function SessionInsightsContent() {
                             onClick={() => setInputMode('sync')}
                             className="gap-2"
                         >
-                            <Cloud className="w-4 h-4" />
-                            Sync from PostHog
+                            {replaySource === 'mixpanel' ? <BarChart3 className="w-4 h-4" /> :
+                             replaySource === 'amplitude' ? <BarChart3 className="w-4 h-4" /> :
+                             <Cloud className="w-4 h-4" />}
+                            Sync from {replaySource === 'mixpanel' ? 'Mixpanel' : replaySource === 'amplitude' ? 'Amplitude' : 'PostHog'}
                         </Button>
                     </div>
 
@@ -754,7 +822,7 @@ function SessionInsightsContent() {
 
                                 <div className="text-center">
                                     <h3 className="text-lg font-semibold text-[var(--foreground)]">
-                                        Sync Sessions from PostHog
+                                        Sync Sessions from {replaySource === 'mixpanel' ? 'Mixpanel' : replaySource === 'amplitude' ? 'Amplitude' : 'PostHog'}
                                     </h3>
                                     <p className="text-sm text-[var(--muted-foreground)] mt-1">
                                         Automatically fetch and analyze recent session recordings
@@ -847,7 +915,7 @@ function SessionInsightsContent() {
                                 </Button>
 
                                 <p className="text-xs text-[var(--muted-foreground)] text-center max-w-sm">
-                                    Sessions will be fetched from your PostHog account and automatically analyzed using AI
+                                    Sessions will be fetched from your {replaySource === 'mixpanel' ? 'Mixpanel' : replaySource === 'amplitude' ? 'Amplitude' : 'PostHog'} account and automatically analyzed using AI
                                 </p>
                             </div>
                         </Card>
@@ -871,8 +939,15 @@ function SessionInsightsContent() {
                                         <PlayCircle className="w-5 h-5 text-blue-500" />
                                         Session Replay
                                         <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{dbSelectedSession.name}</span>
-                                        <Badge variant="outline" className={dbSelectedSession.source === 'posthog' ? 'border-blue-200 text-blue-700' : 'border-emerald-200 text-emerald-700'}>
-                                            {dbSelectedSession.source === 'posthog' ? 'PostHog' : 'Upload'}
+                                        <Badge variant="outline" className={
+                                            dbSelectedSession.source === 'posthog' ? 'border-blue-200 text-blue-700' :
+                                            dbSelectedSession.source === 'mixpanel' ? 'border-orange-200 text-orange-700' :
+                                            dbSelectedSession.source === 'amplitude' ? 'border-violet-200 text-violet-700' :
+                                            'border-emerald-200 text-emerald-700'
+                                        }>
+                                            {dbSelectedSession.source === 'posthog' ? 'PostHog' :
+                                             dbSelectedSession.source === 'mixpanel' ? 'Mixpanel' :
+                                             dbSelectedSession.source === 'amplitude' ? 'Amplitude' : 'Upload'}
                                         </Badge>
                                     </CardTitle>
                                     <Button variant="ghost" size="sm" onClick={handleCloseDetail}>
@@ -1036,6 +1111,137 @@ function SessionInsightsContent() {
                                     </ul>
                                 </CardContent>
                             </Card>
+                        </div>
+                    </section>
+                )}
+
+                {/* Conversation transcript detail view (for qualitative research data) */}
+                {selectedConversation && (
+                    <section id="conversation-detail-area" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 space-y-4">
+                            <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2 text-[var(--foreground)]">
+                                        <MessageCircle className="w-5 h-5 text-violet-500" />
+                                        Conversation Transcript
+                                        <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{selectedConversation.participantName}</span>
+                                        <Badge variant="outline" className="border-violet-200 text-violet-700 dark:border-violet-700 dark:text-violet-400">
+                                            {selectedConversation.metadata?.user_type || 'Interview'}
+                                        </Badge>
+                                    </CardTitle>
+                                    <Button variant="ghost" size="sm" onClick={() => setSelectedConversation(null)}>
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[500px] pr-4">
+                                        <div className="space-y-4">
+                                            {selectedConversation.transcript?.map((msg: { role: string; message: string }, i: number) => (
+                                                <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-start' : 'justify-end'}`}>
+                                                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                                                        msg.role === 'agent'
+                                                            ? 'bg-[var(--muted)] text-[var(--foreground)]'
+                                                            : 'bg-violet-500 text-white'
+                                                    }`}>
+                                                        <p className="text-xs font-semibold mb-1 opacity-70">
+                                                            {msg.role === 'agent' ? 'Maya (Researcher)' : 'User'}
+                                                        </p>
+                                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="space-y-6">
+                            {/* Analysis Summary */}
+                            <Card className="bg-[var(--card)] border-[var(--border)]">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--foreground)]">Analysis Summary</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                                        {selectedConversation.analysis?.summary}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-4">
+                                        <Badge variant={selectedConversation.analysis?.churn_status === 'churned' ? 'destructive' : 'default'}>
+                                            {selectedConversation.analysis?.churn_status === 'churned' ? 'Churned' : 'Active'}
+                                        </Badge>
+                                        {selectedConversation.analysis?.winback_outcome && (
+                                            <Badge variant={selectedConversation.analysis.winback_outcome === 'accepted' ? 'default' : 'secondary'}>
+                                                Win-back: {selectedConversation.analysis.winback_outcome}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Pain Points */}
+                            {selectedConversation.analysis?.pain_points?.length > 0 && (
+                                <Card className="bg-[var(--card)] border-red-500/20 dark:border-red-500/30">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-red-500">
+                                            <AlertTriangle className="w-5 h-5" />
+                                            Pain Points
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-2">
+                                            {selectedConversation.analysis.pain_points.map((point: string, i: number) => (
+                                                <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground)]">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                                                    {point}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Key Quotes */}
+                            {selectedConversation.analysis?.key_quotes?.length > 0 && (
+                                <Card className="bg-[var(--card)] border-violet-500/20 dark:border-violet-500/30">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-violet-500">
+                                            <Quote className="w-5 h-5" />
+                                            Key Quotes
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {selectedConversation.analysis.key_quotes.map((quote: string, i: number) => (
+                                                <blockquote key={i} className="border-l-2 border-violet-500 pl-3 italic text-sm text-[var(--muted-foreground)]">
+                                                    &ldquo;{quote}&rdquo;
+                                                </blockquote>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Feature Requests */}
+                            {selectedConversation.analysis?.feature_requests?.length > 0 && (
+                                <Card className="bg-[var(--card)] border-emerald-500/20 dark:border-emerald-500/30">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-emerald-500">
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            Feature Requests
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-2">
+                                            {selectedConversation.analysis.feature_requests.map((fr: string, i: number) => (
+                                                <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground)]">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                                                    {fr}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </section>
                 )}

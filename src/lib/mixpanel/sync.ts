@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { SyncResult } from '@/types/session';
 import type { MixpanelEvent, MixpanelSession } from './types';
 import { mixpanelToRRWebEvents } from './event-mapper';
+import { hasReplayData, assembleReplayEvents, cleanupOldChunks } from '@/lib/replay-assembler';
 
 // Fetch events from Mixpanel Export API
 async function fetchMixpanelEvents(
@@ -241,7 +242,19 @@ export async function syncSessionsFromMixpanel(
         continue;
       }
 
-      const rrwebEvents = mixpanelToRRWebEvents(session.events);
+      // Check if real replay data exists from the client-side snippet
+      const hasReal = await hasReplayData(projectId, session.sessionId);
+      let rrwebEvents: unknown[];
+      let replayDataSource: 'real' | 'synthetic';
+
+      if (hasReal) {
+        rrwebEvents = await assembleReplayEvents(projectId, session.sessionId);
+        replayDataSource = 'real';
+        console.log(`[Mixpanel Sync] Using real replay data for session ${session.sessionId} (${rrwebEvents.length} events)`);
+      } else {
+        rrwebEvents = mixpanelToRRWebEvents(session.events);
+        replayDataSource = 'synthetic';
+      }
 
       if (rrwebEvents.length === 0) {
         result.failed++;
@@ -268,11 +281,17 @@ export async function syncSessionsFromMixpanel(
             originalEventCount: session.events.length,
             source: 'mixpanel',
             mixpanelSessionId: session.sessionId,
+            replayDataSource,
           }),
         },
       });
 
-      console.log(`[Mixpanel Sync] Imported session: ${session.sessionId} (${rrwebEvents.length} events)`);
+      // Clean up chunks after successful import with real data
+      if (hasReal) {
+        await cleanupOldChunks(projectId, session.sessionId);
+      }
+
+      console.log(`[Mixpanel Sync] Imported session: ${session.sessionId} (${rrwebEvents.length} events, source: ${replayDataSource})`);
       result.imported++;
     } catch (err) {
       console.error(`[Mixpanel Sync] Failed to import session ${session.sessionId}:`, err);

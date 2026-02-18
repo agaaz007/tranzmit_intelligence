@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, BarChart3, Cloud, Activity } from 'lucide-react';
 
 interface ProjectSettings {
   id: string;
   name: string;
   organizationId: string | null;
+  apiKey: string;
   posthogKey: string;
   posthogHost: string;
   posthogProjId: string;
@@ -19,6 +20,7 @@ interface ProjectSettings {
   amplitudeSecret: string;
   amplitudeProjId: string;
   elevenlabsAgentId: string;
+  replaySource: string | null;
 }
 
 export default function SettingsPage() {
@@ -30,6 +32,7 @@ export default function SettingsPage() {
   const [projectId, setProjectId] = useState<string>('');
   const [noProjectExists, setNoProjectExists] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,6 +48,7 @@ export default function SettingsPage() {
     amplitudeSecret: '',
     amplitudeProjId: '',
     elevenlabsAgentId: '',
+    replaySource: '',
   });
 
   useEffect(() => {
@@ -105,6 +109,7 @@ export default function SettingsPage() {
           amplitudeSecret: data.project.amplitudeSecret || '',
           amplitudeProjId: data.project.amplitudeProjId || '',
           elevenlabsAgentId: data.project.elevenlabsAgentId || '',
+          replaySource: data.project.replaySource || '',
         });
         setNoProjectExists(false);
       } else {
@@ -298,6 +303,99 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Session Replay Source Toggle */}
+        {!noProjectExists && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Activity className="w-6 h-6 text-indigo-600" />
+              <h2 className="text-2xl font-bold text-slate-900">Session Replay Source</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">
+              Choose which analytics platform to use for fetching and syncing session replays. Only sessions from the selected source will be synced.
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              {/* PostHog */}
+              <button
+                onClick={() => handleInputChange('replaySource', 'posthog')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  formData.replaySource === 'posthog'
+                    ? 'border-purple-500 bg-purple-50 shadow-md shadow-purple-100'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                {formData.replaySource === 'posthog' && (
+                  <div className="absolute top-2 right-2">
+                    <Check className="w-4 h-4 text-purple-600" />
+                  </div>
+                )}
+                <Cloud className={`w-8 h-8 ${formData.replaySource === 'posthog' ? 'text-purple-600' : 'text-slate-400'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'posthog' ? 'text-purple-900' : 'text-slate-600'}`}>PostHog</span>
+                <span className="text-xs text-slate-500 text-center">Real DOM session recordings</span>
+                {formData.posthogKey && formData.posthogProjId ? (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
+                ) : (
+                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                )}
+              </button>
+
+              {/* Mixpanel */}
+              <button
+                onClick={() => handleInputChange('replaySource', 'mixpanel')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  formData.replaySource === 'mixpanel'
+                    ? 'border-orange-500 bg-orange-50 shadow-md shadow-orange-100'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                {formData.replaySource === 'mixpanel' && (
+                  <div className="absolute top-2 right-2">
+                    <Check className="w-4 h-4 text-orange-600" />
+                  </div>
+                )}
+                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'mixpanel' ? 'text-orange-600' : 'text-slate-400'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'mixpanel' ? 'text-orange-900' : 'text-slate-600'}`}>Mixpanel</span>
+                <span className="text-xs text-slate-500 text-center">Event-based activity timeline</span>
+                {formData.mixpanelKey && formData.mixpanelProjId ? (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
+                ) : (
+                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                )}
+              </button>
+
+              {/* Amplitude */}
+              <button
+                onClick={() => handleInputChange('replaySource', 'amplitude')}
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  formData.replaySource === 'amplitude'
+                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-100'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                {formData.replaySource === 'amplitude' && (
+                  <div className="absolute top-2 right-2">
+                    <Check className="w-4 h-4 text-blue-600" />
+                  </div>
+                )}
+                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'amplitude' ? 'text-blue-600' : 'text-slate-400'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'amplitude' ? 'text-blue-900' : 'text-slate-600'}`}>Amplitude</span>
+                <span className="text-xs text-slate-500 text-center">Event-based activity timeline</span>
+                {formData.amplitudeKey && formData.amplitudeProjId ? (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
+                ) : (
+                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                )}
+              </button>
+            </div>
+
+            {!formData.replaySource && (
+              <p className="text-xs text-amber-600 mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                No source selected — the system will auto-detect based on which integration is configured.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* PostHog Integration */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
@@ -437,6 +535,63 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Mixpanel Session Replay Snippet */}
+        {project && (formData.mixpanelKey || formData.mixpanelProjId) && (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <Code className="w-6 h-6 text-orange-600" />
+              <h2 className="text-2xl font-bold text-slate-900">Real Session Replay</h2>
+              <span className="ml-auto text-xs bg-orange-100 px-3 py-1 rounded-full font-semibold text-orange-700 border border-orange-300">
+                Optional
+              </span>
+            </div>
+
+            <p className="text-sm text-slate-500 mb-4 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+              Without this snippet, Mixpanel sessions show a <strong>timeline reconstruction</strong> from analytics events.
+              Add this snippet to your site for <strong>real DOM session replays</strong> powered by rrweb.
+            </p>
+
+            <div className="relative">
+              <pre className="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto leading-relaxed">
+{`<!-- Tranzmit Real Session Replay -->
+<script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb-all.min.js"></script>
+<script>
+  window.TRANZMIT_CONFIG = {
+    apiKey: '${project.apiKey}',
+    endpoint: '${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.com'}'
+  };
+</script>
+<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.com'}/tranzmit-replay.js"></script>`}
+              </pre>
+              <button
+                onClick={() => {
+                  const snippet = `<!-- Tranzmit Real Session Replay -->\n<script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb-all.min.js"></script>\n<script>\n  window.TRANZMIT_CONFIG = {\n    apiKey: '${project.apiKey}',\n    endpoint: '${window.location.origin}'\n  };\n</script>\n<script src="${window.location.origin}/tranzmit-replay.js"></script>`;
+                  navigator.clipboard.writeText(snippet);
+                  setCopiedSnippet(true);
+                  setTimeout(() => setCopiedSnippet(false), 2000);
+                }}
+                className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-slate-200 text-xs font-medium transition-colors"
+              >
+                {copiedSnippet ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-green-400" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 mt-3">
+              Add this snippet to your site&apos;s {'<head>'} or before {'</body>'}. Make sure the Mixpanel SDK is loaded first so session IDs are correlated.
+            </p>
+          </div>
+        )}
 
         {/* Amplitude Integration */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

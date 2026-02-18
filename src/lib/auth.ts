@@ -4,8 +4,11 @@ import { prisma } from './prisma';
 import crypto from 'crypto';
 
 // Get project from external API key (for external API access)
+// Supports header (x-tranzmit-api-key) or query param (key) for sendBeacon compatibility
 export async function getProjectFromRequest(request: NextRequest) {
-  const apiKey = request.headers.get('x-tranzmit-api-key');
+  const apiKey =
+    request.headers.get('x-tranzmit-api-key') ||
+    request.nextUrl.searchParams.get('key');
 
   if (!apiKey) {
     return null;
