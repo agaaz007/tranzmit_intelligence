@@ -18,6 +18,7 @@ if (typeof window !== 'undefined') {
       capture_pageleave: true,
     });
   }
+  window.posthog = posthog;
 }
 
 // Component to handle user identification
