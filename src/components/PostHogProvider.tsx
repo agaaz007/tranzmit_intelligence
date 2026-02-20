@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
       capture_pageleave: true,
     });
   }
-  window.posthog = posthog;
+  (window as any).posthog = posthog;
 }
 
 // Component to handle user identification
