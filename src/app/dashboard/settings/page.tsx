@@ -713,6 +713,11 @@ export default function SettingsPage() {
         <div className="flex justify-end gap-3">
           <button
             id="cancel-btn"
+            onClick={() => {
+              if ((window as any).ExitButton?.start) {
+                (window as any).ExitButton.start();
+              }
+            }}
             className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-2xl hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all"
           >
             <X className="w-5 h-5" />
