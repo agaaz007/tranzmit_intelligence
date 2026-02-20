@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, BarChart3, Cloud, Activity } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, BarChart3, Cloud, Activity, X } from 'lucide-react';
 
 interface ProjectSettings {
   id: string;
@@ -708,8 +709,15 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Save/Create Button */}
-        <div className="flex justify-end">
+        {/* Save/Create & Cancel Buttons */}
+        <div className="flex justify-end gap-3">
+          <button
+            id="cancel-btn"
+            className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-2xl hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all"
+          >
+            <X className="w-5 h-5" />
+            Cancel
+          </button>
           {noProjectExists ? (
             <button
               onClick={handleCreate}
@@ -749,6 +757,13 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <Script
+        src="https://tranzmit-button-sdk-react-app.vercel.app/embed.js"
+        data-api-key="eb_live_trnzmit_sk_2026"
+        data-attach="#cancel-btn"
+        strategy="lazyOnload"
+      />
     </div>
   );
 }
