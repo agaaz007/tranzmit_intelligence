@@ -763,12 +763,7 @@ export default function SettingsPage() {
         data-api-key="eb_live_trnzmit_sk_2026"
         data-attach="#cancel-btn"
         data-backend-url="https://tranzmit-button-sdk-react-app.vercel.app"
-        strategy="lazyOnload"
-        onLoad={() => {
-          if (typeof (window as any).ExitButton?.prefetch === 'function') {
-            (window as any).ExitButton.prefetch();
-          }
-        }}
+        strategy="afterInteractive"
       />
     </div>
   );
