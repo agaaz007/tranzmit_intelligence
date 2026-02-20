@@ -764,6 +764,11 @@ export default function SettingsPage() {
         data-attach="#cancel-btn"
         data-backend-url="https://tranzmit-button-sdk-react-app.vercel.app"
         strategy="lazyOnload"
+        onLoad={() => {
+          if (typeof (window as any).ExitButton?.prefetch === 'function') {
+            (window as any).ExitButton.prefetch();
+          }
+        }}
       />
     </div>
   );
