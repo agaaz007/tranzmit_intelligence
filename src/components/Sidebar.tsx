@@ -14,6 +14,7 @@ import {
     Target,
     PlayCircle,
     PhoneCall,
+    UserX,
     Sun,
     Moon,
     Sparkles,
@@ -24,6 +25,7 @@ const navItems = [
     { href: '/dashboard/session-insights', icon: PlayCircle, label: 'Session Insights' },
     { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Qualitative' },
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
+    { href: '/dashboard/churned-sessions', icon: UserX, label: 'Churned Sessions' },
 ];
 
 export default function Sidebar() {

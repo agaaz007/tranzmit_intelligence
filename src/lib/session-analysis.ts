@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { generateObject } from 'ai';
-import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { parseRRWebSession } from '@/lib/rrweb-parser';
 
@@ -164,7 +164,7 @@ Based on this log, analyze:
 
     // Call LLM
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash-lite'),
+      model: openai('gpt-5-mini'),
       schema: UXAnalysisSchema,
       system: systemPrompt,
       prompt: userPrompt,

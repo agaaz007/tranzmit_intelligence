@@ -83,6 +83,7 @@ model Project {
   interviews     Interview[]
   sessions             Session[]
   churnedUsers         ChurnedUser[]
+  churnedSessionBatches ChurnedSessionBatch[]
   synthesizedInsight   SynthesizedInsight?
   conversations        Conversation[]
   replayChunks         ReplayChunk[]
@@ -376,6 +377,26 @@ model ChurnedUser {
   @@unique([projectId, email])
   @@index([projectId])
   @@index([projectId, outreachStatus])
+}
+
+// Batched churned user session lookups from CSV uploads
+model ChurnedSessionBatch {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fileName          String?
+  totalEmails       Int      @default(0)
+  processedEmails   Int      @default(0)
+  emailsFound       Int      @default(0)
+  emailsNotFound    Int      @default(0)
+  sessionsImported  Int      @default(0)
+  status            String   @default("pending") // pending|processing|completed|failed
+  emailResults      String?  @db.Text // JSON: [{email, status, recordingCount, personName}]
+  error             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 // Conversations from ElevenLabs auto-fetch or manual transcript upload

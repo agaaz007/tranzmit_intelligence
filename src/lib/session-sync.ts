@@ -20,32 +20,61 @@ interface RRWebEvent {
   windowId?: string;
 }
 
+// Helper to sleep for a given number of milliseconds
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Helper to try fetching from PostHog with both API patterns
+// Includes retry logic for 429 rate limit errors
 export async function fetchFromPostHog(
   host: string,
   projectId: string,
   endpoint: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  maxRetries: number = 2
 ): Promise<{ response: Response | null; error?: string }> {
   const urlPatterns = [
     `${host}/api/environments/${projectId}${endpoint}`,
     `${host}/api/projects/${projectId}${endpoint}`,
   ];
 
-  for (const url of urlPatterns) {
-    try {
-      console.log(`[PostHog] Trying: ${url}`);
-      const response = await fetch(url, { headers });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (const url of urlPatterns) {
+      try {
+        console.log(`[PostHog] Trying: ${url}`);
+        const response = await fetch(url, { headers });
 
-      if (response.ok) {
-        console.log(`[PostHog] Success with: ${url}`);
-        return { response };
+        if (response.ok) {
+          console.log(`[PostHog] Success with: ${url}`);
+          return { response };
+        }
+
+        if (response.status === 429) {
+          const retryBody = await response.text().catch(() => '');
+          let waitSeconds = 10;
+          try {
+            const parsed = JSON.parse(retryBody);
+            if (parsed.detail) {
+              const match = parsed.detail.match(/(\d+)\s*seconds/);
+              if (match) waitSeconds = Math.min(parseInt(match[1], 10), 30);
+            }
+          } catch { /* ignore */ }
+
+          if (attempt < maxRetries) {
+            console.log(`[PostHog] Rate limited, waiting ${waitSeconds}s before retry (attempt ${attempt + 1}/${maxRetries})`);
+            await sleep(waitSeconds * 1000);
+            break; // Break inner loop to retry both URL patterns
+          }
+          console.log(`[PostHog] Rate limited, no retries left`);
+          return { response: null, error: `Rate limited (429)` };
+        }
+
+        const errorText = await response.text().catch(() => 'No error body');
+        console.log(`[PostHog] Failed (${response.status}): ${url} - ${errorText.substring(0, 200)}`);
+      } catch (err) {
+        console.log(`[PostHog] Network error for ${url}:`, err);
       }
-
-      const errorText = await response.text().catch(() => 'No error body');
-      console.log(`[PostHog] Failed (${response.status}): ${url} - ${errorText.substring(0, 200)}`);
-    } catch (err) {
-      console.log(`[PostHog] Network error for ${url}:`, err);
     }
   }
 
@@ -189,7 +218,7 @@ export function parseEncodedSnapshots(items: unknown[]): RRWebEvent[] {
 }
 
 // Fetch rrweb events for a single PostHog session
-async function fetchSessionEvents(
+export async function fetchSessionEvents(
   sessionId: string,
   headers: Record<string, string>,
   host: string,
@@ -215,7 +244,13 @@ async function fetchSessionEvents(
   }
 
   const allSnapshots: unknown[] = [];
-  const blobKeys = sources.map((s: { blob_key: string }) => s.blob_key);
+  const allBlobKeys = sources.map((s: { blob_key: string }) => s.blob_key);
+  // Cap blob keys to avoid rate limiting on very long sessions
+  const MAX_BLOBS = 30;
+  const blobKeys = allBlobKeys.slice(0, MAX_BLOBS);
+  if (allBlobKeys.length > MAX_BLOBS) {
+    console.log(`[Session Events] Capping blob fetches from ${allBlobKeys.length} to ${MAX_BLOBS} for session ${sessionId}`);
+  }
 
   for (const blobKey of blobKeys) {
     const { response: blobRes } = await fetchFromPostHog(
@@ -237,6 +272,11 @@ async function fetchSessionEvents(
       }
     }).filter(Boolean);
     allSnapshots.push(...snapshots);
+
+    // Small delay between blob fetches to avoid rate limiting
+    if (blobKeys.indexOf(blobKey) < blobKeys.length - 1) {
+      await sleep(200);
+    }
   }
 
   return parseEncodedSnapshots(allSnapshots);
