@@ -42,10 +42,10 @@ export function AnalysisTable({ analyses, selectedId, onView, onDelete }: Analys
     };
 
     return (
-        <div className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--card)]">
             <Table>
                 <TableHeader>
-                    <TableRow className="bg-zinc-50 dark:bg-zinc-900/50">
+                    <TableRow className="bg-[var(--muted)]/50">
                         <TableHead className="w-[180px]">File</TableHead>
                         <TableHead className="w-[100px]">Time</TableHead>
                         <TableHead>Summary</TableHead>
@@ -60,13 +60,13 @@ export function AnalysisTable({ analyses, selectedId, onView, onDelete }: Analys
                         return (
                             <TableRow 
                                 key={entry.id}
-                                className={`cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 ${entry.isAnalyzing ? 'opacity-60' : ''} ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                className={`cursor-pointer hover:bg-[var(--muted)]/40 ${entry.isAnalyzing ? 'opacity-60' : ''} ${isSelected ? 'bg-blue-500/10 dark:bg-blue-500/15' : ''}`}
                                 onClick={() => !entry.isAnalyzing && entry.analysis && handleToggleView(entry)}
                             >
                                 <TableCell className="font-medium truncate max-w-[180px]" title={entry.fileName}>
                                     {entry.fileName}
                                 </TableCell>
-                                <TableCell className="text-zinc-500 text-sm">{entry.timestamp}</TableCell>
+                                <TableCell className="text-[var(--muted-foreground)] text-sm">{entry.timestamp}</TableCell>
                                 <TableCell className="max-w-md truncate">
                                     {entry.isAnalyzing ? (
                                         <span className="flex items-center gap-2 text-blue-500">
@@ -122,7 +122,7 @@ export function AnalysisTable({ analyses, selectedId, onView, onDelete }: Analys
                                                     e.stopPropagation();
                                                     onDelete(entry.id);
                                                 }}
-                                                className="text-zinc-400 hover:text-red-500"
+                                                className="text-[var(--muted-foreground)] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>

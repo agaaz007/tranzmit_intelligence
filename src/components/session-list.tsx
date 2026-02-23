@@ -130,21 +130,21 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
 
   if (loading && sessions.length === 0) {
     return (
-      <Card className="p-8 text-center">
-        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
-        <p className="text-sm text-slate-500">Loading sessions...</p>
+      <Card className="p-8 text-center bg-[var(--card)] border-[var(--border)]">
+        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[var(--muted-foreground)]" />
+        <p className="text-sm text-[var(--muted-foreground)]">Loading sessions...</p>
       </Card>
     );
   }
 
   if (sessions.length === 0 && !loading) {
     return (
-      <Card className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-          <PlayCircle className="w-8 h-8 text-slate-400" />
+      <Card className="p-8 text-center bg-[var(--card)] border-[var(--border)]">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--muted)] flex items-center justify-center mx-auto mb-4">
+          <PlayCircle className="w-8 h-8 text-[var(--muted-foreground)]" />
         </div>
-        <h3 className="font-semibold text-slate-900 mb-1">No Sessions Yet</h3>
-        <p className="text-sm text-slate-500 mb-4">
+        <h3 className="font-semibold text-[var(--foreground)] mb-1">No Sessions Yet</h3>
+        <p className="text-sm text-[var(--muted-foreground)] mb-4">
           Upload session recordings or sync from PostHog to get started
         </p>
       </Card>
@@ -196,7 +196,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
           size="sm"
           onClick={fetchSessions}
           disabled={loading}
-          className="gap-1"
+          className="gap-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -204,26 +204,28 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
       </div>
 
       {/* Session Table */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] overflow-hidden">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-[var(--muted)]/50 border-b border-[var(--border)]">
             <tr>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Name</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Source</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Date</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Duration</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Status</th>
-              <th className="text-left text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">UX Rating</th>
-              <th className="text-right text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3">Actions</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Name</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Source</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Date</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Duration</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Status</th>
+              <th className="text-left text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">UX Rating</th>
+              <th className="text-right text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[var(--border)]">
             {sessions.map((session) => (
               <tr
                 key={session.id}
                 onClick={() => loadEventsAndSelect(session)}
-                className={`cursor-pointer hover:bg-slate-50 transition-colors ${
-                  selectedSessionId === session.id ? 'bg-blue-50' : ''
+                className={`cursor-pointer transition-colors ${
+                  selectedSessionId === session.id
+                    ? 'bg-blue-500/10 dark:bg-blue-500/15'
+                    : 'hover:bg-[var(--muted)]/40'
                 }`}
               >
                 <td className="px-4 py-3">
@@ -231,17 +233,17 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                     {loadingEvents === session.id && (
                       <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                     )}
-                    <span className="font-medium text-slate-900 text-sm truncate max-w-[200px]">
+                    <span className="font-medium text-[var(--foreground)] text-sm truncate max-w-[200px]">
                       {session.name}
                     </span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={
-                    session.source === 'posthog' ? 'border-blue-200 text-blue-700' :
-                    session.source === 'mixpanel' ? 'border-orange-200 text-orange-700' :
-                    session.source === 'amplitude' ? 'border-violet-200 text-violet-700' :
-                    'border-emerald-200 text-emerald-700'
+                    session.source === 'posthog' ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                    session.source === 'mixpanel' ? 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5' :
+                    session.source === 'amplitude' ? 'border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/5' :
+                    'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5'
                   }>
                     {session.source === 'posthog' ? (
                       <><Cloud className="w-3 h-3 mr-1" />PostHog</>
@@ -254,36 +256,36 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                     )}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-600">
+                <td className="px-4 py-3 text-sm text-[var(--muted-foreground)]">
                   {formatDate(session.startTime || session.createdAt)}
                 </td>
-                <td className="px-4 py-3 text-sm text-slate-600">
+                <td className="px-4 py-3 text-sm text-[var(--muted-foreground)]">
                   {formatDuration(session.duration)}
                 </td>
                 <td className="px-4 py-3">
                   {session.analysisStatus === 'completed' ? (
-                    <Badge className="bg-green-100 text-green-700 border-0">Analyzed</Badge>
+                    <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Analyzed</Badge>
                   ) : session.analysisStatus === 'analyzing' ? (
-                    <Badge className="bg-blue-100 text-blue-700 border-0">
+                    <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                       <Loader2 className="w-3 h-3 animate-spin mr-1" />
                       Analyzing
                     </Badge>
                   ) : session.analysisStatus === 'failed' ? (
-                    <Badge className="bg-red-100 text-red-700 border-0">Failed</Badge>
+                    <Badge className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">Failed</Badge>
                   ) : (
-                    <Badge className="bg-slate-100 text-slate-600 border-0">Pending</Badge>
+                    <Badge className="bg-[var(--muted)] text-[var(--muted-foreground)] border border-[var(--border)]">Pending</Badge>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {session.analysis?.ux_rating ? (
-                    <span className={`font-semibold ${
-                      session.analysis.ux_rating >= 7 ? 'text-green-600' :
-                      session.analysis.ux_rating >= 4 ? 'text-amber-600' : 'text-red-600'
+                    <span className={`font-semibold text-sm ${
+                      session.analysis.ux_rating >= 7 ? 'text-emerald-600 dark:text-emerald-400' :
+                      session.analysis.ux_rating >= 4 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
                     }`}>
                       {session.analysis.ux_rating}/10
                     </span>
                   ) : (
-                    <span className="text-slate-400">-</span>
+                    <span className="text-[var(--foreground-subtle)]">-</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -293,7 +295,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                         variant="ghost"
                         size="sm"
                         onClick={(e) => handleAnalyze(session.id, e)}
-                        className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="h-8 px-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-500/10"
                       >
                         Analyze
                       </Button>
@@ -302,7 +304,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                       variant="ghost"
                       size="sm"
                       onClick={(e) => handleDelete(session.id, e)}
-                      className="h-8 px-2 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      className="h-8 px-2 text-[var(--muted-foreground)] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -317,7 +319,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-[var(--muted-foreground)]">
             Showing {((page - 1) * limit) + 1}-{Math.min(page * limit, total)} of {total}
           </p>
           <div className="flex items-center gap-2">
@@ -329,7 +331,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-[var(--muted-foreground)]">
               Page {page} of {totalPages}
             </span>
             <Button
