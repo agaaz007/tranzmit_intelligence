@@ -50,47 +50,90 @@ export async function getCurrentUser() {
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) return null;
 
-    // Create user, org, and default project in one transaction
-    const firstName = clerkUser.firstName;
-    const orgName = firstName ? `${firstName}'s Workspace` : 'My Workspace';
-    const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomBytes(3).toString('hex');
-    const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+    // Check if user already exists by email (e.g. created via webhook with different clerkId)
+    const existingByEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingByEmail) {
+      // Update clerkId and re-fetch with memberships
+      user = await prisma.user.update({
+        where: { email },
+        data: {
+          clerkId: userId,
+          firstName: clerkUser.firstName,
+          lastName: clerkUser.lastName,
+          imageUrl: clerkUser.imageUrl,
+        },
+        include: {
+          memberships: {
+            include: {
+              organization: true,
+            },
+          },
+        },
+      });
+      console.log(`[Auth] Linked existing user ${user.email} to clerkId ${userId}`);
+    } else {
+      // Create user, org, and default project in one transaction
+      const firstName = clerkUser.firstName;
+      const orgName = firstName ? `${firstName}'s Workspace` : 'My Workspace';
+      const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomBytes(3).toString('hex');
+      const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
 
-    user = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        email,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        imageUrl: clerkUser.imageUrl,
-        memberships: {
-          create: {
-            role: 'owner',
-            organization: {
+      try {
+        user = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+            imageUrl: clerkUser.imageUrl,
+            memberships: {
               create: {
-                name: orgName,
-                slug,
-                projects: {
+                role: 'owner',
+                organization: {
                   create: {
-                    name: 'Default Project',
-                    apiKey,
+                    name: orgName,
+                    slug,
+                    projects: {
+                      create: {
+                        name: 'Default Project',
+                        apiKey,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      },
-      include: {
-        memberships: {
           include: {
-            organization: true,
+            memberships: {
+              include: {
+                organization: true,
+              },
+            },
           },
-        },
-      },
-    });
-
-    console.log(`[Auth] Auto-created user ${user.email} with org and project`);
+        });
+        console.log(`[Auth] Auto-created user ${user.email} with org and project`);
+      } catch (createError: unknown) {
+        // Race condition: another concurrent request created the user between our check and create.
+        // Re-fetch the user that was just created.
+        if ((createError as { code?: string }).code === 'P2002') {
+          console.log(`[Auth] Race condition detected, re-fetching user ${email}`);
+          user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+              memberships: {
+                include: {
+                  organization: true,
+                },
+              },
+            },
+          });
+          if (!user) throw createError;
+        } else {
+          throw createError;
+        }
+      }
+    }
   }
 
   return user;
