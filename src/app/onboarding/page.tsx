@@ -56,18 +56,18 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-[var(--brand-primary)] flex items-center justify-center shadow-lg">
             <Radio className="w-5 h-5 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-slate-900 text-lg tracking-tight leading-none">
+            <span className="font-semibold text-[var(--foreground)] text-lg tracking-tight leading-none">
               Tranzmit
             </span>
-            <span className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
+            <span className="text-[10px] text-[var(--foreground-subtle)] mt-0.5 flex items-center gap-1">
               <Sparkles className="w-2.5 h-2.5" />
               AI Platform
             </span>
@@ -75,17 +75,17 @@ export default function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900 text-center mb-2">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 shadow-sm">
+          <h1 className="text-2xl font-bold text-[var(--foreground)] text-center mb-2">
             Join your team
           </h1>
-          <p className="text-slate-500 text-center text-sm mb-8">
+          <p className="text-[var(--foreground-subtle)] text-center text-sm mb-8">
             Enter the Organization ID shared by your team admin to access the workspace.
           </p>
 
           <form onSubmit={handleJoin} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Organization ID
               </label>
               <input
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
                   setOrgId(e.target.value);
                   setError('');
                 }}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900 font-mono text-sm"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono text-sm"
                 placeholder="cm1abc2de3fg4hi5jk..."
                 autoFocus
               />
@@ -110,7 +110,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={isJoining}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 font-semibold transition-all"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl hover:shadow-lg hover:shadow-[var(--brand-glow)] disabled:opacity-50 font-semibold transition-all"
             >
               {isJoining ? (
                 <>
@@ -128,9 +128,9 @@ export default function OnboardingPage() {
 
           {/* Demo divider */}
           <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400 font-medium">OR</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-[var(--border)]" />
+            <span className="text-xs text-[var(--foreground-subtle)] font-medium">OR</span>
+            <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
 
           {/* Try Demo button */}
@@ -145,7 +145,7 @@ export default function OnboardingPage() {
               }, 100);
             }}
             disabled={isJoining}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-50 font-medium transition-all border border-slate-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--background-subtle)] text-[var(--foreground-muted)] rounded-xl hover:bg-[var(--muted)] disabled:opacity-50 font-medium transition-all border border-[var(--border)]"
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
             Try Demo (Juno Health Companion)
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
         <div className="text-center mt-6">
           <button
             onClick={handleSkip}
-            className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-sm text-[var(--foreground-subtle)] hover:text-[var(--foreground-muted)] transition-colors"
           >
             Skip — create my own workspace
           </button>

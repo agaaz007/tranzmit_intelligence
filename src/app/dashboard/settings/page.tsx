@@ -203,22 +203,22 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-[var(--background)] p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--brand-primary)] flex items-center justify-center shadow-lg">
             <SettingsIcon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Settings</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-4xl font-bold text-[var(--foreground)] tracking-tight">Settings</h1>
+            <p className="text-[var(--foreground-muted)] mt-1">
               {noProjectExists ? 'Set up your project to get started' : 'Manage your project configuration'}
             </p>
           </div>
@@ -240,16 +240,16 @@ export default function SettingsPage() {
 
         {/* Organization ID */}
         {project?.organizationId && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <Users className="w-6 h-6 text-indigo-600" />
-              <h2 className="text-2xl font-bold text-slate-900">Organization ID</h2>
+              <Users className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">Organization ID</h2>
             </div>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-[var(--foreground-subtle)] mb-4">
               Share this ID with team members so they can join your workspace.
             </p>
             <div className="flex items-center gap-3">
-              <code className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono text-sm select-all">
+              <code className="flex-1 px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl text-[var(--foreground)] font-mono text-sm select-all">
                 {project.organizationId}
               </code>
               <button
@@ -258,7 +258,7 @@ export default function SettingsPage() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm transition-colors"
+                className="flex items-center gap-2 px-4 py-3 bg-[var(--background-subtle)] hover:bg-[var(--muted)] border border-[var(--border)] rounded-xl text-[var(--foreground-muted)] font-medium text-sm transition-colors"
               >
                 {copied ? (
                   <>
@@ -277,10 +277,10 @@ export default function SettingsPage() {
         )}
 
         {/* Project Settings */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <Globe className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Project Settings</h2>
+            <Globe className="w-6 h-6 text-[var(--brand-primary)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">Project Settings</h2>
             {noProjectExists && (
               <span className="ml-auto text-xs bg-amber-100 px-3 py-1 rounded-full font-semibold text-amber-700 border border-amber-300">
                 New Project
@@ -290,14 +290,14 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Project Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)]"
                 placeholder="My Project"
               />
             </div>
@@ -306,12 +306,12 @@ export default function SettingsPage() {
 
         {/* Session Replay Source Toggle */}
         {!noProjectExists && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <Activity className="w-6 h-6 text-indigo-600" />
-              <h2 className="text-2xl font-bold text-slate-900">Session Replay Source</h2>
+              <Activity className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">Session Replay Source</h2>
             </div>
-            <p className="text-sm text-slate-500 mb-5">
+            <p className="text-sm text-[var(--foreground-subtle)] mb-5">
               Choose which analytics platform to use for fetching and syncing session replays. Only sessions from the selected source will be synced.
             </p>
 
@@ -321,22 +321,22 @@ export default function SettingsPage() {
                 onClick={() => handleInputChange('replaySource', 'posthog')}
                 className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   formData.replaySource === 'posthog'
-                    ? 'border-purple-500 bg-purple-50 shadow-md shadow-purple-100'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                    ? 'border-[var(--brand-primary)] bg-[var(--brand-light)] shadow-md shadow-[var(--brand-glow)]'
+                    : 'border-[var(--border)] bg-[var(--background-subtle)] hover:border-[var(--border-hover)]'
                 }`}
               >
                 {formData.replaySource === 'posthog' && (
                   <div className="absolute top-2 right-2">
-                    <Check className="w-4 h-4 text-purple-600" />
+                    <Check className="w-4 h-4 text-[var(--brand-primary)]" />
                   </div>
                 )}
-                <Cloud className={`w-8 h-8 ${formData.replaySource === 'posthog' ? 'text-purple-600' : 'text-slate-400'}`} />
-                <span className={`font-semibold text-sm ${formData.replaySource === 'posthog' ? 'text-purple-900' : 'text-slate-600'}`}>PostHog</span>
-                <span className="text-xs text-slate-500 text-center">Real DOM session recordings</span>
+                <Cloud className={`w-8 h-8 ${formData.replaySource === 'posthog' ? 'text-[var(--brand-primary)]' : 'text-[var(--foreground-subtle)]'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'posthog' ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>PostHog</span>
+                <span className="text-xs text-[var(--foreground-subtle)] text-center">Real DOM session recordings</span>
                 {formData.posthogKey && formData.posthogProjId ? (
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
                 ) : (
-                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                  <span className="text-xs bg-[var(--muted)] text-[var(--foreground-subtle)] px-2 py-0.5 rounded-full font-medium">Not configured</span>
                 )}
               </button>
 
@@ -345,22 +345,22 @@ export default function SettingsPage() {
                 onClick={() => handleInputChange('replaySource', 'mixpanel')}
                 className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   formData.replaySource === 'mixpanel'
-                    ? 'border-orange-500 bg-orange-50 shadow-md shadow-orange-100'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                    ? 'border-[var(--brand-primary)] bg-[var(--brand-light)] shadow-md shadow-[var(--brand-glow)]'
+                    : 'border-[var(--border)] bg-[var(--background-subtle)] hover:border-[var(--border-hover)]'
                 }`}
               >
                 {formData.replaySource === 'mixpanel' && (
                   <div className="absolute top-2 right-2">
-                    <Check className="w-4 h-4 text-orange-600" />
+                    <Check className="w-4 h-4 text-[var(--brand-primary)]" />
                   </div>
                 )}
-                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'mixpanel' ? 'text-orange-600' : 'text-slate-400'}`} />
-                <span className={`font-semibold text-sm ${formData.replaySource === 'mixpanel' ? 'text-orange-900' : 'text-slate-600'}`}>Mixpanel</span>
-                <span className="text-xs text-slate-500 text-center">Event-based activity timeline</span>
+                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'mixpanel' ? 'text-[var(--brand-primary)]' : 'text-[var(--foreground-subtle)]'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'mixpanel' ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>Mixpanel</span>
+                <span className="text-xs text-[var(--foreground-subtle)] text-center">Event-based activity timeline</span>
                 {formData.mixpanelKey && formData.mixpanelProjId ? (
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
                 ) : (
-                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                  <span className="text-xs bg-[var(--muted)] text-[var(--foreground-subtle)] px-2 py-0.5 rounded-full font-medium">Not configured</span>
                 )}
               </button>
 
@@ -369,22 +369,22 @@ export default function SettingsPage() {
                 onClick={() => handleInputChange('replaySource', 'amplitude')}
                 className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                   formData.replaySource === 'amplitude'
-                    ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-100'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                    ? 'border-[var(--brand-primary)] bg-[var(--brand-light)] shadow-md shadow-[var(--brand-glow)]'
+                    : 'border-[var(--border)] bg-[var(--background-subtle)] hover:border-[var(--border-hover)]'
                 }`}
               >
                 {formData.replaySource === 'amplitude' && (
                   <div className="absolute top-2 right-2">
-                    <Check className="w-4 h-4 text-blue-600" />
+                    <Check className="w-4 h-4 text-[var(--brand-primary)]" />
                   </div>
                 )}
-                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'amplitude' ? 'text-blue-600' : 'text-slate-400'}`} />
-                <span className={`font-semibold text-sm ${formData.replaySource === 'amplitude' ? 'text-blue-900' : 'text-slate-600'}`}>Amplitude</span>
-                <span className="text-xs text-slate-500 text-center">Event-based activity timeline</span>
+                <BarChart3 className={`w-8 h-8 ${formData.replaySource === 'amplitude' ? 'text-[var(--brand-primary)]' : 'text-[var(--foreground-subtle)]'}`} />
+                <span className={`font-semibold text-sm ${formData.replaySource === 'amplitude' ? 'text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>Amplitude</span>
+                <span className="text-xs text-[var(--foreground-subtle)] text-center">Event-based activity timeline</span>
                 {formData.amplitudeKey && formData.amplitudeProjId ? (
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Configured</span>
                 ) : (
-                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Not configured</span>
+                  <span className="text-xs bg-[var(--muted)] text-[var(--foreground-subtle)] px-2 py-0.5 rounded-full font-medium">Not configured</span>
                 )}
               </button>
             </div>
@@ -398,61 +398,61 @@ export default function SettingsPage() {
         )}
 
         {/* PostHog Integration */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <Key className="w-6 h-6 text-purple-600" />
-            <h2 className="text-2xl font-bold text-slate-900">PostHog Integration</h2>
+            <Key className="w-6 h-6 text-[var(--brand-primary)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">PostHog Integration</h2>
           </div>
 
-          <p className="text-sm text-slate-500 mb-5 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-[var(--foreground-subtle)] mb-5 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
             Configure PostHog to sync session recordings. You only need <strong>either</strong> PostHog or Mixpanel, not both.
           </p>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 API Key
               </label>
               <input
                 type="password"
                 value={formData.posthogKey}
                 onChange={(e) => handleInputChange('posthogKey', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="phx_••••••••••••••••••••"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Your PostHog Personal API Key (starts with phx_)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Project ID
               </label>
               <input
                 type="text"
                 value={formData.posthogProjId}
                 onChange={(e) => handleInputChange('posthogProjId', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="12345"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Your PostHog Project ID (found in PostHog project settings)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Host URL
               </label>
               <input
                 type="text"
                 value={formData.posthogHost}
                 onChange={(e) => handleInputChange('posthogHost', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="https://us.posthog.com"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 PostHog instance URL (default: https://us.posthog.com)
               </p>
             </div>
@@ -460,77 +460,77 @@ export default function SettingsPage() {
         </div>
 
         {/* Mixpanel Integration */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <Key className="w-6 h-6 text-orange-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Mixpanel Integration</h2>
+            <Key className="w-6 h-6 text-[var(--brand-primary)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">Mixpanel Integration</h2>
           </div>
 
-          <p className="text-sm text-slate-500 mb-5 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-[var(--foreground-subtle)] mb-5 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
             Configure Mixpanel to sync user sessions. You only need <strong>either</strong> PostHog or Mixpanel, not both.
           </p>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 API Secret <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
                 value={formData.mixpanelKey}
                 onChange={(e) => handleInputChange('mixpanelKey', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="Your Mixpanel API Secret"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Found in Mixpanel → Project Settings → Project Details → API Secret
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Project ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.mixpanelProjId}
                 onChange={(e) => handleInputChange('mixpanelProjId', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="2195XXX"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Numeric Project ID (e.g., 2195XXX). Found in Mixpanel → Settings → Project Settings → Overview. <strong>Not</strong> the Project Token.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Service Account Secret
               </label>
               <input
                 type="password"
                 value={formData.mixpanelSecret}
                 onChange={(e) => handleInputChange('mixpanelSecret', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="Optional - only for Service Account auth"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Only needed if using Service Account instead of API Secret
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Host URL
               </label>
               <input
                 type="text"
                 value={formData.mixpanelHost}
                 onChange={(e) => handleInputChange('mixpanelHost', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="https://mixpanel.com"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Use https://eu.mixpanel.com for EU data residency
               </p>
             </div>
@@ -539,16 +539,16 @@ export default function SettingsPage() {
 
         {/* Mixpanel Session Replay Snippet */}
         {project && (formData.mixpanelKey || formData.mixpanelProjId) && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <Code className="w-6 h-6 text-orange-600" />
-              <h2 className="text-2xl font-bold text-slate-900">Real Session Replay</h2>
-              <span className="ml-auto text-xs bg-orange-100 px-3 py-1 rounded-full font-semibold text-orange-700 border border-orange-300">
+              <Code className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">Real Session Replay</h2>
+              <span className="ml-auto text-xs bg-[var(--background-subtle)] px-3 py-1 rounded-full font-semibold text-[var(--foreground-subtle)] border border-[var(--border)]">
                 Optional
               </span>
             </div>
 
-            <p className="text-sm text-slate-500 mb-4 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+            <p className="text-sm text-[var(--foreground-subtle)] mb-4 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
               Without this snippet, Mixpanel sessions show a <strong>timeline reconstruction</strong> from analytics events.
               Add this snippet to your site for <strong>real DOM session replays</strong> powered by rrweb.
             </p>
@@ -588,68 +588,68 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 mt-3">
+            <p className="text-xs text-[var(--foreground-subtle)] mt-3">
               Add this snippet to your site&apos;s {'<head>'} or before {'</body>'}. Make sure the Mixpanel SDK is loaded first so session IDs are correlated.
             </p>
           </div>
         )}
 
         {/* Amplitude Integration */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <Key className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Amplitude Integration</h2>
+            <Key className="w-6 h-6 text-[var(--brand-primary)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">Amplitude Integration</h2>
           </div>
 
-          <p className="text-sm text-slate-500 mb-5 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-[var(--foreground-subtle)] mb-5 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
             Configure Amplitude to sync session events. You only need <strong>one</strong> analytics integration (PostHog, Mixpanel, or Amplitude).
           </p>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 API Key <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
                 value={formData.amplitudeKey}
                 onChange={(e) => handleInputChange('amplitudeKey', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="Your Amplitude API Key"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Found in Amplitude → Settings → Projects → Your Project → General
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Secret Key <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
                 value={formData.amplitudeSecret}
                 onChange={(e) => handleInputChange('amplitudeSecret', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="Your Amplitude Secret Key"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Found in Amplitude → Settings → Projects → Your Project → General (next to API Key)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Project ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.amplitudeProjId}
                 onChange={(e) => handleInputChange('amplitudeProjId', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="123456"
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Numeric Project ID found in Amplitude → Settings → Projects → Your Project
               </p>
             </div>
@@ -657,28 +657,28 @@ export default function SettingsPage() {
         </div>
 
         {/* ElevenLabs Integration */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <Bot className="w-6 h-6 text-violet-600" />
-            <h2 className="text-2xl font-bold text-slate-900">ElevenLabs Integration</h2>
-            <span className="ml-auto text-xs bg-violet-100 px-3 py-1 rounded-full font-semibold text-violet-700 border border-violet-300">
+            <Bot className="w-6 h-6 text-[var(--brand-primary)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">ElevenLabs Integration</h2>
+            <span className="ml-auto text-xs bg-[var(--background-subtle)] px-3 py-1 rounded-full font-semibold text-[var(--foreground-subtle)] border border-[var(--border)]">
               Optional
             </span>
           </div>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
                 Agent ID
               </label>
               <input
                 type="text"
                 value={formData.elevenlabsAgentId}
                 onChange={(e) => handleInputChange('elevenlabsAgentId', e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
                 placeholder="agent_abc123..."
               />
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2">
                 Your ElevenLabs Conversational AI Agent ID. Used by the Qualitative tab to sync conversations.
               </p>
             </div>
@@ -686,25 +686,25 @@ export default function SettingsPage() {
         </div>
 
         {/* Notification Settings (Placeholder) */}
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-6 shadow-sm opacity-60">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm opacity-60">
           <div className="flex items-center gap-3 mb-4">
-            <Bell className="w-6 h-6 text-amber-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Notifications</h2>
-            <span className="ml-auto text-xs bg-white px-3 py-1 rounded-full font-semibold text-amber-700 border border-amber-300">Coming Soon</span>
+            <Bell className="w-6 h-6 text-[var(--foreground-subtle)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">Notifications</h2>
+            <span className="ml-auto text-xs bg-[var(--background-subtle)] px-3 py-1 rounded-full font-semibold text-[var(--foreground-subtle)] border border-[var(--border)]">Coming Soon</span>
           </div>
-          <p className="text-sm text-slate-700 leading-relaxed">
+          <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
             Configure email and webhook notifications for friction points, completed interviews, and insights.
           </p>
         </div>
 
         {/* Security Settings (Placeholder) */}
-        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 shadow-sm opacity-60">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm opacity-60">
           <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-6 h-6 text-emerald-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Security</h2>
-            <span className="ml-auto text-xs bg-white px-3 py-1 rounded-full font-semibold text-emerald-700 border border-emerald-300">Coming Soon</span>
+            <Shield className="w-6 h-6 text-[var(--foreground-subtle)]" />
+            <h2 className="text-2xl font-bold text-[var(--foreground)]">Security</h2>
+            <span className="ml-auto text-xs bg-[var(--background-subtle)] px-3 py-1 rounded-full font-semibold text-[var(--foreground-subtle)] border border-[var(--border)]">Coming Soon</span>
           </div>
-          <p className="text-sm text-slate-700 leading-relaxed">
+          <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
             Manage API keys, access tokens, and team member permissions.
           </p>
         </div>
@@ -718,7 +718,7 @@ export default function SettingsPage() {
                 (window as any).ExitButton.start();
               }
             }}
-            className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-2xl hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-[var(--card)] border border-[var(--border)] text-[var(--foreground-muted)] rounded-2xl hover:bg-[var(--muted)] hover:border-[var(--border-hover)] font-semibold transition-all"
           >
             <X className="w-5 h-5" />
             Cancel
@@ -745,7 +745,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 font-semibold transition-all"
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-2xl hover:shadow-lg hover:shadow-[var(--brand-glow)] disabled:opacity-50 font-semibold transition-all"
             >
               {isSaving ? (
                 <>
