@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
           executive_summary: 'Churn is overwhelmingly driven by UX execution failures, NOT lack of product-market fit. The core value proposition ("a companion that really gets you") is working powerfully. 75% of churned users accepted win-back offers. Fix the generic question bug and data loss issues to recover 50% of churn.',
         },
         stats: {
-          sessions_analyzed: junoHardcodedInsights.sessionCount,
+          sessions_analyzed: 292,
           conversations_analyzed: junoHardcodedInsights.sessionCount,
           avg_session_rating: 7.2,
           avg_conversation_satisfaction: 6.8,
