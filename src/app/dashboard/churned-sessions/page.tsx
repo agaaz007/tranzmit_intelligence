@@ -88,6 +88,7 @@ export default function ChurnedSessionsPage() {
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [lastSynthesizedAt, setLastSynthesizedAt] = useState<Date | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const synthesizeChurnedInsights = useCallback(async () => {
     const projectId = localStorage.getItem('currentProjectId');
@@ -160,15 +161,23 @@ export default function ChurnedSessionsPage() {
     (b) => b.status === 'processing' || b.status === 'pending'
   );
 
-  // Poll for updates while any batch is processing
+  // Poll for updates while any batch is processing or analysis is running
   useEffect(() => {
-    if (!hasActiveBatch) return;
+    if (!hasActiveBatch && !isAnalyzing) return;
     const interval = setInterval(() => {
       loadBatches();
       loadSessions();
     }, 5000);
     return () => clearInterval(interval);
-  }, [hasActiveBatch, loadBatches, loadSessions]);
+  }, [hasActiveBatch, isAnalyzing, loadBatches, loadSessions]);
+
+  // Detect when analysis finishes (no more pending sessions)
+  const pendingAnalysisCount = sessions.filter(s => s.analysisStatus === 'pending').length;
+  useEffect(() => {
+    if (isAnalyzing && pendingAnalysisCount === 0) {
+      setIsAnalyzing(false);
+    }
+  }, [isAnalyzing, pendingAnalysisCount]);
 
   const handleUploadComplete = async (batchId: string) => {
     setShowUploadModal(false);
@@ -192,6 +201,23 @@ export default function ChurnedSessionsPage() {
     } catch (err) {
       console.error('Failed to stop batch:', err);
     }
+  };
+
+  const handleRunAnalysis = async () => {
+    const projectId = localStorage.getItem('currentProjectId');
+    if (!projectId || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    try {
+      await fetch('/api/churned-sessions/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+    } catch (err) {
+      console.error('Failed to trigger analysis:', err);
+    }
+    // Don't setIsAnalyzing(false) here — let polling detect when sessions flip to analyzed
   };
 
   const handleResumeBatch = async (batchId: string) => {
@@ -319,6 +345,25 @@ export default function ChurnedSessionsPage() {
               {sessions.filter((s) => s.analysisStatus === 'completed').length}
             </div>
             <div className="text-sm text-[var(--foreground-muted)]">Analyzed</div>
+            {pendingAnalysisCount > 0 && (
+              <button
+                onClick={handleRunAnalysis}
+                disabled={isAnalyzing}
+                className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium bg-[var(--brand-primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <PlayCircle className="w-3 h-3" />
+                    Analyze {pendingAnalysisCount} pending
+                  </>
+                )}
+              </button>
+            )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card p-4">
             <div className="text-2xl font-bold text-purple-500 dark:text-purple-400">
