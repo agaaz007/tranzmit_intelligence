@@ -390,13 +390,16 @@ model ChurnedSessionBatch {
   emailsFound       Int      @default(0)
   emailsNotFound    Int      @default(0)
   sessionsImported  Int      @default(0)
-  status            String   @default("pending") // pending|processing|completed|failed
+  status            String   @default("pending") // pending|processing|completed|failed|paused
   emailResults      String?  @db.Text // JSON: [{email, status, recordingCount, personName}]
   error             String?
+  rateLimitedUntil  DateTime?  // Don't retry until this time
+  lastProcessedAt   DateTime?  // For stale batch detection by cron
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@index([projectId])
+  @@index([status])
 }
 
 // Conversations from ElevenLabs auto-fetch or manual transcript upload

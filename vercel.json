@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-chunks",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/process-churned-batches",
+      "schedule": "*/2 * * * *"
+    }
+  ]
+}

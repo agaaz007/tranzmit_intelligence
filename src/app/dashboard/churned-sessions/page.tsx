@@ -18,6 +18,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   PlayCircle,
+  Pause,
+  Play,
+  Timer,
 } from 'lucide-react';
 import { IssuesPanel } from '@/components/issues-panel';
 import type { SynthesizedInsightData } from '@/types/session';
@@ -40,6 +43,7 @@ interface Batch {
   status: string;
   emailResults: string | null;
   error: string | null;
+  rateLimitedUntil: string | null;
   createdAt: string;
 }
 
@@ -78,14 +82,6 @@ export default function ChurnedSessionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<ChurnedSession | null>(null);
-  const [processingBatchId, setProcessingBatchId] = useState<string | null>(null);
-  const [processProgress, setProcessProgress] = useState<{
-    processedEmails: number;
-    totalEmails: number;
-    emailsFound: number;
-    sessionsImported: number;
-    status: string;
-  } | null>(null);
   const [page, setPage] = useState(1);
   const [filterBatchId, setFilterBatchId] = useState<string | null>(null);
   const [churnedInsights, setChurnedInsights] = useState<SynthesizedInsightData | null>(null);
@@ -159,43 +155,55 @@ export default function ChurnedSessionsPage() {
     }
   }, [sessions, churnedInsights, isSynthesizing, isLoading, synthesizeChurnedInsights]);
 
+  // Check if any batch is actively processing
+  const hasActiveBatch = batches.some(
+    (b) => b.status === 'processing' || b.status === 'pending'
+  );
+
+  // Poll for updates while any batch is processing
+  useEffect(() => {
+    if (!hasActiveBatch) return;
+    const interval = setInterval(() => {
+      loadBatches();
+      loadSessions();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [hasActiveBatch, loadBatches, loadSessions]);
+
   const handleUploadComplete = async (batchId: string) => {
     setShowUploadModal(false);
-    setProcessingBatchId(batchId);
     await loadBatches();
-    await processNextBatch(batchId);
+    // Fire-and-forget: trigger backend processing, it continues via after() + cron
+    fetch('/api/churned-sessions/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batchId }),
+    }).catch((err) => console.error('Failed to trigger processing:', err));
   };
 
-  const processNextBatch = async (batchId: string) => {
+  const handleStopBatch = async (batchId: string) => {
     try {
-      const res = await fetch('/api/churned-sessions/process', {
+      await fetch('/api/churned-sessions/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ batchId }),
       });
-
-      const data = await res.json();
-      setProcessProgress({
-        processedEmails: data.processedEmails,
-        totalEmails: data.totalEmails,
-        emailsFound: data.emailsFound,
-        sessionsImported: data.sessionsImported,
-        status: data.status,
-      });
-
-      if (data.hasMore) {
-        // Continue processing
-        setTimeout(() => processNextBatch(batchId), 500);
-      } else {
-        // Done processing
-        setProcessingBatchId(null);
-        await loadBatches();
-        await loadSessions();
-      }
+      await loadBatches();
     } catch (err) {
-      console.error('Processing error:', err);
-      setProcessingBatchId(null);
-      setProcessProgress(null);
+      console.error('Failed to stop batch:', err);
+    }
+  };
+
+  const handleResumeBatch = async (batchId: string) => {
+    try {
+      await fetch('/api/churned-sessions/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchId }),
+      });
+      await loadBatches();
+    } catch (err) {
+      console.error('Failed to resume batch:', err);
     }
   };
 
@@ -231,36 +239,56 @@ export default function ChurnedSessionsPage() {
         </button>
       </div>
 
-      {/* Processing Progress Banner */}
-      {processingBatchId && processProgress && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card p-4 mb-6 border-l-4 border-l-[var(--brand-primary)]"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-primary)]" />
-              <span className="font-medium text-[var(--foreground)]">Processing churned users...</span>
+      {/* Processing Progress Banners */}
+      {batches
+        .filter((b) => b.status === 'processing' || b.status === 'pending')
+        .map((batch) => (
+          <motion.div
+            key={batch.id}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card p-4 mb-6 border-l-4 border-l-[var(--brand-primary)]"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-primary)]" />
+                <span className="font-medium text-[var(--foreground)]">
+                  Processing {batch.fileName || 'churned users'}...
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[var(--foreground-muted)]">
+                  {batch.processedEmails} / {batch.totalEmails} emails
+                </span>
+                <button
+                  onClick={() => handleStopBatch(batch.id)}
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--muted)] hover:bg-[var(--border)] rounded-lg text-[var(--foreground-muted)] transition-colors"
+                >
+                  <Pause className="w-3 h-3" />
+                  Stop
+                </button>
+              </div>
             </div>
-            <span className="text-sm text-[var(--foreground-muted)]">
-              {processProgress.processedEmails} / {processProgress.totalEmails} emails
-            </span>
-          </div>
-          <div className="w-full h-2 bg-[var(--muted)] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--brand-primary)] transition-all duration-300"
-              style={{
-                width: `${(processProgress.processedEmails / processProgress.totalEmails) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-[var(--foreground-muted)]">
-            <span>{processProgress.emailsFound} users found in PostHog</span>
-            <span>{processProgress.sessionsImported} sessions imported</span>
-          </div>
-        </motion.div>
-      )}
+            <div className="w-full h-2 bg-[var(--muted)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--brand-primary)] transition-all duration-300"
+                style={{
+                  width: `${batch.totalEmails > 0 ? (batch.processedEmails / batch.totalEmails) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-4 mt-2 text-xs text-[var(--foreground-muted)]">
+              <span>{batch.emailsFound} users found in PostHog</span>
+              <span>{batch.sessionsImported} sessions imported</span>
+              {batch.rateLimitedUntil && new Date(batch.rateLimitedUntil) > new Date() && (
+                <span className="flex items-center gap-1 text-yellow-500">
+                  <Timer className="w-3 h-3" />
+                  Rate limited — will resume automatically
+                </span>
+              )}
+            </div>
+          </motion.div>
+        ))}
 
       {/* Issues Overview Panel */}
       <IssuesPanel
@@ -326,17 +354,33 @@ export default function ChurnedSessionsPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       batch.status === 'completed' ? 'bg-[var(--success-bg)] text-[var(--success)]' :
                       batch.status === 'processing' ? 'bg-[var(--info-bg)] text-[var(--info)]' :
+                      batch.status === 'paused' ? 'bg-yellow-500/15 text-yellow-500' :
                       batch.status === 'failed' ? 'bg-[var(--error-bg)] text-[var(--error)]' :
                       'bg-[var(--muted)] text-[var(--muted-foreground)]'
                     }`}>
                       {batch.status}
                     </span>
-                    {(batch.status === 'completed' || batch.status === 'failed') && !processingBatchId && (
+                    {batch.status === 'processing' && (
                       <button
-                        onClick={() => {
-                          setProcessingBatchId(batch.id);
-                          processNextBatch(batch.id);
-                        }}
+                        onClick={() => handleStopBatch(batch.id)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--muted)] hover:bg-[var(--border)] rounded-lg text-[var(--foreground-muted)] transition-colors"
+                      >
+                        <Pause className="w-3 h-3" />
+                        Stop
+                      </button>
+                    )}
+                    {(batch.status === 'paused' || batch.status === 'failed') && (
+                      <button
+                        onClick={() => handleResumeBatch(batch.id)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--muted)] hover:bg-[var(--border)] rounded-lg text-[var(--foreground-muted)] transition-colors"
+                      >
+                        <Play className="w-3 h-3" />
+                        Resume
+                      </button>
+                    )}
+                    {batch.status === 'completed' && (
+                      <button
+                        onClick={() => handleResumeBatch(batch.id)}
                         className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--muted)] hover:bg-[var(--border)] rounded-lg text-[var(--foreground-muted)] transition-colors"
                       >
                         <RefreshCw className="w-3 h-3" />
@@ -876,6 +920,7 @@ function BatchEmailResults({ emailResults }: { emailResults: EmailResult[] }) {
   const found = emailResults.filter((r) => r.status === 'found');
   const notFound = emailResults.filter((r) => r.status === 'not_found');
   const pending = emailResults.filter((r) => r.status === 'pending');
+  const rateLimited = emailResults.filter((r) => r.status === 'rate_limited');
   const displayResults = expanded ? emailResults : emailResults.slice(0, 5);
 
   return (
@@ -885,7 +930,7 @@ function BatchEmailResults({ emailResults }: { emailResults: EmailResult[] }) {
         className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-2 flex items-center gap-1"
       >
         <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
-        Per-email results ({found.length} found, {notFound.length} not found{pending.length > 0 ? `, ${pending.length} pending` : ''})
+        Per-email results ({found.length} found, {notFound.length} not found{pending.length > 0 ? `, ${pending.length} pending` : ''}{rateLimited.length > 0 ? `, ${rateLimited.length} waiting` : ''})
       </button>
       {expanded && (
         <div className="max-h-60 overflow-y-auto space-y-1">
@@ -900,10 +945,11 @@ function BatchEmailResults({ emailResults }: { emailResults: EmailResult[] }) {
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                   r.status === 'found' ? 'bg-emerald-500/15 text-emerald-500' :
                   r.status === 'not_found' ? 'bg-[var(--muted)] text-[var(--foreground-subtle)]' :
+                  r.status === 'rate_limited' ? 'bg-yellow-500/15 text-yellow-500' :
                   r.status === 'error' ? 'bg-red-500/15 text-red-500' :
                   'bg-[var(--muted)] text-[var(--foreground-muted)]'
                 }`}>
-                  {r.status === 'not_found' ? 'not found' : r.status}
+                  {r.status === 'not_found' ? 'not found' : r.status === 'rate_limited' ? 'waiting' : r.status}
                 </span>
               </div>
             </div>

@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { findPersonByEmail, getRecordingsForPerson } from '@/lib/posthog-person-lookup';
-import { fetchSessionEvents } from '@/lib/session-sync';
-import { analyzeSession } from '@/lib/session-analysis';
-import { synthesizeInsightsWithSessionLinkage } from '@/lib/session-synthesize';
+import {
+  processNextEmails,
+  analyzePendingSessions,
+  runSynthesis,
+} from '@/lib/churned-batch-processor';
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-const BATCH_SIZE = 3; // Process 3 emails per call to respect PostHog rate limits
-
-interface EmailResult {
-  email: string;
-  status: string;
-  recordingCount: number;
-  personName: string | null;
-}
-
+/**
+ * POST /api/churned-sessions/process
+ *
+ * Triggers background processing for a churned session batch.
+ * Returns immediately with batch status; actual processing runs via after().
+ *
+ * Also supports resume: if a batch is paused, calling this will resume it.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { batchId } = await request.json();
@@ -33,7 +30,6 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             posthogKey: true,
-            posthogHost: true,
             posthogProjId: true,
           },
         },
@@ -44,221 +40,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
     }
 
-    const project = batch.project;
-    if (!project.posthogKey || !project.posthogProjId) {
+    if (!batch.project.posthogKey || !batch.project.posthogProjId) {
       return NextResponse.json(
         { error: 'PostHog API key or Project ID not configured' },
         { status: 400 }
       );
     }
 
-    const host = (project.posthogHost || 'https://us.posthog.com').replace(/\/$/, '');
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${project.posthogKey}`,
-      'Content-Type': 'application/json',
-    };
-
-    // Parse email results
-    let emailResults: EmailResult[] = [];
-    try {
-      emailResults = JSON.parse(batch.emailResults || '[]');
-    } catch {
-      emailResults = [];
-    }
-
-    // Find unprocessed emails
-    const pendingEmails = emailResults.filter((r) => r.status === 'pending');
-    const emailsToProcess = pendingEmails.slice(0, BATCH_SIZE);
-
-    if (emailsToProcess.length === 0) {
-      // All done - run synthesis
-      if (batch.status !== 'completed') {
-        try {
-          await synthesizeInsightsWithSessionLinkage(project.id);
-        } catch (err) {
-          console.error('[ChurnedSessions] Synthesis failed:', err);
-        }
-
-        await prisma.churnedSessionBatch.update({
-          where: { id: batchId },
-          data: { status: 'completed' },
-        });
-      }
-
-      return NextResponse.json({
-        status: 'completed',
-        processedEmails: batch.totalEmails,
-        totalEmails: batch.totalEmails,
-        emailsFound: batch.emailsFound,
-        emailsNotFound: batch.emailsNotFound,
-        sessionsImported: batch.sessionsImported,
-        hasMore: false,
-      });
-    }
-
-    // Mark as processing
-    if (batch.status === 'pending') {
+    // If batch was paused, resume it
+    if (batch.status === 'paused') {
       await prisma.churnedSessionBatch.update({
         where: { id: batchId },
         data: { status: 'processing' },
       });
     }
 
-    let emailsFoundDelta = 0;
-    let emailsNotFoundDelta = 0;
-    let sessionsImportedDelta = 0;
-
-    for (const emailEntry of emailsToProcess) {
-      const { email } = emailEntry;
-      console.log(`[ChurnedSessions] Processing email: ${email}`);
-
-      try {
-        // 1. Find person by email
-        const person = await findPersonByEmail(email, headers, host, project.posthogProjId!);
-
-        if (!person) {
-          emailEntry.status = 'not_found';
-          emailsNotFoundDelta++;
-          console.log(`[ChurnedSessions] Person not found: ${email}`);
-          continue;
-        }
-
-        emailEntry.personName = person.name;
-        emailEntry.status = 'found';
-        emailsFoundDelta++;
-
-        // 2. Get recordings for this person
-        const recordings = await getRecordingsForPerson(
-          person.personUuid,
-          headers,
-          host,
-          project.posthogProjId!,
-          2 // limit to 2 recordings per person to avoid rate limits
-        );
-
-        if (recordings.length === 0) {
-          emailEntry.recordingCount = 0;
-          console.log(`[ChurnedSessions] No recordings for: ${email}`);
-          continue;
-        }
-
-        emailEntry.recordingCount = recordings.length;
-
-        // 3. For each recording, fetch events and create session
-        for (let ri = 0; ri < recordings.length; ri++) {
-          const recording = recordings[ri];
-          // Delay between recordings to respect rate limits
-          if (ri > 0) await sleep(2000);
-          try {
-            // Check if session already exists
-            const existing = await prisma.session.findUnique({
-              where: {
-                projectId_posthogSessionId: {
-                  projectId: project.id,
-                  posthogSessionId: recording.id,
-                },
-              },
-              select: { id: true },
-            });
-
-            if (existing) {
-              console.log(`[ChurnedSessions] Session already exists: ${recording.id}`);
-              continue;
-            }
-
-            // Fetch rrweb events
-            const events = await fetchSessionEvents(
-              recording.id,
-              headers,
-              host,
-              project.posthogProjId!
-            );
-
-            if (events.length === 0) {
-              console.log(`[ChurnedSessions] No events for recording: ${recording.id}`);
-              continue;
-            }
-
-            // Create session with source='churned'
-            const sessionName = `Churned: ${email} - ${new Date(recording.start_time).toLocaleDateString()} ${new Date(recording.start_time).toLocaleTimeString()}`;
-
-            const session = await prisma.session.create({
-              data: {
-                projectId: project.id,
-                source: 'churned',
-                posthogSessionId: recording.id,
-                name: sessionName,
-                distinctId: recording.distinct_id,
-                startTime: new Date(recording.start_time),
-                endTime: new Date(recording.end_time),
-                duration: Math.round(recording.recording_duration),
-                events: JSON.stringify(events),
-                eventCount: events.length,
-                analysisStatus: 'pending',
-                metadata: JSON.stringify({
-                  batchId,
-                  email,
-                  personName: person.name,
-                  clickCount: recording.click_count,
-                  keypressCount: recording.keypress_count,
-                  activeSeconds: recording.active_seconds,
-                }),
-              },
-            });
-
-            sessionsImportedDelta++;
-
-            // 4. Run analysis on this session
-            try {
-              await analyzeSession(session.id);
-              console.log(`[ChurnedSessions] Analyzed session: ${session.id}`);
-            } catch (err) {
-              console.error(`[ChurnedSessions] Analysis failed for session ${session.id}:`, err);
-            }
-          } catch (err) {
-            console.error(`[ChurnedSessions] Failed to import recording ${recording.id}:`, err);
-          }
-        }
-      } catch (err) {
-        console.error(`[ChurnedSessions] Error processing email ${email}:`, err);
-        emailEntry.status = 'error';
-      }
+    // If already completed, just return status
+    if (batch.status === 'completed') {
+      return NextResponse.json({
+        status: 'completed',
+        processedEmails: batch.processedEmails,
+        totalEmails: batch.totalEmails,
+        emailsFound: batch.emailsFound,
+        emailsNotFound: batch.emailsNotFound,
+        sessionsImported: batch.sessionsImported,
+      });
     }
 
-    // Update batch with progress
-    const processedCount = emailResults.filter((r) => r.status !== 'pending').length;
+    const projectId = batch.project.id;
 
-    await prisma.churnedSessionBatch.update({
-      where: { id: batchId },
-      data: {
-        processedEmails: processedCount,
-        emailsFound: batch.emailsFound + emailsFoundDelta,
-        emailsNotFound: batch.emailsNotFound + emailsNotFoundDelta,
-        sessionsImported: batch.sessionsImported + sessionsImportedDelta,
-        emailResults: JSON.stringify(emailResults),
-        status: processedCount >= batch.totalEmails ? 'completed' : 'processing',
-      },
+    // Kick off background processing after response is sent
+    after(async () => {
+      try {
+        console.log(`[ProcessRoute] Starting background processing for batch ${batchId}`);
+
+        // Import phase: process emails until done, rate-limited, or time limit
+        const startTime = Date.now();
+        const TIME_LIMIT_MS = 50_000; // 50s safety margin for Vercel function timeout
+
+        let result = await processNextEmails(batchId);
+
+        while (result.hasMore && !result.rateLimitedUntil) {
+          if (Date.now() - startTime > TIME_LIMIT_MS) {
+            console.log(`[ProcessRoute] Approaching time limit, stopping. Cron will continue.`);
+            break;
+          }
+          result = await processNextEmails(batchId);
+        }
+
+        // Analysis phase: analyze any pending sessions
+        await analyzePendingSessions(projectId);
+
+        // Synthesis: run if batch completed
+        if (result.batchCompleted) {
+          await runSynthesis(projectId);
+        }
+
+        console.log(`[ProcessRoute] Background processing done for batch ${batchId}`);
+      } catch (err) {
+        console.error(`[ProcessRoute] Background processing error:`, err);
+      }
     });
 
-    const hasMore = processedCount < batch.totalEmails;
-
-    // If all done, run synthesis
-    if (!hasMore) {
-      try {
-        await synthesizeInsightsWithSessionLinkage(project.id);
-      } catch (err) {
-        console.error('[ChurnedSessions] Synthesis failed:', err);
-      }
-    }
-
+    // Return immediately with current batch status
     return NextResponse.json({
-      status: hasMore ? 'processing' : 'completed',
-      processedEmails: processedCount,
+      status: batch.status === 'pending' ? 'started' : batch.status,
+      processedEmails: batch.processedEmails,
       totalEmails: batch.totalEmails,
-      emailsFound: batch.emailsFound + emailsFoundDelta,
-      emailsNotFound: batch.emailsNotFound + emailsNotFoundDelta,
-      sessionsImported: batch.sessionsImported + sessionsImportedDelta,
-      hasMore,
+      emailsFound: batch.emailsFound,
+      emailsNotFound: batch.emailsNotFound,
+      sessionsImported: batch.sessionsImported,
     });
   } catch (error) {
     console.error('Churned session process error:', error);
