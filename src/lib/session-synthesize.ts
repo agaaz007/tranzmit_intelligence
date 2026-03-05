@@ -13,6 +13,10 @@ const SynthesizedInsightsSchema = z.object({
     severity: z.enum(["critical", "high", "medium"]).describe("Severity level"),
     recommendation: z.string().describe("Actionable recommendation to fix this issue"),
     sessionIds: z.array(z.string()).describe("The exact session IDs from the friction points that relate to this issue. Only use IDs from the provided data."),
+    affected_archetypes: z.array(z.object({
+      archetypeId: z.string(),
+      archetypeName: z.string(),
+    })).optional().describe("Churn archetypes most affected by this issue, if archetype data is available"),
   })).describe("Top 3-5 most critical and common issues, prioritized by impact"),
 
   pattern_summary: z.string().describe("2-3 sentence summary of the overall UX patterns observed across all sessions"),

@@ -22,6 +22,12 @@ interface ProjectSettings {
   amplitudeProjId: string;
   elevenlabsAgentId: string;
   replaySource: string | null;
+  sentryDsn: string;
+  sentryAuthToken: string;
+  sentryOrgSlug: string;
+  sentryProjectSlug: string;
+  userTypeProperty: string;
+  userTypePaidValues: string;
 }
 
 export default function SettingsPage() {
@@ -50,6 +56,12 @@ export default function SettingsPage() {
     amplitudeProjId: '',
     elevenlabsAgentId: '',
     replaySource: '',
+    sentryDsn: '',
+    sentryAuthToken: '',
+    sentryOrgSlug: '',
+    sentryProjectSlug: '',
+    userTypeProperty: '',
+    userTypePaidValues: '',
   });
 
   useEffect(() => {
@@ -111,6 +123,12 @@ export default function SettingsPage() {
           amplitudeProjId: data.project.amplitudeProjId || '',
           elevenlabsAgentId: data.project.elevenlabsAgentId || '',
           replaySource: data.project.replaySource || '',
+          sentryDsn: data.project.sentryDsn || '',
+          sentryAuthToken: data.project.sentryAuthToken || '',
+          sentryOrgSlug: data.project.sentryOrgSlug || '',
+          sentryProjectSlug: data.project.sentryProjectSlug || '',
+          userTypeProperty: data.project.userTypeProperty || '',
+          userTypePaidValues: data.project.userTypePaidValues || '',
         });
         setNoProjectExists(false);
       } else {
@@ -684,6 +702,116 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* User Classification */}
+        {!noProjectExists && (
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <Users className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">User Classification</h2>
+            </div>
+
+            <p className="text-sm text-[var(--foreground-subtle)] mb-5 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
+              Configure how Tranzmit identifies paid vs trial users from your analytics data. This powers archetype generation and churn analysis.
+            </p>
+
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
+                  User Type Property
+                </label>
+                <input
+                  type="text"
+                  value={formData.userTypeProperty}
+                  onChange={(e) => handleInputChange('userTypeProperty', e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                  placeholder="plan_type"
+                />
+                <p className="text-xs text-[var(--foreground-subtle)] mt-2">
+                  The user property in your analytics platform that indicates subscription status (e.g., plan_type, subscription_tier, user_plan)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
+                  Paid User Values
+                </label>
+                <input
+                  type="text"
+                  value={formData.userTypePaidValues}
+                  onChange={(e) => handleInputChange('userTypePaidValues', e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                  placeholder="pro, enterprise, business"
+                />
+                <p className="text-xs text-[var(--foreground-subtle)] mt-2">
+                  Comma-separated values that indicate a paid user. Users with any other value will be classified as trial/unpaid.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sentry Integration */}
+        {!noProjectExists && (
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">Sentry Integration</h2>
+              <span className="ml-auto text-xs bg-[var(--background-subtle)] px-3 py-1 rounded-full font-semibold text-[var(--foreground-subtle)] border border-[var(--border)]">
+                Optional
+              </span>
+            </div>
+
+            <p className="text-sm text-[var(--foreground-subtle)] mb-5 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl px-4 py-3">
+              Connect Sentry to correlate frontend errors with churned user sessions. Errors are matched to user profiles and influence archetype analysis.
+            </p>
+
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">DSN</label>
+                <input
+                  type="text"
+                  value={formData.sentryDsn}
+                  onChange={(e) => handleInputChange('sentryDsn', e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                  placeholder="https://examplePublicKey@o0.ingest.sentry.io/0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">Auth Token</label>
+                <input
+                  type="password"
+                  value={formData.sentryAuthToken}
+                  onChange={(e) => handleInputChange('sentryAuthToken', e.target.value)}
+                  className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                  placeholder="sntrys_••••••••••••••••"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">Organization Slug</label>
+                  <input
+                    type="text"
+                    value={formData.sentryOrgSlug}
+                    onChange={(e) => handleInputChange('sentryOrgSlug', e.target.value)}
+                    className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                    placeholder="my-org"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">Project Slug</label>
+                  <input
+                    type="text"
+                    value={formData.sentryProjectSlug}
+                    onChange={(e) => handleInputChange('sentryProjectSlug', e.target.value)}
+                    className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono"
+                    placeholder="my-frontend"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Notification Settings (Placeholder) */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 shadow-sm opacity-60">

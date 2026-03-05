@@ -26,6 +26,7 @@ const navItems = [
     { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Qualitative' },
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
     { href: '/dashboard/churned-sessions', icon: UserX, label: 'Churned Sessions' },
+    { href: '/dashboard/patterns', icon: Sparkles, label: 'Discoveries' },
 ];
 
 export default function Sidebar() {

@@ -73,6 +73,14 @@ model Project {
   amplitudeKey    String?        // Amplitude API Key
   amplitudeSecret String?        // Amplitude Secret Key
   amplitudeProjId String?        // Amplitude Project ID
+  // Sentry integration
+  sentryDsn            String?
+  sentryAuthToken      String?
+  sentryOrgSlug        String?
+  sentryProjectSlug    String?
+  // User type classification
+  userTypeProperty     String?   // Analytics property that distinguishes trial/paid (e.g. "plan")
+  userTypePaidValues   String?   // JSON string[] — values meaning "paid" (e.g. ["pro", "enterprise"])
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   elevenlabsAgentId    String?   // ElevenLabs agent ID for auto-sync
@@ -87,6 +95,9 @@ model Project {
   synthesizedInsight   SynthesizedInsight?
   conversations        Conversation[]
   replayChunks         ReplayChunk[]
+  userProfiles         UserProfile[]
+  archetypes           ChurnArchetype[]
+  discoveredPatterns   DiscoveredPattern[]
 
   @@index([organizationId])
 }
@@ -302,6 +313,7 @@ model Session {
 
   name              String    // Display name (filename for uploads, formatted name for PostHog)
   distinctId        String?   // User identifier from PostHog
+  userType          String?   // 'trial' | 'paid' — set by project config
   startTime         DateTime?
   endTime           DateTime?
   duration          Int?      // Duration in seconds
@@ -431,4 +443,119 @@ model Conversation {
   @@unique([projectId, externalId])
   @@index([projectId])
   @@index([projectId, source])
+}
+
+// ==================== CONVERSION INTELLIGENCE ====================
+
+// Lightweight identity aggregation — infrastructure for cross-source user resolution
+model UserProfile {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  canonicalEmail     String?
+  displayName        String?
+  userType           String?  // 'trial' | 'paid' | 'unknown'
+  behavioralSummary  String?  @db.Text  // JSON aggregated signals
+  engagementScore    Float    @default(0)
+  frustrationScore   Float    @default(0)
+  riskLevel          String   @default("unknown") // low|medium|high|churned
+  archetypeId        String?
+  archetype          ChurnArchetype? @relation(fields: [archetypeId], references: [id])
+  firstSeen          DateTime?
+  lastSeen           DateTime?
+  totalSessions      Int      @default(0)
+  totalErrors        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  identifiers        UserIdentifier[]
+  errorEvents        UserErrorEvent[]
+
+  @@unique([projectId, canonicalEmail])
+  @@index([projectId, userType])
+  @@index([projectId, riskLevel])
+}
+
+// Join table for identity resolution — enables indexed lookups across analytics sources
+model UserIdentifier {
+  id            String      @id @default(cuid())
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  source        String      // 'posthog' | 'mixpanel' | 'amplitude' | 'sentry' | 'tranzmit'
+  identifier    String      // The distinctId value from that source
+
+  @@unique([source, identifier])
+  @@index([identifier])
+  @@index([userProfileId])
+}
+
+// AI-generated churn archetypes — personas representing behavioral clusters
+model ChurnArchetype {
+  id                  String   @id @default(cuid())
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  churnType           String   // 'unpaid' | 'paid'
+  name                String   // "The Quiet Drifter", "The Window Shopper"
+  tagline             String   // "Engaged daily, then vanished without a trace"
+  description         String   @db.Text
+  behavioralSignature String   @db.Text  // JSON: the defining pattern for this archetype
+  triggerEvents       String?  @db.Text  // JSON: common events preceding this churn type
+  conversionBlockers  String?  @db.Text  // JSON: (unpaid only) what prevented conversion
+  recoveryStrategy    String?  @db.Text  // JSON: (paid only) recommended outreach approach
+  interviewQuestions  String?  @db.Text  // JSON: archetype-specific exit interview questions
+  productFixes        String?  @db.Text  // JSON: recommended product changes for this archetype
+  userCount           Int      @default(0)
+  color               String?  // Hex color for UI cards
+  icon                String?  // Lucide icon name
+  isActive            Boolean  @default(true)
+  users               UserProfile[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([projectId, name])
+  @@index([projectId, churnType])
+}
+
+// Errors linked to user profiles — from Sentry or client-side capture
+model UserErrorEvent {
+  id            String      @id @default(cuid())
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  projectId     String
+  sentryEventId String?
+  sentryIssueId String?
+  errorType     String      // javascript|api|crash|unhandled_rejection
+  errorMessage  String
+  stackTrace    String?     @db.Text
+  url           String?
+  sessionId     String?
+  occurredAt    DateTime
+  createdAt     DateTime    @default(now())
+
+  @@index([userProfileId, occurredAt])
+  @@index([projectId, sentryIssueId])
+}
+
+// AI-discovered cross-session patterns and product insights
+model DiscoveredPattern {
+  id                  String   @id @default(cuid())
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  churnType           String?  // 'unpaid' | 'paid' | null (cross-cutting)
+  patternType         String   // conversion_blocker|behavioral_cluster|feature_suggestion|risk_indicator
+  title               String
+  description         String   @db.Text
+  confidence          Float
+  evidence            String   @db.Text  // JSON evidence chain
+  sourceTypes         String   // JSON string[] — which data sources contributed
+  suggestion          String?  @db.Text  // Product fix recommendation
+  affectedArchetypes  String?  @db.Text  // JSON: [{ archetypeId, archetypeName, count }]
+  priority            String   @default("medium")
+  status              String   @default("new") // new|reviewed|accepted|dismissed
+  interviewValidation String?  @db.Text
+  affectedUserCount   Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([projectId, churnType])
+  @@index([projectId, status])
 }

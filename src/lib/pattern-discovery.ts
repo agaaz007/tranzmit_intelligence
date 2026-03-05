@@ -1,0 +1,193 @@
+import { prisma } from '@/lib/prisma';
+import { analyzePatterns, type PatternAnalysisInput, type AnalyzedPattern } from './pattern-analyzer';
+
+interface DiscoveryResult {
+  patternsCreated: number;
+  patternsUpdated: number;
+  errors: string[];
+}
+
+async function gatherFrictionPoints(projectId: string) {
+  const sessions = await prisma.session.findMany({
+    where: { projectId, analysisStatus: 'completed' },
+    select: { id: true, analysis: true },
+  });
+
+  const frictionMap = new Map<string, { count: number; sessionIds: string[] }>();
+  for (const s of sessions) {
+    if (!s.analysis) continue;
+    let parsed;
+    try { parsed = JSON.parse(s.analysis); } catch { continue; }
+    for (const fp of parsed.frustration_points || []) {
+      const key = fp.issue;
+      const entry = frictionMap.get(key) || { count: 0, sessionIds: [] };
+      entry.count++;
+      if (!entry.sessionIds.includes(s.id)) entry.sessionIds.push(s.id);
+      frictionMap.set(key, entry);
+    }
+  }
+  return Array.from(frictionMap.entries())
+    .map(([issue, data]) => ({ issue, count: data.count, sessionIds: data.sessionIds }))
+    .sort((a, b) => b.count - a.count);
+}
+
+async function gatherInterviewThemes(projectId: string) {
+  const interviews = await prisma.interview.findMany({
+    where: { projectId },
+    select: { id: true, insights: { select: { painPoints: true, themes: true } } },
+  });
+
+  const themeMap = new Map<string, { count: number; sentiments: string[] }>();
+  for (const i of interviews) {
+    for (const insight of i.insights) {
+      // Parse pain points
+      if (insight.painPoints) {
+        let points;
+        try { points = JSON.parse(insight.painPoints); } catch { continue; }
+        for (const point of points) {
+          const theme = point.point || point.theme || point;
+          if (typeof theme !== 'string') continue;
+          const entry = themeMap.get(theme) || { count: 0, sentiments: [] };
+          entry.count++;
+          if (point.severity) entry.sentiments.push(point.severity);
+          themeMap.set(theme, entry);
+        }
+      }
+      // Parse themes
+      if (insight.themes) {
+        let themes;
+        try { themes = JSON.parse(insight.themes); } catch { continue; }
+        for (const t of themes) {
+          const theme = t.theme || t;
+          if (typeof theme !== 'string') continue;
+          const entry = themeMap.get(theme) || { count: 0, sentiments: [] };
+          entry.count++;
+          themeMap.set(theme, entry);
+        }
+      }
+    }
+  }
+  return Array.from(themeMap.entries())
+    .map(([theme, data]) => ({
+      theme,
+      count: data.count,
+      sentiment: data.sentiments.includes('high') || data.sentiments.includes('critical') ? 'negative' : 'neutral',
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+async function gatherErrorClusters(projectId: string) {
+  const errors = await prisma.userErrorEvent.groupBy({
+    by: ['errorMessage'],
+    where: { projectId },
+    _count: { id: true },
+    orderBy: { _count: { id: 'desc' } },
+    take: 20,
+  });
+
+  const clusters = [];
+  for (const e of errors) {
+    const userCount = await prisma.userErrorEvent.findMany({
+      where: { projectId, errorMessage: e.errorMessage },
+      select: { userProfileId: true },
+      distinct: ['userProfileId'],
+    });
+    clusters.push({ message: e.errorMessage, count: e._count.id, userCount: userCount.length });
+  }
+  return clusters;
+}
+
+async function gatherArchetypes(projectId: string) {
+  const archetypes = await prisma.churnArchetype.findMany({
+    where: { projectId, isActive: true },
+    select: { id: true, name: true, userCount: true, triggerEvents: true },
+  });
+  return archetypes.map(a => ({
+    name: a.name,
+    id: a.id,
+    userCount: a.userCount,
+    triggerEvents: a.triggerEvents ? JSON.parse(a.triggerEvents) : [],
+  }));
+}
+
+function buildInterviewValidation(pattern: AnalyzedPattern, interviewThemes: Array<{ theme: string; count: number }>) {
+  const matches = interviewThemes.filter(t => {
+    const tLower = t.theme.toLowerCase();
+    const pLower = pattern.title.toLowerCase();
+    return tLower.includes(pLower.substring(0, 15)) || pLower.includes(tLower.substring(0, 15));
+  });
+  if (matches.length === 0) return null;
+  return JSON.stringify({
+    validated: true,
+    matchingThemes: matches.map(m => m.theme),
+    totalMentions: matches.reduce((sum, m) => sum + m.count, 0),
+  });
+}
+
+export async function discoverPatterns(projectId: string, churnType?: 'unpaid' | 'paid' | null): Promise<DiscoveryResult> {
+  const result: DiscoveryResult = { patternsCreated: 0, patternsUpdated: 0, errors: [] };
+
+  const [frictionPoints, interviewThemes, errorClusters, archetypeSummaries] = await Promise.all([
+    gatherFrictionPoints(projectId),
+    gatherInterviewThemes(projectId),
+    gatherErrorClusters(projectId),
+    gatherArchetypes(projectId),
+  ]);
+
+  const totalUsers = await prisma.userProfile.count({ where: { projectId } });
+
+  const input: PatternAnalysisInput = {
+    frictionPoints,
+    interviewThemes,
+    errorClusters,
+    archetypeSummaries,
+    totalUsers,
+    churnType,
+  };
+
+  let patterns: AnalyzedPattern[];
+  try {
+    patterns = await analyzePatterns(input);
+  } catch (e) {
+    result.errors.push(`LLM analysis failed: ${e}`);
+    return result;
+  }
+
+  for (const pattern of patterns) {
+    const affectedArchetypes = archetypeSummaries
+      .filter(a => pattern.evidence.some(e => e.source === 'archetype' && e.detail.toLowerCase().includes(a.name.toLowerCase())))
+      .map(a => ({ archetypeId: a.id, archetypeName: a.name, count: a.userCount }));
+
+    const sourceTypes = [...new Set(pattern.evidence.map(e => e.source))];
+    const interviewValidation = buildInterviewValidation(pattern, interviewThemes);
+
+    const data = {
+      churnType: churnType || null,
+      patternType: pattern.patternType,
+      description: pattern.description,
+      confidence: pattern.confidence,
+      evidence: JSON.stringify(pattern.evidence),
+      sourceTypes: JSON.stringify(sourceTypes),
+      suggestion: pattern.suggestion || null,
+      affectedArchetypes: affectedArchetypes.length > 0 ? JSON.stringify(affectedArchetypes) : null,
+      priority: pattern.priority,
+      status: 'new',
+      interviewValidation,
+      affectedUserCount: pattern.affectedUserCount,
+    };
+
+    const existing = await prisma.discoveredPattern.findFirst({
+      where: { projectId, title: pattern.title },
+    });
+
+    if (existing) {
+      await prisma.discoveredPattern.update({ where: { id: existing.id }, data });
+      result.patternsUpdated++;
+    } else {
+      await prisma.discoveredPattern.create({ data: { projectId, title: pattern.title, ...data } });
+      result.patternsCreated++;
+    }
+  }
+
+  return result;
+}
