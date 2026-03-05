@@ -164,12 +164,20 @@ export async function discoverPatterns(projectId: string, churnType?: 'unpaid' |
 
   console.log(`[Discover] Starting discovery for project ${projectId}`);
 
-  const [frictionData, interviewThemes, errorClusters, archetypeSummaries] = await Promise.all([
-    gatherFrictionPoints(projectId),
-    gatherInterviewThemes(projectId),
-    gatherErrorClusters(projectId),
-    gatherArchetypes(projectId),
-  ]);
+  // Warm up Neon connection with a simple query first (avoids "connection closed" on cold start)
+  try {
+    await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+  } catch (e) {
+    console.log(`[Discover] Connection warmup failed, retrying:`, e);
+    await new Promise(r => setTimeout(r, 1000));
+    await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+  }
+
+  // Run sequentially to avoid overwhelming Neon's serverless connection
+  const frictionData = await gatherFrictionPoints(projectId);
+  const interviewThemes = await gatherInterviewThemes(projectId);
+  const errorClusters = await gatherErrorClusters(projectId);
+  const archetypeSummaries = await gatherArchetypes(projectId);
 
   const frictionPoints = frictionData.points;
   const totalUsers = await prisma.userProfile.count({ where: { projectId } });
