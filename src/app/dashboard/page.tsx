@@ -248,6 +248,8 @@ export default function DashboardPage() {
   const [projectId, setProjectId] = useState<string>('');
   const [archetypes, setArchetypes] = useState<any[]>([]);
   const [archetypeTab, setArchetypeTab] = useState<'unpaid' | 'paid'>('unpaid');
+  const [isGeneratingArchetypes, setIsGeneratingArchetypes] = useState(false);
+  const [archetypeStatus, setArchetypeStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeProject = async () => {
@@ -313,6 +315,41 @@ export default function DashboardPage() {
   const handleRefresh = () => {
     if (projectId) {
       loadDashboard(projectId, true);
+    }
+  };
+
+  const handleGenerateArchetypes = async () => {
+    if (!projectId) return;
+    setIsGeneratingArchetypes(true);
+    setArchetypeStatus('Building user profiles...');
+    try {
+      const buildRes = await fetch('/api/user-profiles/bulk-build', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      const buildData = await buildRes.json();
+      if (!buildRes.ok) throw new Error(buildData.error || 'Profile build failed');
+      setArchetypeStatus(`Profiles built (${buildData.profilesCreated} new, ${buildData.profilesUpdated} updated). Generating ${archetypeTab} archetypes...`);
+
+      const genRes = await fetch('/api/archetypes/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, churnType: archetypeTab }),
+      });
+      const genData = await genRes.json();
+      if (!genRes.ok) throw new Error(genData.error || 'Archetype generation failed');
+
+      setArchetypes(prev => {
+        const other = prev.filter(a => a.churnType !== archetypeTab);
+        return [...other, ...genData.archetypes];
+      });
+      setArchetypeStatus(`Generated ${genData.archetypes.length} ${archetypeTab} archetypes.`);
+    } catch (e) {
+      setArchetypeStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsGeneratingArchetypes(false);
+      setTimeout(() => setArchetypeStatus(null), 8000);
     }
   };
 
@@ -512,13 +549,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Archetypes Section */}
-      {archetypes.length > 0 && (
-        <div className="px-8 pb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-gray-400" />
-              <h2 className="text-gray-900 dark:text-white font-medium">Churn Archetypes</h2>
-            </div>
+      <div className="px-8 pb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-gray-400" />
+            <h2 className="text-gray-900 dark:text-white font-medium">Churn Archetypes</h2>
+          </div>
+          <div className="flex items-center gap-3">
             <div className="flex gap-1 bg-gray-100 dark:bg-[#141414] rounded-lg p-1">
               {(['unpaid', 'paid'] as const).map(tab => (
                 <button
@@ -534,17 +571,44 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-          </div>
-          <div className="space-y-2">
-            {archetypes
-              .filter(a => a.churnType === archetypeTab)
-              .map(a => <ArchetypeCard key={a.id} archetype={a} />)}
-            {archetypes.filter(a => a.churnType === archetypeTab).length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-[#666] text-center py-8">No {archetypeTab} archetypes generated yet.</p>
-            )}
+            <button
+              onClick={handleGenerateArchetypes}
+              disabled={isGeneratingArchetypes}
+              className="px-4 py-1.5 text-xs font-medium bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {isGeneratingArchetypes ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Archetypes'
+              )}
+            </button>
           </div>
         </div>
-      )}
+        {archetypeStatus && (
+          <div className={`mb-4 px-4 py-2 rounded-lg text-sm ${
+            archetypeStatus.startsWith('Error')
+              ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'
+              : 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'
+          }`}>
+            {archetypeStatus}
+          </div>
+        )}
+        <div className="space-y-2">
+          {archetypes
+            .filter(a => a.churnType === archetypeTab)
+            .map(a => <ArchetypeCard key={a.id} archetype={a} />)}
+          {archetypes.filter(a => a.churnType === archetypeTab).length === 0 && !isGeneratingArchetypes && (
+            <div className="text-center py-12 bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-transparent">
+              <Users className="w-8 h-8 text-gray-300 dark:text-[#333] mx-auto mb-3" />
+              <p className="text-sm text-gray-500 dark:text-[#666] mb-1">No {archetypeTab === 'unpaid' ? 'trial' : 'paid'} churn archetypes yet</p>
+              <p className="text-xs text-gray-400 dark:text-[#444]">Click &quot;Generate Archetypes&quot; to cluster users into personas</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
