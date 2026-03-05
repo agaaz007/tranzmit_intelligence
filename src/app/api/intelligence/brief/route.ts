@@ -18,6 +18,8 @@ const BriefSchema = z.object({
   risk_outlook: z.string().describe("Brief forward-looking risk assessment"),
 });
 
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get('projectId');
