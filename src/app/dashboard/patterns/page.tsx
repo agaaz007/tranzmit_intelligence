@@ -171,6 +171,7 @@ export default function PatternsPage() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoverResult, setDiscoverResult] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'unpaid' | 'paid'>('all');
   const [projectId, setProjectId] = useState('');
 
@@ -200,15 +201,23 @@ export default function PatternsPage() {
   const handleDiscover = async () => {
     if (!projectId) return;
     setIsDiscovering(true);
+    setDiscoverResult(null);
     try {
-      await fetch('/api/patterns/discover', {
+      const res = await fetch('/api/patterns/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId }),
       });
+      const data = await res.json();
+      if (data.errors?.length > 0) {
+        setDiscoverResult(`Errors: ${data.errors.join(', ')}`);
+      } else {
+        setDiscoverResult(`Created ${data.patternsCreated || 0}, updated ${data.patternsUpdated || 0}`);
+      }
       await loadPatterns(projectId);
     } catch (e) {
       console.error('Discovery failed:', e);
+      setDiscoverResult(`Failed: ${e}`);
     } finally {
       setIsDiscovering(false);
     }
@@ -262,6 +271,19 @@ export default function PatternsPage() {
           </button>
         </div>
       </div>
+
+      {/* Discovery Result */}
+      {discoverResult && (
+        <div className="px-8 pb-2">
+          <p className={`text-sm px-4 py-2 rounded-lg ${
+            discoverResult.startsWith('Errors') || discoverResult.startsWith('Failed')
+              ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+              : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          }`}>
+            {discoverResult}
+          </p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="px-8 pb-4">

@@ -21,5 +21,12 @@ export async function GET(request: NextRequest) {
     orderBy: [{ priority: 'desc' }, { confidence: 'desc' }, { createdAt: 'desc' }],
   });
 
-  return NextResponse.json({ patterns });
+  return NextResponse.json({
+    patterns: patterns.map(p => ({
+      ...p,
+      evidence: JSON.parse(p.evidence),
+      sourceTypes: JSON.parse(p.sourceTypes),
+      affectedArchetypes: p.affectedArchetypes ? JSON.parse(p.affectedArchetypes) : [],
+    })),
+  });
 }
