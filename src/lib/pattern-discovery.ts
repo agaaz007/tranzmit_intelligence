@@ -5,6 +5,16 @@ interface DiscoveryResult {
   patternsCreated: number;
   patternsUpdated: number;
   errors: string[];
+  debug?: {
+    sessionsFound: number;
+    sessionsWithAnalysis: number;
+    frictionPointCount: number;
+    interviewThemeCount: number;
+    errorClusterCount: number;
+    archetypeCount: number;
+    llmPatternsReturned: number;
+    sampleAnalysisKeys?: string[];
+  };
 }
 
 async function gatherFrictionPoints(projectId: string) {
@@ -13,22 +23,44 @@ async function gatherFrictionPoints(projectId: string) {
     select: { id: true, analysis: true },
   });
 
+  console.log(`[Discover] Found ${sessions.length} completed sessions`);
+
+  let withAnalysis = 0;
+  let sampleKeys: string[] = [];
   const frictionMap = new Map<string, { count: number; sessionIds: string[] }>();
+
   for (const s of sessions) {
     if (!s.analysis) continue;
     let parsed;
     try { parsed = JSON.parse(s.analysis); } catch { continue; }
-    for (const fp of parsed.frustration_points || []) {
-      const key = fp.issue;
+    withAnalysis++;
+
+    // Log first session's analysis keys so we know the field names
+    if (sampleKeys.length === 0) {
+      sampleKeys = Object.keys(parsed);
+      console.log(`[Discover] Sample analysis keys: ${sampleKeys.join(', ')}`);
+    }
+
+    // Try multiple field names for friction/frustration points
+    const points = parsed.frustration_points || parsed.friction_points || parsed.frictionPoints || parsed.frustrationPoints || [];
+    for (const fp of points) {
+      const key = typeof fp === 'string' ? fp : (fp.issue || fp.description || fp.point || JSON.stringify(fp));
       const entry = frictionMap.get(key) || { count: 0, sessionIds: [] };
       entry.count++;
       if (!entry.sessionIds.includes(s.id)) entry.sessionIds.push(s.id);
       frictionMap.set(key, entry);
     }
   }
-  return Array.from(frictionMap.entries())
-    .map(([issue, data]) => ({ issue, count: data.count, sessionIds: data.sessionIds }))
-    .sort((a, b) => b.count - a.count);
+
+  console.log(`[Discover] ${withAnalysis} sessions have analysis, ${frictionMap.size} unique friction points`);
+
+  return {
+    points: Array.from(frictionMap.entries())
+      .map(([issue, data]) => ({ issue, count: data.count, sessionIds: data.sessionIds }))
+      .sort((a, b) => b.count - a.count),
+    sessionsWithAnalysis: withAnalysis,
+    sampleKeys,
+  };
 }
 
 async function gatherInterviewThemes(projectId: string) {
@@ -37,10 +69,11 @@ async function gatherInterviewThemes(projectId: string) {
     select: { id: true, insights: { select: { painPoints: true, themes: true } } },
   });
 
+  console.log(`[Discover] Found ${interviews.length} interviews`);
+
   const themeMap = new Map<string, { count: number; sentiments: string[] }>();
   for (const i of interviews) {
     for (const insight of i.insights) {
-      // Parse pain points
       if (insight.painPoints) {
         let points;
         try { points = JSON.parse(insight.painPoints); } catch { continue; }
@@ -53,7 +86,6 @@ async function gatherInterviewThemes(projectId: string) {
           themeMap.set(theme, entry);
         }
       }
-      // Parse themes
       if (insight.themes) {
         let themes;
         try { themes = JSON.parse(insight.themes); } catch { continue; }
@@ -67,6 +99,9 @@ async function gatherInterviewThemes(projectId: string) {
       }
     }
   }
+
+  console.log(`[Discover] ${themeMap.size} unique interview themes`);
+
   return Array.from(themeMap.entries())
     .map(([theme, data]) => ({
       theme,
@@ -125,16 +160,21 @@ function buildInterviewValidation(pattern: AnalyzedPattern, interviewThemes: Arr
 }
 
 export async function discoverPatterns(projectId: string, churnType?: 'unpaid' | 'paid' | null): Promise<DiscoveryResult> {
-  const result: DiscoveryResult = { patternsCreated: 0, patternsUpdated: 0, errors: [] };
+  const result: DiscoveryResult = { patternsCreated: 0, patternsUpdated: 0, errors: [], debug: undefined };
 
-  const [frictionPoints, interviewThemes, errorClusters, archetypeSummaries] = await Promise.all([
+  console.log(`[Discover] Starting discovery for project ${projectId}`);
+
+  const [frictionData, interviewThemes, errorClusters, archetypeSummaries] = await Promise.all([
     gatherFrictionPoints(projectId),
     gatherInterviewThemes(projectId),
     gatherErrorClusters(projectId),
     gatherArchetypes(projectId),
   ]);
 
+  const frictionPoints = frictionData.points;
   const totalUsers = await prisma.userProfile.count({ where: { projectId } });
+
+  console.log(`[Discover] Data gathered: ${frictionPoints.length} friction, ${interviewThemes.length} themes, ${errorClusters.length} errors, ${archetypeSummaries.length} archetypes, ${totalUsers} profiles`);
 
   const input: PatternAnalysisInput = {
     frictionPoints,
@@ -147,9 +187,22 @@ export async function discoverPatterns(projectId: string, churnType?: 'unpaid' |
 
   let patterns: AnalyzedPattern[];
   try {
+    console.log(`[Discover] Calling LLM...`);
     patterns = await analyzePatterns(input);
+    console.log(`[Discover] LLM returned ${patterns.length} patterns`);
   } catch (e) {
+    console.error(`[Discover] LLM failed:`, e);
     result.errors.push(`LLM analysis failed: ${e}`);
+    result.debug = {
+      sessionsFound: frictionData.sessionsWithAnalysis,
+      sessionsWithAnalysis: frictionData.sessionsWithAnalysis,
+      frictionPointCount: frictionPoints.length,
+      interviewThemeCount: interviewThemes.length,
+      errorClusterCount: errorClusters.length,
+      archetypeCount: archetypeSummaries.length,
+      llmPatternsReturned: 0,
+      sampleAnalysisKeys: frictionData.sampleKeys,
+    };
     return result;
   }
 
@@ -189,5 +242,17 @@ export async function discoverPatterns(projectId: string, churnType?: 'unpaid' |
     }
   }
 
+  result.debug = {
+    sessionsFound: frictionData.sessionsWithAnalysis,
+    sessionsWithAnalysis: frictionData.sessionsWithAnalysis,
+    frictionPointCount: frictionPoints.length,
+    interviewThemeCount: interviewThemes.length,
+    errorClusterCount: errorClusters.length,
+    archetypeCount: archetypeSummaries.length,
+    llmPatternsReturned: patterns.length,
+    sampleAnalysisKeys: frictionData.sampleKeys,
+  };
+
+  console.log(`[Discover] Done: created=${result.patternsCreated}, updated=${result.patternsUpdated}`);
   return result;
 }

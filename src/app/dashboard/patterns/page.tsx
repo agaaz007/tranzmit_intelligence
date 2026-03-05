@@ -209,10 +209,12 @@ export default function PatternsPage() {
         body: JSON.stringify({ projectId }),
       });
       const data = await res.json();
+      const d = data.debug;
+      const debugStr = d ? ` (${d.sessionsWithAnalysis} sessions analyzed, ${d.frictionPointCount} friction points, ${d.interviewThemeCount} themes, ${d.llmPatternsReturned} LLM patterns${d.sampleAnalysisKeys?.length ? `, keys: ${d.sampleAnalysisKeys.slice(0, 5).join(',')}` : ''})` : '';
       if (data.errors?.length > 0) {
-        setDiscoverResult(`Errors: ${data.errors.join(', ')}`);
+        setDiscoverResult(`Errors: ${data.errors.join(', ')}${debugStr}`);
       } else {
-        setDiscoverResult(`Created ${data.patternsCreated || 0}, updated ${data.patternsUpdated || 0}`);
+        setDiscoverResult(`Created ${data.patternsCreated || 0}, updated ${data.patternsUpdated || 0}${debugStr}`);
       }
       await loadPatterns(projectId);
     } catch (e) {
