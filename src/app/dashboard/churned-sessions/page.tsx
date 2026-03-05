@@ -23,7 +23,8 @@ import {
   Timer,
 } from 'lucide-react';
 import { IssuesPanel } from '@/components/issues-panel';
-import type { SynthesizedInsightData } from '@/types/session';
+import { SessionPlayer } from '@/components/session-player';
+import type { SynthesizedInsightData, RRWebEvent } from '@/types/session';
 
 interface EmailResult {
   email: string;
@@ -89,6 +90,29 @@ export default function ChurnedSessionsPage() {
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [lastSynthesizedAt, setLastSynthesizedAt] = useState<Date | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [replayEvents, setReplayEvents] = useState<RRWebEvent[]>([]);
+  const [isLoadingReplay, setIsLoadingReplay] = useState(false);
+
+  const handleSessionReplay = useCallback(async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    setSelectedSession(session);
+    setReplayEvents([]);
+    setIsLoadingReplay(true);
+
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/events`);
+      if (res.ok) {
+        const data = await res.json();
+        setReplayEvents(data.events || []);
+      }
+    } catch (err) {
+      console.error('Failed to load session events:', err);
+    } finally {
+      setIsLoadingReplay(false);
+    }
+  }, [sessions]);
 
   const synthesizeChurnedInsights = useCallback(async () => {
     const projectId = localStorage.getItem('currentProjectId');
@@ -320,10 +344,7 @@ export default function ChurnedSessionsPage() {
       <IssuesPanel
         insights={churnedInsights}
         isLoading={isLoadingInsights || isSynthesizing}
-        onSessionClick={(sessionId) => {
-          const session = sessions.find(s => s.id === sessionId);
-          if (session) setSelectedSession(session);
-        }}
+        onSessionClick={handleSessionReplay}
         onRefresh={synthesizeChurnedInsights}
         isRefreshing={isSynthesizing}
         lastSyncTime={lastSynthesizedAt}
@@ -550,11 +571,11 @@ export default function ChurnedSessionsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => setSelectedSession(session)}
+                        onClick={() => handleSessionReplay(session.id)}
                         className="p-2 hover:bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)] transition-colors"
-                        title="View details"
+                        title="View replay"
                       >
-                        <ChevronRight className="w-4 h-4" />
+                        <PlayCircle className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -596,11 +617,13 @@ export default function ChurnedSessionsPage() {
         />
       )}
 
-      {/* Session Detail Panel */}
+      {/* Session Replay Panel */}
       {selectedSession && (
-        <SessionDetailPanel
+        <SessionReplayPanel
           session={selectedSession}
-          onClose={() => setSelectedSession(null)}
+          events={replayEvents}
+          isLoading={isLoadingReplay}
+          onClose={() => { setSelectedSession(null); setReplayEvents([]); }}
         />
       )}
     </div>
@@ -776,26 +799,52 @@ function UploadModal({
   );
 }
 
-// Session Detail Panel Component
-function SessionDetailPanel({
+// Session Replay Panel Component
+function SessionReplayPanel({
   session,
+  events,
+  isLoading,
   onClose,
 }: {
   session: ChurnedSession;
+  events: RRWebEvent[];
+  isLoading: boolean;
   onClose: () => void;
 }) {
   const analysis = session.analysis;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-[var(--card)] shadow-2xl z-50 overflow-y-auto border-l border-[var(--border)]">
-      <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-y-0 right-0 w-full max-w-3xl bg-[var(--card)] shadow-2xl z-50 overflow-y-auto border-l border-[var(--border)]">
+      <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between z-10">
         <div>
           <h3 className="font-semibold text-lg text-[var(--foreground)]">
             {session.metadata?.email || session.name}
           </h3>
-          {session.metadata?.personName && (
-            <p className="text-sm text-[var(--foreground-muted)]">{session.metadata.personName}</p>
-          )}
+          <div className="flex items-center gap-3 mt-0.5">
+            {session.metadata?.personName && (
+              <span className="text-sm text-[var(--foreground-muted)]">{session.metadata.personName}</span>
+            )}
+            {session.startTime && (
+              <span className="text-xs text-[var(--foreground-subtle)]">
+                {new Date(session.startTime).toLocaleString()}
+              </span>
+            )}
+            {session.duration && (
+              <span className="text-xs text-[var(--foreground-subtle)] flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {Math.floor(session.duration / 60)}m {session.duration % 60}s
+              </span>
+            )}
+            {analysis?.ux_rating && (
+              <span className={`text-xs font-semibold flex items-center gap-1 ${
+                analysis.ux_rating >= 7 ? 'text-emerald-500' :
+                analysis.ux_rating >= 4 ? 'text-yellow-500' : 'text-red-500'
+              }`}>
+                <Star className="w-3 h-3" />
+                {analysis.ux_rating}/10
+              </span>
+            )}
+          </div>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)]">
           <X className="w-5 h-5" />
@@ -803,61 +852,38 @@ function SessionDetailPanel({
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Session Info */}
+        {/* Replay Viewer */}
         <div>
-          <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">
-            Session Info
-          </h4>
-          <div className="bg-[var(--muted)] rounded-lg p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--foreground-muted)]">Date</span>
-              <span className="text-sm text-[var(--foreground)]">
-                {session.startTime ? new Date(session.startTime).toLocaleString() : '-'}
-              </span>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center bg-[var(--muted)] rounded-lg border border-dashed border-[var(--border)] py-16">
+              <Loader2 className="w-10 h-10 text-[var(--foreground-subtle)] mb-3 animate-spin" />
+              <p className="text-sm text-[var(--foreground-muted)]">Loading session replay...</p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--foreground-muted)]">Duration</span>
-              <span className="text-sm text-[var(--foreground)]">
-                {session.duration ? `${Math.floor(session.duration / 60)}m ${session.duration % 60}s` : '-'}
-              </span>
+          ) : events.length > 0 ? (
+            <SessionPlayer key={session.id} events={events} autoPlay={false} />
+          ) : (
+            <div className="flex flex-col items-center justify-center bg-[var(--muted)] rounded-lg border border-dashed border-[var(--border)] py-16">
+              <PlayCircle className="w-10 h-10 text-[var(--foreground-subtle)] mb-3" />
+              <p className="text-sm text-[var(--foreground-muted)]">No replay events available for this session</p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--foreground-muted)]">Events</span>
-              <span className="text-sm text-[var(--foreground)]">{session.eventCount}</span>
-            </div>
-            {analysis?.ux_rating && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--foreground-muted)]">UX Rating</span>
-                <span className={`text-sm font-semibold ${
-                  analysis.ux_rating >= 7 ? 'text-emerald-500' :
-                  analysis.ux_rating >= 4 ? 'text-yellow-500' : 'text-red-500'
-                }`}>
-                  {analysis.ux_rating}/10
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Analysis */}
+        {/* Analysis below replay */}
         {analysis ? (
           <>
-            {/* Summary */}
-            <div>
-              <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">
-                Summary
-              </h4>
-              <div className="bg-[var(--muted)] rounded-lg p-4">
-                <p className="text-sm text-[var(--foreground)]">{analysis.summary}</p>
+            {analysis.summary && (
+              <div>
+                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">Summary</h4>
+                <div className="bg-[var(--muted)] rounded-lg p-4">
+                  <p className="text-sm text-[var(--foreground)]">{analysis.summary}</p>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* User Intent */}
             {analysis.user_intent && (
               <div>
-                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">
-                  User Intent
-                </h4>
+                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">User Intent</h4>
                 <div className="bg-[var(--muted)] rounded-lg p-4">
                   <p className="text-sm text-[var(--brand-primary)] font-medium">
                     &ldquo;{analysis.user_intent}&rdquo;
@@ -866,18 +892,12 @@ function SessionDetailPanel({
               </div>
             )}
 
-            {/* Tags */}
             {analysis.tags && analysis.tags.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">
-                  Tags
-                </h4>
+                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">Tags</h4>
                 <div className="flex flex-wrap gap-2">
                   {analysis.tags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 rounded-full text-xs font-medium bg-[var(--muted)] text-[var(--foreground-muted)]"
-                    >
+                    <span key={i} className="px-2 py-1 rounded-full text-xs font-medium bg-[var(--muted)] text-[var(--foreground-muted)]">
                       {tag}
                     </span>
                   ))}
@@ -885,7 +905,6 @@ function SessionDetailPanel({
               </div>
             )}
 
-            {/* Friction Points */}
             {analysis.frustration_points && analysis.frustration_points.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-red-500 uppercase mb-2 flex items-center gap-1">
@@ -894,10 +913,7 @@ function SessionDetailPanel({
                 </h4>
                 <div className="space-y-2">
                   {analysis.frustration_points.map((fp, i) => (
-                    <div
-                      key={i}
-                      className="bg-red-500/10 border border-red-500/20 rounded-lg p-3"
-                    >
+                    <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">
                           {fp.timestamp}
@@ -910,7 +926,6 @@ function SessionDetailPanel({
               </div>
             )}
 
-            {/* Went Well */}
             {analysis.went_well && analysis.went_well.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-emerald-500 uppercase mb-2 flex items-center gap-1">
@@ -926,20 +941,6 @@ function SessionDetailPanel({
                 </div>
               </div>
             )}
-
-            {/* Detailed Narrative */}
-            {analysis.description && (
-              <div>
-                <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">
-                  Detailed Narrative
-                </h4>
-                <div className="bg-[var(--muted)] rounded-lg p-4">
-                  <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                    {analysis.description}
-                  </p>
-                </div>
-              </div>
-            )}
           </>
         ) : session.analysisStatus === 'analyzing' ? (
           <div className="flex items-center gap-2 text-sm text-[var(--foreground-muted)] p-4">
@@ -951,9 +952,7 @@ function SessionDetailPanel({
             <AlertCircle className="w-4 h-4" />
             Analysis failed
           </div>
-        ) : (
-          <div className="text-sm text-[var(--foreground-muted)] p-4">Not yet analyzed</div>
-        )}
+        ) : null}
       </div>
     </div>
   );
