@@ -10,10 +10,10 @@ export const PatternSchema = z.object({
     confidence: z.number().min(0).max(1),
     evidence: z.array(z.object({
       source: z.enum(['session', 'interview', 'error', 'archetype']),
-      sourceId: z.string().optional(),
+      sourceId: z.string(),
       detail: z.string(),
     })),
-    suggestion: z.string().optional(),
+    suggestion: z.string(),
     priority: z.enum(['low', 'medium', 'high', 'critical']),
     affectedUserCount: z.number(),
   })),
@@ -67,7 +67,7 @@ export async function analyzePatterns(input: PatternAnalysisInput): Promise<Anal
     model: openai('gpt-5.2-chat-latest'),
     schema: PatternSchema,
     system: `You are a senior product analyst discovering cross-source patterns from user behavior data. Identify patterns that appear across multiple data sources (sessions, interviews, errors). Prioritize actionable insights. ${churnContext}`,
-    prompt: `Analyze data from ${input.totalUsers} users and discover non-obvious patterns:\n\n${sections.join('\n\n')}\n\nIdentify 3-7 distinct patterns. Each must have evidence from at least one source. Confidence should reflect how strongly the data supports the pattern.`,
+    prompt: `Analyze data from ${input.totalUsers} users and discover non-obvious patterns:\n\n${sections.join('\n\n')}\n\nIdentify 3-7 distinct patterns. Each must have evidence from at least one source. Confidence should reflect how strongly the data supports the pattern. For each evidence item, provide a sourceId (use "aggregate" if not tied to a specific record). Always provide a suggestion for each pattern.`,
   });
 
   return object.patterns;

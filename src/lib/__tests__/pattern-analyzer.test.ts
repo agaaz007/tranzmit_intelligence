@@ -31,6 +31,7 @@ describe('PatternSchema', () => {
         patternType: 'behavioral_cluster',
         confidence: 1.5,
         evidence: [],
+        suggestion: 'test',
         priority: 'low',
         affectedUserCount: 0,
       }],
@@ -46,6 +47,7 @@ describe('PatternSchema', () => {
         patternType: 'invalid_type',
         confidence: 0.5,
         evidence: [],
+        suggestion: 'test',
         priority: 'low',
         affectedUserCount: 0,
       }],
@@ -53,7 +55,7 @@ describe('PatternSchema', () => {
     expect(() => PatternSchema.parse(data)).toThrow();
   });
 
-  it('allows optional suggestion', () => {
+  it('requires suggestion field', () => {
     const data = {
       patterns: [{
         title: 'No suggestion',
@@ -65,8 +67,7 @@ describe('PatternSchema', () => {
         affectedUserCount: 10,
       }],
     };
-    const result = PatternSchema.parse(data);
-    expect(result.patterns[0].suggestion).toBeUndefined();
+    expect(() => PatternSchema.parse(data)).toThrow();
   });
 
   it('accepts all valid pattern types', () => {
@@ -79,6 +80,7 @@ describe('PatternSchema', () => {
           patternType: type,
           confidence: 0.5,
           evidence: [],
+          suggestion: 'test suggestion',
           priority: 'low',
           affectedUserCount: 0,
         }],
