@@ -8,6 +8,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)', // Clerk webhooks
   '/api/campaigns(.*)', // External API with API key auth
   '/api/ingest(.*)', // Replay ingestion from client-side snippets
+  '/api/widget/check(.*)', // Widget SDK polling (public, API key auth)
+  '/api/widget/complete(.*)', // Widget SDK outcome reporting (public)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
