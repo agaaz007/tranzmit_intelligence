@@ -278,14 +278,14 @@ export default function ChurnScoresPage() {
                   <>
                     <tr key={score.id} className="table-row">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-[var(--foreground)] text-sm">
-                          {score.email || score.distinctId}
-                        </div>
-                        {score.email && score.email !== score.distinctId && (
-                          <div className="text-xs text-[var(--foreground-subtle)] truncate max-w-[200px]">
-                            {score.distinctId}
+                        {score.email && (
+                          <div className="font-medium text-[var(--foreground)] text-sm">
+                            {score.email}
                           </div>
                         )}
+                        <div className="text-xs text-[var(--foreground-muted)] truncate max-w-[220px]">
+                          ID: {score.distinctId}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs px-2 py-1 rounded-full bg-[var(--muted)] text-[var(--foreground-muted)]">
