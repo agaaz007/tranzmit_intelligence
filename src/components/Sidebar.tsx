@@ -19,6 +19,7 @@ import {
     Sun,
     Moon,
     Sparkles,
+    Mic,
 } from 'lucide-react';
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
     { href: '/dashboard/churned-sessions', icon: UserX, label: 'Churned Sessions' },
     { href: '/dashboard/churn-scores', icon: TrendingDown, label: 'Churn Scores' },
+    { href: '/dashboard/triggers', icon: Mic, label: 'Widget Triggers' },
 ];
 
 export default function Sidebar() {
