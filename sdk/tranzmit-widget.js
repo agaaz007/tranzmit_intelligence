@@ -95,10 +95,17 @@
       console.warn('[Tranzmit Widget] No interviewApiKey provided — interview may not load.');
     }
     interviewLaunched = true;
+
+    // Create a mount point for the embed SDK
+    var mount = document.createElement('div');
+    mount.id = '__tz_interview_mount__';
+    document.body.appendChild(mount);
+
     var s = document.createElement('script');
     s.src = SDK_URL;
     s.setAttribute('data-api-key', key);
     s.setAttribute('data-backend-url', SDK_BACKEND);
+    s.setAttribute('data-attach', '#__tz_interview_mount__');
     document.head.appendChild(s);
   }
 
