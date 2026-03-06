@@ -133,14 +133,16 @@
     var userName        = data.userName || 'there';
     var interviewApiKey = data.interviewApiKey || '';
 
-    /* Inject one-time keyframe style */
+    /* Inject one-time keyframe + glass styles */
     if (!document.getElementById('__tz_style__')) {
       var style = document.createElement('style');
       style.id = '__tz_style__';
       style.textContent = [
-        '@keyframes __tz_in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}',
-        '@keyframes __tz_out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(12px)}}',
-        '#' + WIDGET_ID + ' button:hover{opacity:0.88}',
+        '@keyframes __tz_in{from{opacity:0;transform:translateY(16px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}',
+        '@keyframes __tz_pulse{0%,100%{opacity:0.6}50%{opacity:1}}',
+        '#' + WIDGET_ID + ' button:hover{opacity:0.92}',
+        '#__tz_start__:hover{background:rgba(255,255,255,0.22)!important;box-shadow:0 0 20px rgba(255,255,255,0.15)!important}',
+        '#__tz_close__:hover{background:rgba(255,255,255,0.18)!important}',
       ].join('\n');
       document.head.appendChild(style);
     }
@@ -153,45 +155,56 @@
       'position:fixed',
       'bottom:24px',
       'right:24px',
-      'width:288px',
-      'border-radius:16px',
+      'width:296px',
+      'border-radius:20px',
       'overflow:hidden',
-      'box-shadow:0 8px 40px rgba(0,0,0,0.18),0 2px 8px rgba(0,0,0,0.08)',
+      'background:rgba(255,255,255,0.08)',
+      'backdrop-filter:blur(24px) saturate(1.8)',
+      '-webkit-backdrop-filter:blur(24px) saturate(1.8)',
+      'border:1px solid rgba(255,255,255,0.18)',
+      'box-shadow:0 8px 48px rgba(0,0,0,0.12),0 2px 16px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.15)',
       'z-index:2147483647',
       'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif',
-      'animation:__tz_in 0.28s cubic-bezier(0.34,1.56,0.64,1) both',
+      'animation:__tz_in 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+      'color:#fff',
     ].join(';');
 
     root.innerHTML = [
-      /* Header */
-      '<div style="background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);padding:14px 14px 12px;">',
-      '  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">',
-      '    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">',
-      '      <div style="flex-shrink:0;width:34px;height:34px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">',
-      '        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">',
-      '          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>',
-      '          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>',
-      '          <line x1="12" x2="12" y1="19" y2="22"/>',
-      '        </svg>',
+      /* Header area */
+      '<div style="padding:18px 18px 0;">',
+      '  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">',
+      '    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">',
+      /* Mic icon with subtle glow ring */
+      '      <div style="flex-shrink:0;position:relative;">',
+      '        <div style="width:40px;height:40px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">',
+      '          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+      '            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>',
+      '            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>',
+      '            <line x1="12" x2="12" y1="19" y2="22"/>',
+      '          </svg>',
+      '        </div>',
+      '        <div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:#34d399;border-radius:50%;border:2px solid rgba(0,0,0,0.2);animation:__tz_pulse 2s ease-in-out infinite;"></div>',
       '      </div>',
       '      <div style="min-width:0;">',
-      '        <div style="color:#fff;font-size:13.5px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">',
+      '        <div style="font-size:14px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,0.95);">',
       '          Hey ' + esc(userName) + ', got a minute?',
       '        </div>',
-      '        <div style="color:rgba(255,255,255,0.75);font-size:11.5px;margin-top:1px;">Quick 2-min voice chat</div>',
+      '        <div style="color:rgba(255,255,255,0.5);font-size:11.5px;margin-top:2px;font-weight:400;">Quick 2-min voice chat</div>',
       '      </div>',
       '    </div>',
-      '    <button id="__tz_close__" aria-label="Dismiss" style="flex-shrink:0;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;line-height:1;padding:0;transition:opacity 0.15s;">',
+      '    <button id="__tz_close__" aria-label="Dismiss" style="flex-shrink:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:14px;line-height:1;padding:0;transition:all 0.2s ease;">',
       '      &#x2715;',
       '    </button>',
       '  </div>',
       '</div>',
+      /* Divider */
+      '<div style="margin:14px 18px 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);"></div>',
       /* Body */
-      '<div style="background:#fff;padding:14px 14px 14px;">',
-      '  <p style="margin:0 0 12px;color:#374151;font-size:13px;line-height:1.55;">',
+      '<div style="padding:14px 18px 18px;">',
+      '  <p style="margin:0 0 14px;color:rgba(255,255,255,0.55);font-size:13px;line-height:1.55;font-weight:400;">',
       '    We\'d love to hear about your experience — it only takes a couple of minutes.',
       '  </p>',
-      '  <button id="__tz_start__" style="display:block;width:100%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13.5px;font-weight:600;cursor:pointer;transition:opacity 0.15s;letter-spacing:0.01em;">',
+      '  <button id="__tz_start__" style="display:block;width:100%;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all 0.2s ease;letter-spacing:0.01em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">',
       '    Start Voice Interview &rarr;',
       '  </button>',
       '</div>',
