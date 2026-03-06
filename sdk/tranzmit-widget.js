@@ -96,16 +96,25 @@
     }
     interviewLaunched = true;
 
-    // Create a mount point for the embed SDK
-    var mount = document.createElement('div');
-    mount.id = '__tz_interview_mount__';
-    document.body.appendChild(mount);
+    // Create a hidden trigger button for embed.js to attach its click handler to
+    var trigger = document.createElement('button');
+    trigger.id = '__tz_interview_trigger__';
+    trigger.style.display = 'none';
+    document.body.appendChild(trigger);
 
     var s = document.createElement('script');
     s.src = SDK_URL;
     s.setAttribute('data-api-key', key);
     s.setAttribute('data-backend-url', SDK_BACKEND);
-    s.setAttribute('data-attach', '#__tz_interview_mount__');
+    s.setAttribute('data-attach', '#__tz_interview_trigger__');
+
+    // After embed.js loads and attaches, programmatically click the trigger
+    s.onload = function() {
+      setTimeout(function() {
+        trigger.click();
+      }, 100);
+    };
+
     document.head.appendChild(s);
   }
 
