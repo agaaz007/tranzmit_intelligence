@@ -15,6 +15,7 @@ import {
     PlayCircle,
     PhoneCall,
     UserX,
+    TrendingDown,
     Sun,
     Moon,
     Sparkles,
@@ -26,6 +27,7 @@ const navItems = [
     { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Qualitative' },
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
     { href: '/dashboard/churned-sessions', icon: UserX, label: 'Churned Sessions' },
+    { href: '/dashboard/churn-scores', icon: TrendingDown, label: 'Churn Scores' },
 ];
 
 export default function Sidebar() {

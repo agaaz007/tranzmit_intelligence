@@ -84,6 +84,7 @@ model Project {
   sessions             Session[]
   churnedUsers         ChurnedUser[]
   churnedSessionBatches ChurnedSessionBatch[]
+  dailyChurnScores     DailyChurnScore[]
   synthesizedInsight   SynthesizedInsight?
   conversations        Conversation[]
   replayChunks         ReplayChunk[]
@@ -400,6 +401,64 @@ model ChurnedSessionBatch {
 
   @@index([projectId])
   @@index([status])
+}
+
+// Daily churn risk scores per user
+model DailyChurnScore {
+  id                        String   @id @default(cuid())
+  projectId                 String
+  project                   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  date                      DateTime @db.Date
+  distinctId                String
+  email                     String?
+
+  segment                   String   // 'new_user' | 'active_user' | 'paid_user'
+  isPro                     Boolean  @default(false)
+  subscriptionStatus        String?
+
+  // Recency
+  daysSinceLastEvent        Int?
+  daysSinceLastChatStarted  Int?
+  daysSinceLastMessageSent  Int?
+
+  // Volume: last_7d / prev_7d
+  sessionsLast7d            Int      @default(0)
+  sessionsPrev7d            Int      @default(0)
+  messageSentLast7d         Int      @default(0)
+  messageSentPrev7d         Int      @default(0)
+  chatStartedLast7d         Int      @default(0)
+  chatStartedPrev7d         Int      @default(0)
+  chatEndedLast7d           Int      @default(0)
+  featureUsedLast7d         Int      @default(0)
+  featureUsedPrev7d         Int      @default(0)
+
+  // Quality
+  chatCompletionRateLast7d  Float?
+  avgMessagesPerChatLast7d  Float?
+
+  // Friction
+  paywallViewedLast7d       Int      @default(0)
+  manageSubTappedLast30d    Int      @default(0)
+
+  // Scores
+  riskScore                 Int      @default(0)    // 0-100
+  riskLevel                 String   @default("low") // low|medium|high|critical
+  riskReasons               String?  @db.Text        // JSON string[]
+
+  // Sub-scores (for debuggability)
+  recencyScore              Int      @default(0)    // max 35
+  usageDropScore            Int      @default(0)    // max 30
+  engagementQualityScore    Int      @default(0)    // max 20
+  frictionScore             Int      @default(0)    // max 10
+  featureAdoptionLossScore  Int      @default(0)    // max 5
+
+  createdAt                 DateTime @default(now())
+
+  @@unique([projectId, date, distinctId])
+  @@index([projectId, date])
+  @@index([projectId, riskLevel])
+  @@index([projectId, date, riskScore])
 }
 
 // Conversations from ElevenLabs auto-fetch or manual transcript upload
