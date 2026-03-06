@@ -13,15 +13,17 @@
  * SETUP:
  *   <script>
  *     window.TRANZMIT_WIDGET_CONFIG = {
- *       apiKey:     'tranzmit_...',           // Your Tranzmit project API key
- *       endpoint:   'https://app.tranzmit.com', // Your Tranzmit instance URL
- *       distinctId: currentUser.id            // The logged-in user's distinct ID
+ *       apiKey:          'tranzmit_...',           // Your Tranzmit project API key
+ *       endpoint:        'https://app.tranzmit.com', // Your Tranzmit instance URL
+ *       distinctId:      currentUser.id,           // The logged-in user's distinct ID
+ *       interviewApiKey: 'your_interview_api_key'  // API key for the voice interview
  *     };
  *   </script>
  *   <script src="https://app.tranzmit.com/tranzmit-widget.js"></script>
  *
  * OPTIONAL CONFIG:
- *   pollInterval: 5000  — how often to check (ms, default 5000)
+ *   pollInterval:    5000  — how often to check (ms, default 5000)
+ *   interviewApiKey: '...' — API key passed to the voice interview embed
  *
  * STOP MANUALLY:
  *   window.TRANZMIT_WIDGET_STOP()
@@ -88,10 +90,14 @@
   /* ── Launch interview SDK ───────────────────────────────────── */
   function launchInterview(interviewApiKey) {
     if (interviewLaunched) return;
+    var key = interviewApiKey || cfg.interviewApiKey || '';
+    if (!key) {
+      console.warn('[Tranzmit Widget] No interviewApiKey provided — interview may not load.');
+    }
     interviewLaunched = true;
     var s = document.createElement('script');
     s.src = SDK_URL;
-    s.setAttribute('data-api-key', interviewApiKey || '');
+    s.setAttribute('data-api-key', key);
     s.setAttribute('data-backend-url', SDK_BACKEND);
     document.head.appendChild(s);
   }
