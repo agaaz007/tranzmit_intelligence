@@ -765,7 +765,7 @@ export default function SettingsPage() {
 
       <Script
         src="https://tranzmit-button-sdk-react-app.vercel.app/embed.js"
-        data-api-key="eb_live_trnzmit_sk_2026"
+        data-api-key="eb_live_tranzmit_sk_2026"
         data-attach="#cancel-btn"
         data-backend-url="https://tranzmit-button-sdk-react-app.vercel.app"
         data-prefetch-url="/dashboard/settings"
