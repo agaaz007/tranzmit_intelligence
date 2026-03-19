@@ -679,7 +679,7 @@ export default function SettingsPage() {
                 placeholder="agent_abc123..."
               />
               <p className="text-xs text-[var(--foreground-subtle)] mt-2">
-                Your ElevenLabs Conversational AI Agent ID. Used by the Qualitative tab to sync conversations.
+                Your Tranzmit Voice agent Conversational AI Agent ID. Used by the Qualitative tab to sync conversations.
               </p>
             </div>
           </div>

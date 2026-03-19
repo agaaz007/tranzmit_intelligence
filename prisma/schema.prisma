@@ -89,6 +89,7 @@ model Project {
   conversations        Conversation[]
   replayChunks         ReplayChunk[]
   widgetTriggers       WidgetTrigger[]
+  tickets              Ticket[]
 
   @@index([organizationId])
 }
@@ -509,4 +510,48 @@ model Conversation {
   @@unique([projectId, externalId])
   @@index([projectId])
   @@index([projectId, source])
+}
+
+// ==================== UNIFIED TICKET SYSTEM ====================
+//
+// Data flow:
+//   Sessions (analyzed) ─┐
+//                        ├─► aggregateEvidence() ─► LLM synthesis ─► Ticket table
+//   Conversations (analyzed) ─┘                        │
+//                                                      ├─► enrichWithChurnData()
+//                                                      ├─► computeCompositeScore()
+//                                                      └─► computeTrending()
+//
+// Tickets are the user-facing output of the unified synthesis pipeline.
+// Each ticket combines evidence from sessions + conversations, scored by
+// frequency (30%) + churn impact (30%) + severity (20%) + recency (20%).
+
+model Ticket {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String   @db.Text
+  severity        String   // 'critical' | 'high' | 'medium'
+  category        String   // 'ux_friction' | 'feature_gap' | 'bug' | 'confusion' | 'performance' | 'onboarding' | 'retention'
+  effort          String   // 'low' | 'medium' | 'high'
+  recommendation  String   @db.Text
+
+  // Structured evidence (Json — no manual parse/stringify)
+  evidence        Json     // { sessionIds: string[], conversationIds: string[], quotes: string[] }
+  scoreBreakdown  Json     // { frequency: number, churn: number, severity: number, recency: number }
+  churnImpact     Json?    // { atRiskUsers: number, avgRiskScore: number, userIds: string[] }
+  trending        Json?    // { firstSeen: string, lastSeen: string, weeklyCounts: number[] }
+
+  compositeScore  Int      @default(0)  // 0-100, deterministic from scoreBreakdown
+  status          String   @default("open") // 'open' | 'pushed'
+  jiraMarkdown    String?  @db.Text // Pre-computed markdown for clipboard copy
+
+  synthesizedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, compositeScore])
 }

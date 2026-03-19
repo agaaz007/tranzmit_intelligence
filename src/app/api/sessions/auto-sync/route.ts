@@ -4,7 +4,9 @@ import { syncSessionsFromPostHog } from '@/lib/session-sync';
 import { syncSessionsFromMixpanel } from '@/lib/mixpanel';
 import { syncSessionsFromAmplitude } from '@/lib/amplitude';
 import { analyzeSession } from '@/lib/session-analysis';
+import { analyzeConversation } from '@/lib/conversation-analysis';
 import { synthesizeInsightsWithSessionLinkage } from '@/lib/session-synthesize';
+import pLimit from 'p-limit';
 
 // POST: Auto-sync pipeline — sync from PostHog or Mixpanel, analyze pending, re-synthesize
 export async function POST(req: NextRequest) {
@@ -88,23 +90,49 @@ export async function POST(req: NextRequest) {
       data: { lastSyncedAt: new Date(), syncStatus: 'analyzing' },
     });
 
-    // Step 2: Analyze all pending sessions
-    console.log(`[Auto-Sync] Step 2: Analyzing pending sessions`);
-    const pending = await prisma.session.findMany({
-      where: { projectId, analysisStatus: 'pending' },
-      select: { id: true },
-    });
+    // Step 2: Analyze pending sessions + conversations in parallel
+    console.log(`[Auto-Sync] Step 2: Analyzing pending sessions and conversations`);
+    const limit = pLimit(5);
 
-    let analyzedCount = 0;
-    for (const session of pending) {
-      try {
-        await analyzeSession(session.id);
-        analyzedCount++;
-        console.log(`[Auto-Sync] Analyzed session ${session.id} (${analyzedCount}/${pending.length})`);
-      } catch (err) {
-        console.error(`[Auto-Sync] Failed to analyze session ${session.id}:`, err);
-      }
-    }
+    const [pendingSessions, pendingConversations] = await Promise.all([
+      prisma.session.findMany({
+        where: { projectId, analysisStatus: 'pending' },
+        select: { id: true },
+      }),
+      prisma.conversation.findMany({
+        where: { projectId, analysisStatus: 'pending' },
+        select: { id: true },
+      }),
+    ]);
+
+    let analyzedSessions = 0;
+    let analyzedConversations = 0;
+
+    // Run session and conversation analysis concurrently with p-limit(5)
+    const analysisResults = await Promise.allSettled([
+      ...pendingSessions.map(session =>
+        limit(async () => {
+          try {
+            await analyzeSession(session.id);
+            analyzedSessions++;
+            console.log(`[Auto-Sync] Analyzed session ${session.id} (${analyzedSessions}/${pendingSessions.length})`);
+          } catch (err) {
+            console.error(`[Auto-Sync] Failed to analyze session ${session.id}:`, err);
+          }
+        })
+      ),
+      ...pendingConversations.map(convo =>
+        limit(async () => {
+          try {
+            await analyzeConversation(convo.id);
+            analyzedConversations++;
+            console.log(`[Auto-Sync] Analyzed conversation ${convo.id} (${analyzedConversations}/${pendingConversations.length})`);
+          } catch (err) {
+            console.error(`[Auto-Sync] Failed to analyze conversation ${convo.id}:`, err);
+          }
+        })
+      ),
+    ]);
 
     await prisma.synthesizedInsight.update({
       where: { projectId },
@@ -135,11 +163,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`[Auto-Sync] Complete: ${syncResult.imported} synced, ${analyzedCount} analyzed, synthesis=${!!insight}`);
+    // Step 4: Trigger ticket synthesis
+    console.log(`[Auto-Sync] Step 4: Triggering ticket synthesis`);
+    try {
+      const ticketResponse = await fetch(new URL('/api/tickets/synthesize', req.nextUrl.origin), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!ticketResponse.ok) {
+        const errBody = await ticketResponse.json().catch(() => ({}));
+        console.log(`[Auto-Sync] Ticket synthesis skipped: ${ticketResponse.status} ${errBody.error || ''}`);
+      } else {
+        console.log(`[Auto-Sync] Ticket synthesis completed`);
+      }
+    } catch (ticketError) {
+      console.error('[Auto-Sync] Ticket synthesis failed:', ticketError);
+    }
+
+    console.log(`[Auto-Sync] Complete: ${syncResult.imported} synced, ${analyzedSessions} sessions analyzed, ${analyzedConversations} conversations analyzed, synthesis=${!!insight}`);
 
     return NextResponse.json({
       synced: syncResult.imported,
-      analyzed: analyzedCount,
+      analyzedSessions,
+      analyzedConversations,
       synthesized: !!insight,
       insight,
     });
