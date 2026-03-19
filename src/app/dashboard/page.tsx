@@ -372,20 +372,40 @@ export default function DashboardPage() {
         <p className="text-gray-500 dark:text-[#666] text-sm mb-12">Prioritized tickets from user sessions and conversations</p>
 
         <div className="max-w-sm">
-          <p className="text-gray-500 dark:text-[#666] text-sm mb-6">No data yet. Sync sessions or upload conversations to get started.</p>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/session-insights"
-              className="px-5 py-2.5 text-sm font-medium bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-transparent"
-            >
-              Sync Sessions
-            </Link>
-            <Link
-              href="/dashboard/interviews"
-              className="px-5 py-2.5 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
-            >
-              Upload Conversations
-            </Link>
+          <p className="text-gray-500 dark:text-[#666] text-sm mb-6">
+            {projectId
+              ? 'No tickets synthesized yet. Generate insights from your existing sessions and conversations, or sync new data.'
+              : 'No data yet. Sync sessions or upload conversations to get started.'}
+          </p>
+          <div className="flex flex-col gap-3">
+            {projectId && (
+              <button
+                onClick={handleRefresh}
+                disabled={isSynthesizing || cooldownSeconds > 0}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isSynthesizing ? 'animate-spin' : ''}`} />
+                {isSynthesizing
+                  ? 'Generating insights...'
+                  : cooldownSeconds > 0
+                  ? `${Math.floor(cooldownSeconds / 60)}:${String(cooldownSeconds % 60).padStart(2, '0')}`
+                  : 'Generate Insights'}
+              </button>
+            )}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/session-insights"
+                className="px-5 py-2.5 text-sm font-medium bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-transparent"
+              >
+                Sync Sessions
+              </Link>
+              <Link
+                href="/dashboard/interviews"
+                className="px-5 py-2.5 text-sm font-medium bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-transparent"
+              >
+                Upload Conversations
+              </Link>
+            </div>
           </div>
         </div>
       </div>
