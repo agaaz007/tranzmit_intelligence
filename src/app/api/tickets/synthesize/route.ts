@@ -240,12 +240,13 @@ Create tickets that combine evidence from both session replays and user conversa
 
 CRITICAL RULES:
 1. Each ticket must reference specific entry numbers from the evidence list
-2. Quotes must be VERBATIM from conversations — copy exact words
-3. Group related issues into single tickets (don't create duplicates)
-4. Prioritize by: frequency of occurrence, severity of impact, breadth of evidence
-5. Category should reflect the root cause, not the symptom
-6. Recommendations must be specific and actionable
-7. Create 5-15 tickets depending on evidence volume`;
+2. Quotes must be VERBATIM from conversations — copy the exact words shown after "Quotes:" in the evidence list
+3. If a ticket references any conversation entries that contain quotes, you MUST copy those quotes into the ticket's quotes array
+4. Group related issues into single tickets (don't create duplicates)
+5. Prioritize by: frequency of occurrence, severity of impact, breadth of evidence
+6. Category should reflect the root cause, not the symptom
+7. Recommendations must be specific and actionable
+8. Create 5-15 tickets depending on evidence volume`;
 
     const userPrompt = `Here is the numbered evidence list from ${parsedSessions.length} session replays and ${parsedConversations.length} user conversations:
 

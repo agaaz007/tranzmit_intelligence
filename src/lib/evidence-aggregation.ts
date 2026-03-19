@@ -314,7 +314,7 @@ export function buildNumberedPromptEntries(
 
       const quotePart =
         convo.analysis?.key_quotes && convo.analysis.key_quotes.length > 0
-          ? `Quotes: "${convo.analysis.key_quotes[0]}"`
+          ? `Quotes: ${convo.analysis.key_quotes.slice(0, 3).map((q) => `"${q}"`).join('; ')}`
           : '';
 
       const parts = [painPart, quotePart].filter(Boolean).join(', ');
