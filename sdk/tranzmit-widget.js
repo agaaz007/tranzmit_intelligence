@@ -156,6 +156,7 @@
       'bottom:24px',
       'right:24px',
       'width:296px',
+      'max-width:calc(100vw - 32px)',
       'border-radius:20px',
       'overflow:hidden',
       'background:rgba(255,255,255,0.08)',

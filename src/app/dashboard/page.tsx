@@ -104,10 +104,10 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
   const sourceCount = ticket.evidence.sessionIds.length + ticket.evidence.conversationIds.length;
 
   return (
-    <div className="bg-white dark:bg-[#141414] rounded-xl overflow-hidden border border-gray-200 dark:border-transparent">
+    <div className="bg-[var(--card)] rounded-xl overflow-hidden border border-[var(--border)]">
       <button
         onClick={onToggle}
-        className="w-full p-5 text-left hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+        className="w-full p-5 text-left hover:bg-[var(--muted)] transition-colors"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -151,7 +151,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 border-t border-gray-200 dark:border-[#222]">
+            <div className="px-5 pb-5 border-t border-[var(--border)]">
               <p className="text-gray-600 dark:text-[#888] text-sm mt-4">{ticket.description}</p>
 
               {/* Score Breakdown */}
@@ -162,7 +162,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                   { label: 'Severity', value: ticket.scoreBreakdown.severity, weight: '20%' },
                   { label: 'Recency', value: ticket.scoreBreakdown.recency, weight: '20%' },
                 ].map(({ label, value, weight }) => (
-                  <div key={label} className="bg-gray-50 dark:bg-[#0d0d0d] rounded-lg p-2.5 text-center">
+                  <div key={label} className="bg-[var(--muted)] rounded-lg p-2.5 text-center">
                     <p className="text-gray-400 dark:text-[#555] text-[10px] uppercase tracking-wider">{label}</p>
                     <p className="text-gray-900 dark:text-white text-sm font-medium mt-0.5">{value}</p>
                     <p className="text-gray-400 dark:text-[#444] text-[10px]">{weight}</p>
@@ -437,27 +437,27 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="px-8 pb-8">
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-[#141414] rounded-xl p-5 border border-gray-200 dark:border-transparent">
+          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
             <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Total Tickets</p>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-medium text-gray-900 dark:text-white">{stats?.total || 0}</span>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#141414] rounded-xl p-5 border border-gray-200 dark:border-transparent">
+          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
             <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Critical Issues</p>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-medium text-gray-900 dark:text-white">{criticalCount}</span>
               {criticalCount > 0 && <span className="text-red-500 text-sm">needs attention</span>}
             </div>
           </div>
-          <div className="bg-white dark:bg-[#141414] rounded-xl p-5 border border-gray-200 dark:border-transparent">
+          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
             <p className="text-gray-500 dark:text-[#666] text-sm mb-2">High Priority</p>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-medium text-gray-900 dark:text-white">{stats?.high || 0}</span>
               <span className="text-orange-500 text-sm">tickets</span>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#141414] rounded-xl p-5 border border-gray-200 dark:border-transparent">
+          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
             <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Last Synthesized</p>
             <div className="flex items-baseline gap-2">
               <span className="text-gray-900 dark:text-white text-sm font-medium">

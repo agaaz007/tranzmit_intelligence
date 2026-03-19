@@ -28,6 +28,9 @@ const navItems = [
     { href: '/dashboard/hypotheses', icon: Lightbulb, label: 'Qualitative' },
     { href: '/dashboard/recovery', icon: PhoneCall, label: 'Recovery' },
     { href: '/dashboard/churned-sessions', icon: UserX, label: 'Churned Sessions' },
+];
+
+const retentionItems = [
     { href: '/dashboard/churn-scores', icon: TrendingDown, label: 'Churn Scores' },
     { href: '/dashboard/triggers', icon: Mic, label: 'Widget Triggers' },
 ];
@@ -75,7 +78,7 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-2.5 space-y-0.5 relative">
+            <nav className="flex-1 px-2.5 space-y-0.5 relative overflow-y-auto">
                 {navItems.map((item) => {
                     const isActive = item.exact
                         ? pathname === item.href
@@ -90,13 +93,42 @@ export default function Sidebar() {
                                         : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
                                 }`}
                             >
-                                {/* Active indicator glow */}
                                 {isActive && (
                                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-primary)] to-blue-600 dark:from-[var(--brand-primary)] dark:to-blue-500" />
                                 )}
-                                <item.icon className={`w-4 h-4 relative z-10 ${isActive ? '' : ''}`} strokeWidth={1.75} />
+                                <item.icon className="w-4 h-4 relative z-10" strokeWidth={1.75} />
                                 <span className="font-medium relative z-10">{item.label}</span>
-                                {/* Hover highlight */}
+                                {!isActive && (
+                                    <div className="absolute inset-0 bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
+                            </div>
+                        </Link>
+                    );
+                })}
+
+                {/* Retention section */}
+                <div className="pt-3 pb-0.5">
+                    <span className="px-3 text-[10px] font-semibold text-[var(--foreground-subtle)] uppercase tracking-widest">
+                        Retention
+                    </span>
+                </div>
+                {retentionItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href);
+
+                    return (
+                        <Link key={item.href} href={item.href}>
+                            <div
+                                className={`sidebar-item flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] relative overflow-hidden ${
+                                    isActive
+                                        ? 'sidebar-item-active text-white'
+                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
+                                }`}
+                            >
+                                {isActive && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-primary)] to-blue-600 dark:from-[var(--brand-primary)] dark:to-blue-500" />
+                                )}
+                                <item.icon className="w-4 h-4 relative z-10" strokeWidth={1.75} />
+                                <span className="font-medium relative z-10">{item.label}</span>
                                 {!isActive && (
                                     <div className="absolute inset-0 bg-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                                 )}

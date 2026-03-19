@@ -12,6 +12,8 @@ import {
   Users,
   Filter,
   ChevronDown,
+  ShieldCheck,
+  Mic,
 } from 'lucide-react';
 
 interface ChurnScore {
@@ -65,36 +67,68 @@ const SEGMENT_LABELS: Record<string, string> = {
 export default function ChurnScoresPage() {
   const [scores, setScores] = useState<ChurnScore[]>([]);
   const [total, setTotal] = useState(0);
+  const [riskCounts, setRiskCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isTriggering, setIsTriggering] = useState(false);
   const [page, setPage] = useState(1);
   const [filterRiskLevel, setFilterRiskLevel] = useState<string | null>(null);
   const [filterSegment, setFilterSegment] = useState<string | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [triggerResult, setTriggerResult] = useState<string | null>(null);
+  const [triggeringUser, setTriggeringUser] = useState<string | null>(null);
+  const [userTriggerResults, setUserTriggerResults] = useState<Record<string, string>>({});
   const limit = 25;
 
   const loadScores = useCallback(async () => {
     const projectId = localStorage.getItem('currentProjectId');
     if (!projectId) return;
 
+    setLoadError(null);
     try {
       let url = `/api/churn-scores?projectId=${projectId}&limit=${limit}&offset=${(page - 1) * limit}`;
       if (filterRiskLevel) url += `&riskLevel=${filterRiskLevel}`;
       if (filterSegment) url += `&segment=${filterSegment}`;
 
       const res = await fetch(url);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Server error ${res.status}`);
+      }
       const data = await res.json();
       setScores(data.scores || []);
       setTotal(data.total || 0);
-    } catch (err) {
-      console.error('Failed to load churn scores:', err);
+      if (data.riskCounts) setRiskCounts(data.riskCounts);
+    } catch (err: any) {
+      setLoadError(err.message || 'Failed to load churn scores');
     }
   }, [page, filterRiskLevel, filterSegment]);
 
   useEffect(() => {
     loadScores().finally(() => setIsLoading(false));
   }, [loadScores]);
+
+  const handleTriggerForUser = async (score: ChurnScore) => {
+    const projectId = localStorage.getItem('currentProjectId');
+    if (!projectId || triggeringUser === score.id) return;
+    setTriggeringUser(score.id);
+    try {
+      const res = await fetch('/api/widget/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, distinctIds: [score.distinctId] }),
+      });
+      const data = await res.json();
+      setUserTriggerResults((prev) => ({
+        ...prev,
+        [score.id]: res.ok ? 'Triggered! Widget will appear within 5s.' : `Error: ${data.error}`,
+      }));
+    } catch {
+      setUserTriggerResults((prev) => ({ ...prev, [score.id]: 'Network error. Please retry.' }));
+    } finally {
+      setTriggeringUser(null);
+    }
+  };
 
   const handleTriggerScoring = async () => {
     const projectId = localStorage.getItem('currentProjectId');
@@ -122,16 +156,8 @@ export default function ChurnScoresPage() {
     }
   };
 
-  // Count by risk level
-  const riskCounts = scores.reduce(
-    (acc, s) => {
-      acc[s.riskLevel] = (acc[s.riskLevel] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
   const totalPages = Math.ceil(total / limit);
+  const hasActiveFilters = filterRiskLevel !== null || filterSegment !== null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -177,6 +203,23 @@ export default function ChurnScoresPage() {
         </motion.div>
       )}
 
+      {/* Load error banner */}
+      {loadError && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-3 mb-6 text-sm border-l-4 border-l-red-500 flex items-center justify-between"
+        >
+          <span className="text-red-500">{loadError}</span>
+          <button
+            onClick={() => { setIsLoading(true); loadScores().finally(() => setIsLoading(false)); }}
+            className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] underline ml-4"
+          >
+            Retry
+          </button>
+        </motion.div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-4">
@@ -202,10 +245,10 @@ export default function ChurnScoresPage() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card p-4">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingDown className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm text-[var(--foreground-muted)]">Medium</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <span className="text-sm text-[var(--foreground-muted)]">Low Risk</span>
           </div>
-          <div className="text-2xl font-bold text-yellow-500">{riskCounts.medium || 0}</div>
+          <div className="text-2xl font-bold text-emerald-500">{riskCounts.low || 0}</div>
         </motion.div>
       </div>
 
@@ -215,6 +258,7 @@ export default function ChurnScoresPage() {
         <select
           value={filterRiskLevel || ''}
           onChange={(e) => { setFilterRiskLevel(e.target.value || null); setPage(1); }}
+          aria-label="Filter by risk level"
           className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm text-[var(--foreground)]"
         >
           <option value="">All Risk Levels</option>
@@ -226,6 +270,7 @@ export default function ChurnScoresPage() {
         <select
           value={filterSegment || ''}
           onChange={(e) => { setFilterSegment(e.target.value || null); setPage(1); }}
+          aria-label="Filter by segment"
           className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm text-[var(--foreground)]"
         >
           <option value="">All Segments</option>
@@ -245,16 +290,33 @@ export default function ChurnScoresPage() {
         ) : scores.length === 0 ? (
           <div className="p-12 text-center">
             <TrendingDown className="w-12 h-12 mx-auto text-[var(--foreground-subtle)] mb-4" />
-            <div className="text-[var(--foreground-muted)] mb-2">No churn scores yet</div>
-            <button
-              onClick={handleTriggerScoring}
-              disabled={isTriggering}
-              className="text-[var(--brand-primary)] hover:underline text-sm"
-            >
-              Run scoring to compute risk scores for all users
-            </button>
+            {hasActiveFilters ? (
+              <>
+                <div className="text-[var(--foreground-muted)] mb-2">
+                  No users match the current filters
+                </div>
+                <button
+                  onClick={() => { setFilterRiskLevel(null); setFilterSegment(null); setPage(1); }}
+                  className="text-[var(--brand-primary)] hover:underline text-sm"
+                >
+                  Clear filters
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-[var(--foreground-muted)] mb-2">No churn scores yet</div>
+                <button
+                  onClick={handleTriggerScoring}
+                  disabled={isTriggering}
+                  className="text-[var(--brand-primary)] hover:underline text-sm"
+                >
+                  Run scoring to compute risk scores for all users
+                </button>
+              </>
+            )}
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="table-header border-b border-[var(--border)]">
               <tr>
@@ -346,6 +408,8 @@ export default function ChurnScoresPage() {
                       <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => setExpandedUser(isExpanded ? null : score.id)}
+                          aria-expanded={isExpanded}
+                          aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
                           className="p-1.5 hover:bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)] transition-colors"
                         >
                           <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -382,6 +446,26 @@ export default function ChurnScoresPage() {
                                   </div>
                                 </div>
                               )}
+                              {/* Trigger Interview CTA */}
+                              <div className="mb-4">
+                                <button
+                                  onClick={() => handleTriggerForUser(score)}
+                                  disabled={triggeringUser === score.id}
+                                  className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-500 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                                >
+                                  {triggeringUser === score.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Mic className="w-3.5 h-3.5" />
+                                  )}
+                                  {triggeringUser === score.id ? 'Triggering…' : 'Trigger Voice Interview'}
+                                </button>
+                                {userTriggerResults[score.id] && (
+                                  <p className={`text-xs mt-1.5 ${userTriggerResults[score.id].startsWith('Error') || userTriggerResults[score.id].startsWith('Network') ? 'text-red-500' : 'text-emerald-500'}`}>
+                                    {userTriggerResults[score.id]}
+                                  </p>
+                                )}
+                              </div>
                               <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">Metrics</h4>
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div className="text-[var(--foreground-muted)]">
@@ -419,6 +503,7 @@ export default function ChurnScoresPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
