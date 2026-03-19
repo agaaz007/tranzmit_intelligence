@@ -30,7 +30,9 @@
       "Bash(git push)",
       "Skill(plan-eng-review)",
       "Skill(plan-ceo-review)",
-      "Bash(wc -l /private/tmp/claude-502/-Users-Agaaz-conductor-workspaces-voicejourneys-indianapolis-v1/09e215d4-f6cf-468c-8f21-f7f404251d80/tasks/*.output)"
+      "Bash(wc -l /private/tmp/claude-502/-Users-Agaaz-conductor-workspaces-voicejourneys-indianapolis-v1/09e215d4-f6cf-468c-8f21-f7f404251d80/tasks/*.output)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
