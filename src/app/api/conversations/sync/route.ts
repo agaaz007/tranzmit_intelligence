@@ -70,9 +70,10 @@ export async function POST(request: NextRequest) {
             status: detail.status === 'done' ? 'completed' : detail.status,
             duration: detail.duration_seconds ?? conv.duration_seconds,
             transcript: detail.transcript ? JSON.stringify(detail.transcript) : null,
-            analysis: detail.analysis ? JSON.stringify(detail.analysis) : null,
-            analysisStatus: detail.analysis ? 'completed' : 'pending',
+            // Don't use ElevenLabs' analysis — it lacks key_quotes. Always re-analyze with our LLM.
+            analysisStatus: detail.transcript ? 'pending' : 'failed',
             metadata: JSON.stringify({
+              elevenlabs_analysis: detail.analysis ?? null,
               agent_id: resolvedAgentId,
               call_successful: conv.call_successful,
               ...conv.metadata,

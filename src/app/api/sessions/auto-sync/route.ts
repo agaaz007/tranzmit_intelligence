@@ -106,6 +106,26 @@ export async function POST(req: NextRequest) {
     console.log(`[Auto-Sync] Step 2: Analyzing pending sessions and conversations`);
     const limit = pLimit(5);
 
+    // Reset ElevenLabs conversations that have old-format analysis (no key_quotes)
+    // These were marked 'completed' before we added our own analysis step.
+    const elevenLabsToReset = await prisma.conversation.findMany({
+      where: { projectId, source: 'elevenlabs', analysisStatus: 'completed', analysis: { not: null } },
+      select: { id: true, analysis: true },
+    });
+    const needsReset = elevenLabsToReset.filter((c) => {
+      try {
+        const parsed = JSON.parse(c.analysis as string) as Record<string, unknown>;
+        return !Array.isArray(parsed.key_quotes) || (parsed.key_quotes as unknown[]).length === 0;
+      } catch { return true; }
+    });
+    if (needsReset.length > 0) {
+      await prisma.conversation.updateMany({
+        where: { id: { in: needsReset.map((c) => c.id) } },
+        data: { analysisStatus: 'pending', analysis: null },
+      });
+      console.log(`[Auto-Sync] Reset ${needsReset.length} ElevenLabs conversations for re-analysis`);
+    }
+
     const [pendingSessions, pendingConversations] = await Promise.all([
       prisma.session.findMany({
         where: { projectId, analysisStatus: 'pending' },
