@@ -6,7 +6,19 @@ import { syncSessionsFromAmplitude } from '@/lib/amplitude';
 import { analyzeSession } from '@/lib/session-analysis';
 import { analyzeConversation } from '@/lib/conversation-analysis';
 import { synthesizeInsightsWithSessionLinkage } from '@/lib/session-synthesize';
-import pLimit from 'p-limit';
+
+// Inline concurrency limiter (avoids ESM-only p-limit dependency)
+function pLimit(concurrency: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  const next = () => { if (queue.length > 0 && active < concurrency) { active++; queue.shift()!(); } };
+  return <T>(fn: () => Promise<T>): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const run = () => fn().then(resolve, reject).finally(() => { active--; next(); });
+      queue.push(run);
+      next();
+    });
+}
 
 // POST: Auto-sync pipeline — sync from PostHog or Mixpanel, analyze pending, re-synthesize
 export async function POST(req: NextRequest) {
