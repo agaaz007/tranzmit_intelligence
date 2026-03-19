@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProjectWithAccess } from '@/lib/auth';
+import { analyzeConversation } from '@/lib/conversation-analysis';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
@@ -144,6 +145,43 @@ export async function POST(request: NextRequest) {
       create: { projectId, syncStatus: 'synthesizing' },
       update: { syncStatus: 'synthesizing' },
     });
+
+    // -----------------------------------------------------------------------
+    // Pre-step: ensure conversations are analyzed before synthesizing
+    // -----------------------------------------------------------------------
+
+    // 1. Reset ElevenLabs conversations that have wrong analysis format (no key_quotes)
+    const elevenLabsCompleted = await prisma.conversation.findMany({
+      where: { projectId, source: 'elevenlabs', analysisStatus: 'completed', analysis: { not: null } },
+      select: { id: true, analysis: true },
+    });
+    const toReset = elevenLabsCompleted.filter((c) => {
+      try {
+        const p = JSON.parse(c.analysis as string) as Record<string, unknown>;
+        return !Array.isArray(p.key_quotes) || (p.key_quotes as unknown[]).length === 0;
+      } catch { return true; }
+    });
+    if (toReset.length > 0) {
+      await prisma.conversation.updateMany({
+        where: { id: { in: toReset.map((c) => c.id) } },
+        data: { analysisStatus: 'pending', analysis: null },
+      });
+    }
+
+    // 2. Analyze pending conversations (up to 15, concurrency 3)
+    const pendingConvos = await prisma.conversation.findMany({
+      where: { projectId, analysisStatus: 'pending', transcript: { not: null } },
+      select: { id: true },
+      take: 15,
+    });
+
+    if (pendingConvos.length > 0) {
+      const chunks = [];
+      for (let i = 0; i < pendingConvos.length; i += 3) chunks.push(pendingConvos.slice(i, i + 3));
+      for (const chunk of chunks) {
+        await Promise.allSettled(chunk.map((c) => analyzeConversation(c.id)));
+      }
+    }
 
     // -----------------------------------------------------------------------
     // Fetch sessions & conversations in parallel
