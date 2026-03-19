@@ -41,7 +41,11 @@ export async function GET(request: NextRequest) {
       where.segment = segment;
     }
 
-    const [scores, total] = await Promise.all([
+    // Base where (projectId + date only, no riskLevel/segment filter) for global counts
+    const whereBase: any = { projectId };
+    if (date) whereBase.date = new Date(date);
+
+    const [scores, total, riskCounts] = await Promise.all([
       prisma.dailyChurnScore.findMany({
         where,
         orderBy: [{ date: 'desc' }, { riskScore: 'desc' }],
@@ -49,9 +53,19 @@ export async function GET(request: NextRequest) {
         skip: offset,
       }),
       prisma.dailyChurnScore.count({ where }),
+      prisma.dailyChurnScore.groupBy({
+        by: ['riskLevel'],
+        where: whereBase,
+        _count: { riskLevel: true },
+      }),
     ]);
 
-    return NextResponse.json({ scores, total, limit, offset });
+    const riskCountsMap: Record<string, number> = {};
+    for (const row of riskCounts) {
+      riskCountsMap[row.riskLevel] = row._count.riskLevel;
+    }
+
+    return NextResponse.json({ scores, total, limit, offset, riskCounts: riskCountsMap });
   } catch (error: any) {
     console.error('[ChurnScores API] GET error:', error);
     return NextResponse.json(

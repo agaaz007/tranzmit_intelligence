@@ -11,9 +11,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const insight = await prisma.synthesizedInsight.findUnique({
-      where: { projectId },
-    });
+    const [insight, actualSessionCount] = await Promise.all([
+      prisma.synthesizedInsight.findUnique({ where: { projectId } }),
+      prisma.session.count({ where: { projectId } }),
+    ]);
 
     if (!insight) {
       return NextResponse.json(null);
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     const data: SynthesizedInsightData = {
       id: insight.id,
       projectId: insight.projectId,
-      sessionCount: insight.sessionCount,
+      sessionCount: actualSessionCount,
       criticalIssues: insight.criticalIssues ? JSON.parse(insight.criticalIssues) : [],
       patternSummary: insight.patternSummary || '',
       topUserGoals: insight.topUserGoals ? JSON.parse(insight.topUserGoals) : [],
