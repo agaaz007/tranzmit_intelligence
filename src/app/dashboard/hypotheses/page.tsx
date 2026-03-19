@@ -142,7 +142,7 @@ export default function QualitativePage() {
       }
     } catch (error) {
       console.error('Sync error:', error);
-      setSyncMessage('Failed to sync. Check your ElevenLabs API key.');
+      setSyncMessage('Failed to sync. Check your AI PM Agent configuration.');
     } finally {
       setIsSyncing(false);
     }
@@ -240,7 +240,7 @@ export default function QualitativePage() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--foreground)]">Qualitative</h1>
           <p className="text-[var(--foreground-muted)] mt-1">
-            Conversation transcripts from ElevenLabs and manual uploads
+            Conversation transcripts from AI PM Agent and manual uploads
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function QualitativePage() {
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            Sync from ElevenLabs
+            Sync AI PM Agent
           </button>
         </div>
       </div>
@@ -276,7 +276,7 @@ export default function QualitativePage() {
       {/* Agent ID Prompt */}
       {showAgentIdPrompt && (
         <div className="mb-6 card p-4">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2">Enter your ElevenLabs Agent ID</h3>
+          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2">Enter your AI PM Agent ID</h3>
           <p className="text-xs text-[var(--foreground-muted)] mb-3">
             This will be saved to your project for future syncs.
           </p>
@@ -315,7 +315,7 @@ export default function QualitativePage() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-4">
           <div className="text-2xl font-bold text-violet-500 dark:text-violet-400">{elevenlabsCount}</div>
-          <div className="text-sm text-[var(--foreground-muted)]">ElevenLabs Synced</div>
+          <div className="text-sm text-[var(--foreground-muted)]">AI PM Agent</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card p-4">
           <div className="text-2xl font-bold text-blue-500 dark:text-blue-400">{manualCount}</div>
@@ -342,7 +342,7 @@ export default function QualitativePage() {
                   : 'text-[var(--foreground-muted)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'elevenlabs' ? 'ElevenLabs' : 'Manual'}
+              {f === 'all' ? 'All' : f === 'elevenlabs' ? 'AI PM Agent' : 'Manual'}
             </button>
           ))}
         </div>
@@ -367,7 +367,7 @@ export default function QualitativePage() {
           <MessageCircle className="w-12 h-12 mx-auto mb-4 text-[var(--foreground-subtle)]" />
           <p className="text-[var(--foreground)] font-medium mb-2">No conversations yet</p>
           <p className="text-[var(--foreground-muted)] text-sm">
-            Sync conversations from ElevenLabs or upload a transcript manually.
+            Sync conversations from AI PM Agent or upload a transcript manually.
           </p>
         </div>
       ) : (
@@ -413,7 +413,7 @@ export default function QualitativePage() {
                         ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
                         : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                     }`}>
-                      {conv.source === 'elevenlabs' ? 'ElevenLabs' : 'Manual'}
+                      {conv.source === 'elevenlabs' ? 'AI PM Agent' : 'Manual'}
                     </span>
                   </td>
                   <td className="px-4 py-3">{getStatusBadge(conv.status)}</td>
