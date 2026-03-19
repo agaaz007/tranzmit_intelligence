@@ -150,12 +150,12 @@ export async function POST(request: NextRequest) {
     // Pre-step: ensure conversations are analyzed before synthesizing
     // -----------------------------------------------------------------------
 
-    // 1. Reset ElevenLabs conversations that have wrong analysis format (no key_quotes)
-    const elevenLabsCompleted = await prisma.conversation.findMany({
-      where: { projectId, source: 'elevenlabs', analysisStatus: 'completed', analysis: { not: null } },
+    // 1. Reset any conversations whose analysis is missing key_quotes (any source)
+    const completedConvos = await prisma.conversation.findMany({
+      where: { projectId, analysisStatus: 'completed', analysis: { not: null } },
       select: { id: true, analysis: true },
     });
-    const toReset = elevenLabsCompleted.filter((c) => {
+    const toReset = completedConvos.filter((c) => {
       try {
         const p = JSON.parse(c.analysis as string) as Record<string, unknown>;
         return !Array.isArray(p.key_quotes) || (p.key_quotes as unknown[]).length === 0;
