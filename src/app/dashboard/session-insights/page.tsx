@@ -777,7 +777,7 @@ function SessionInsightsContent() {
                                 <div className="space-y-2">
                                     {persistedInsights.criticalIssues.slice(0, 5).map((issue, i) => {
                                         const isExpanded = expandedIssueIdx === i;
-                                        const sessionCount = issue.sessionIds?.length || (issue as Record<string, unknown>).evidenceSessionCount as number || 0;
+                                        const sessionCount = issue.sessionIds?.length || issue.evidenceSessionCount || 0;
                                         return (
                                             <div key={i} className={`rounded-lg border transition-all ${isExpanded ? 'border-[var(--border-hover)] bg-[var(--muted)]/20' : 'border-transparent hover:bg-[var(--muted)]/20'}`}>
                                                 <button

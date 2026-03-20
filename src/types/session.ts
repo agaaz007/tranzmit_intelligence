@@ -78,6 +78,7 @@ export interface EnhancedCriticalIssue {
   recommendation: string;
   sessionIds: string[];
   sessionNames: string[];
+  evidenceSessionCount?: number;
 }
 
 export interface SynthesizedInsightData {
