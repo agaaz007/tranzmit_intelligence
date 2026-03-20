@@ -435,6 +435,8 @@ Be specific and reference the actual data. Don't be generic.`;
       return {
         ...issue,
         id: `issue-${idx}`,
+        sessionIds: [...new Set(matchingSessions)].slice(0, 5),
+        sessionNames: [],
         linked_sessions: [...new Set(matchingSessions)].slice(0, 5),
         linked_conversations: [...new Set(matchingConvos)].slice(0, 5),
       };

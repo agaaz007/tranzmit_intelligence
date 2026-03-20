@@ -20,11 +20,35 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(null);
     }
 
+    // Normalize critical issues — the dashboard synthesize route stores
+    // `linked_sessions` + `evidence.session_count` instead of `sessionIds`,
+    // so we unify both shapes into EnhancedCriticalIssue format.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawIssues: any[] = insight.criticalIssues ? JSON.parse(insight.criticalIssues) : [];
+    const normalizedIssues = rawIssues.map((issue) => {
+      const sessionIds: string[] = issue.sessionIds?.length
+        ? issue.sessionIds
+        : issue.linked_sessions?.length
+          ? issue.linked_sessions
+          : [];
+      const evidenceCount: number = issue.evidence?.session_count || 0;
+      return {
+        title: issue.title || '',
+        description: issue.description || '',
+        frequency: issue.frequency || (evidenceCount > 0 ? `${evidenceCount} sessions affected` : ''),
+        severity: issue.severity || 'medium',
+        recommendation: issue.recommendation || '',
+        sessionIds,
+        sessionNames: issue.sessionNames || [],
+        evidenceSessionCount: evidenceCount,
+      };
+    });
+
     const data: SynthesizedInsightData = {
       id: insight.id,
       projectId: insight.projectId,
       sessionCount: actualSessionCount,
-      criticalIssues: insight.criticalIssues ? JSON.parse(insight.criticalIssues) : [],
+      criticalIssues: normalizedIssues,
       patternSummary: insight.patternSummary || '',
       topUserGoals: insight.topUserGoals ? JSON.parse(insight.topUserGoals) : [],
       immediateActions: insight.immediateActions ? JSON.parse(insight.immediateActions) : [],
