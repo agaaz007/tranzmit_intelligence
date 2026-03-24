@@ -316,6 +316,10 @@ model Session {
   analysisStatus    String    @default("pending") // 'pending' | 'analyzing' | 'completed' | 'failed'
   analyzedAt        DateTime?
 
+  multimodalAnalysis String?  @db.Text  // JSON: fused DOM + vision analysis
+  multimodalStatus   String   @default("pending") // 'pending' | 'analyzing' | 'completed' | 'failed'
+  multimodalAt       DateTime?
+
   metadata          String?   // JSON: additional metadata (viewport, behavioral signals, etc.)
 
   createdAt         DateTime  @default(now())

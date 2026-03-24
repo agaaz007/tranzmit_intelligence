@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight, BarChart3, Eye } from 'lucide-react';
 import type { SessionListItem, SessionsListResponse, RRWebEvent } from '@/types/session';
 
 interface SessionListProps {
@@ -105,11 +105,34 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
     try {
       const res = await fetch(`/api/sessions/${sessionId}/analyze`, { method: 'POST' });
       if (res.ok) {
-        // Refresh the list to show updated status
         fetchSessions();
       }
     } catch (err) {
       console.error('Failed to analyze session:', err);
+    }
+  };
+
+  const handleMultimodalAnalyze = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Optimistically update the status
+    setSessions(prev => prev.map(s =>
+      s.id === sessionId ? { ...s, multimodalStatus: 'analyzing' as const } : s
+    ));
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/multimodal-analyze`, { method: 'POST' });
+      if (res.ok) {
+        fetchSessions();
+      } else {
+        // Revert on failure
+        setSessions(prev => prev.map(s =>
+          s.id === sessionId ? { ...s, multimodalStatus: 'failed' as const } : s
+        ));
+      }
+    } catch (err) {
+      console.error('Failed to run multimodal analysis:', err);
+      setSessions(prev => prev.map(s =>
+        s.id === sessionId ? { ...s, multimodalStatus: 'failed' as const } : s
+      ));
     }
   };
 
@@ -299,6 +322,27 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                       >
                         Analyze
                       </Button>
+                    )}
+                    {session.analysisStatus === 'completed' && session.multimodalStatus !== 'completed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleMultimodalAnalyze(session.id, e)}
+                        disabled={session.multimodalStatus === 'analyzing'}
+                        className="h-8 px-2 gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10"
+                      >
+                        {session.multimodalStatus === 'analyzing' ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
+                        ) : (
+                          <><Eye className="w-3 h-3" /> Multimodal</>
+                        )}
+                      </Button>
+                    )}
+                    {session.multimodalStatus === 'completed' && (
+                      <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
+                        <Eye className="w-3 h-3 mr-1" />
+                        MM
+                      </Badge>
                     )}
                     <Button
                       variant="ghost"

@@ -13,6 +13,8 @@ export interface SessionListItem {
   eventCount: number;
   analysisStatus: 'pending' | 'analyzing' | 'completed' | 'failed';
   analysis?: SessionAnalysis;
+  multimodalStatus: 'pending' | 'analyzing' | 'completed' | 'failed';
+  multimodalAnalysis?: MultimodalAnalysis;
   hasEvents: boolean;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +33,27 @@ export interface SessionAnalysis {
 export interface FrustrationPoint {
   timestamp: string;
   issue: string;
+}
+
+export interface MultimodalFrictionPoint {
+  timestamp: string;
+  dom_evidence: string;
+  visual_evidence: string;
+  issue: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  product_fix: string;
+}
+
+export interface MultimodalAnalysis {
+  summary: string;
+  user_intent: string;
+  tags: string[];
+  went_well: string[];
+  friction_points: MultimodalFrictionPoint[];
+  ux_rating: number;
+  description: string;
+  visual_insights: string[];
+  frames_analyzed: number;
 }
 
 export interface SessionWithEvents extends SessionListItem {
