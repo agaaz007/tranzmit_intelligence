@@ -18,16 +18,20 @@ function buildFusedPrompt(
   keyframes: KeyframeCapture[]
 ): { system: string; content: Array<{ type: string; text?: string; image_url?: { url: string } }> } {
 
-  const system = `You are an expert UX Researcher performing MULTIMODAL analysis of a recorded user session. You have two data sources:
+  const hasVisuals = keyframes.length > 0;
 
-1. DOM EVENT LOG — the actual browser event stream (clicks, hovers, scrolls, rage clicks, dead clicks, page loads). This is GROUND TRUTH for user behavior.
-2. VISUAL KEYFRAMES — screenshots captured at key moments during the session. These show what was VISUALLY on screen when events occurred.
+  const system = `You are an expert UX Researcher performing ${hasVisuals ? 'MULTIMODAL' : 'DEEP DOM'} analysis of a recorded user session. You have ${hasVisuals ? 'two data sources' : 'one data source'}:
+
+1. DOM EVENT LOG — the actual browser event stream (clicks, hovers, scrolls, rage clicks, dead clicks, page loads). This is GROUND TRUTH for user behavior.${hasVisuals ? `
+2. VISUAL KEYFRAMES — screenshots captured at key moments during the session. These show what was VISUALLY on screen when events occurred.` : ''}
 
 ANALYSIS RULES:
 1. ONLY reference events that actually appear in the session log
-2. Use the EXACT timestamps from the logs when referencing events
+2. Use the EXACT timestamps from the logs when referencing events${hasVisuals ? `
 3. Cross-reference DOM events with visual frames at matching timestamps
-4. For each friction point, cite BOTH the DOM evidence AND the visual evidence
+4. For each friction point, cite BOTH the DOM evidence AND the visual evidence` : `
+3. For each friction point, cite the DOM evidence and infer likely visual state from context
+4. Set visual_evidence to your best inference of what the UI likely looked like based on DOM context`}
 5. Pay special attention to friction indicators like [RAGE CLICK], [NO RESPONSE], [CONSOLE ERROR]
 6. Be specific about element names from the logs
 7. Factor in hover/hesitation patterns — high hesitations suggest UI confusion or unclear CTAs
@@ -38,9 +42,10 @@ ANALYSIS RULES:
 12. Cleared inputs suggest form friction or user changing their mind
 13. Pay attention to URL paths in "Navigated to" events — they reveal which specific pages the user visited
 14. When interactions include ancestor context like "(in heading: ..., section: ...)", use that to understand WHAT SPECIFIC CONTENT the user was engaging with
-15. Failed network request paths reveal which specific resources failed to load
+15. Failed network request paths reveal which specific resources failed to load${hasVisuals ? `
 16. USE THE VISUAL FRAMES to identify: layout issues, unclear CTAs, missing loading indicators, confusing UI states, broken layouts, content not rendering, or any visual problem the DOM log alone cannot capture
-17. If a visual frame shows something interesting that the DOM log doesn't capture (e.g., a broken layout, misleading visual hierarchy, poor contrast), call it out as a VISUAL-ONLY insight
+17. If a visual frame shows something interesting that the DOM log doesn't capture (e.g., a broken layout, misleading visual hierarchy, poor contrast), call it out as a VISUAL-ONLY insight` : `
+16. Infer likely visual issues from DOM patterns (e.g., rage clicks suggest unclear CTAs, dead clicks suggest broken elements)`}
 
 SESSION CONTEXT:
 ${sessionContext}`;
@@ -48,18 +53,20 @@ ${sessionContext}`;
   // Build content array with interleaved images and text
   const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
 
-  // Add keyframes with timestamps
-  for (const frame of keyframes) {
-    content.push({
-      type: 'image_url',
-      image_url: { url: `data:image/jpeg;base64,${frame.base64}` },
-    });
-    const mins = Math.floor(frame.timestamp / 60);
-    const secs = frame.timestamp % 60;
-    content.push({
-      type: 'text',
-      text: `[Frame at ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} — captured because: ${frame.reason}]`,
-    });
+  // Add keyframes with timestamps (if available)
+  if (keyframes.length > 0) {
+    for (const frame of keyframes) {
+      content.push({
+        type: 'image_url',
+        image_url: { url: `data:image/jpeg;base64,${frame.base64}` },
+      });
+      const mins = Math.floor(frame.timestamp / 60);
+      const secs = frame.timestamp % 60;
+      content.push({
+        type: 'text',
+        text: `[Frame at ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} — captured because: ${frame.reason}]`,
+      });
+    }
   }
 
   // Add the DOM event log and analysis instructions
@@ -177,9 +184,9 @@ export async function runMultimodalAnalysis(sessionId: string): Promise<Multimod
     const keyTimestamps = extractKeyTimestamps(semanticSession);
     console.log(`[Multimodal] Session ${sessionId}: ${keyTimestamps.length} key timestamps identified`);
 
-    // Step 3: Capture screenshots at those timestamps
+    // Step 3: Capture screenshots at those timestamps (gracefully degrades on serverless)
     const keyframes = await captureKeyframes(events, keyTimestamps);
-    console.log(`[Multimodal] Session ${sessionId}: ${keyframes.length} keyframes captured`);
+    console.log(`[Multimodal] Session ${sessionId}: ${keyframes.length} keyframes captured${keyframes.length === 0 ? ' (DOM-only mode)' : ''}`);
 
     // Step 4: Build session context (same as session-analysis.ts)
     const sessionLog = semanticSession.logs
