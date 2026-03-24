@@ -1,10 +1,22 @@
-import { chromium, type Browser, type Page } from 'playwright';
 import type { SemanticSession } from '@/lib/rrweb-parser';
 
 export interface KeyframeCapture {
   timestamp: number; // seconds into the session
   base64: string;    // base64-encoded JPEG
   reason: string;    // why this frame was selected
+}
+
+/**
+ * Dynamically import Playwright. Returns null if not available (e.g. Vercel serverless).
+ */
+async function getPlaywright() {
+  try {
+    const pw = await import('playwright');
+    return pw.chromium;
+  } catch {
+    console.warn('[Multimodal] Playwright not available — running DOM-only analysis');
+    return null;
+  }
 }
 
 const MAX_FRAMES = 25;
@@ -105,10 +117,16 @@ export async function captureKeyframes(
 ): Promise<KeyframeCapture[]> {
   if (timestamps.length === 0) return [];
 
-  let browser: Browser | null = null;
+  const chromium = await getPlaywright();
+  if (!chromium) {
+    // Playwright not available (serverless) — return empty, caller will do DOM-only analysis
+    return [];
+  }
+
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
   try {
     browser = await chromium.launch({ headless: true });
-    const page: Page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
     // Build a minimal HTML page with rrweb-player loaded via CDN
     const html = `<!DOCTYPE html>
