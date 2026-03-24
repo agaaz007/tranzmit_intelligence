@@ -147,6 +147,9 @@ IMPORTANT RULES:
 8. Scroll reversals indicate the user is searching for something they can't find
 9. Pinch zooms on mobile suggest content isn't responsive or text is too small
 10. Cleared inputs suggest form friction or user changing their mind
+11. Pay attention to URL paths in "Navigated to" events — they reveal which specific pages, communities, threads, or features the user visited
+12. When interactions include ancestor context like "(in heading: ..., section: ...)", use that to understand WHAT SPECIFIC CONTENT the user was engaging with — not just what UI element they clicked
+13. Failed network request paths (e.g., /api/posts/123) reveal which specific resources failed to load
 
 SESSION CONTEXT:
 ${sessionContext}`;
