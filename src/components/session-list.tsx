@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight, BarChart3, Eye } from 'lucide-react';
 import type { SessionListItem, SessionsListResponse, RRWebEvent } from '@/types/session';
+import { captureKeyframesClientSide } from '@/lib/client-keyframe-capture';
 
 interface SessionListProps {
   projectId: string;
@@ -114,16 +115,33 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
 
   const handleMultimodalAnalyze = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Optimistically update the status
     setSessions(prev => prev.map(s =>
       s.id === sessionId ? { ...s, multimodalStatus: 'analyzing' as const } : s
     ));
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/multimodal-analyze`, { method: 'POST' });
+      // Step 1: Fetch events (use cache if available)
+      let events = eventsCache.get(sessionId);
+      if (!events) {
+        const eventsRes = await fetch(`/api/sessions/${sessionId}/events`);
+        if (!eventsRes.ok) throw new Error('Failed to fetch events');
+        const eventsData = await eventsRes.json();
+        events = eventsData.events as RRWebEvent[];
+        setEventsCache(prev => new Map(prev).set(sessionId, events!));
+      }
+
+      // Step 2: Capture screenshots client-side
+      const keyframes = await captureKeyframesClientSide(events);
+      if (keyframes.length === 0) throw new Error('No frames captured');
+
+      // Step 3: Send keyframes to API for VLM analysis
+      const res = await fetch(`/api/sessions/${sessionId}/multimodal-analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyframes }),
+      });
       if (res.ok) {
         fetchSessions();
       } else {
-        // Revert on failure
         setSessions(prev => prev.map(s =>
           s.id === sessionId ? { ...s, multimodalStatus: 'failed' as const } : s
         ));
