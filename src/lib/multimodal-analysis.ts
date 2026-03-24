@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { parseRRWebSession } from '@/lib/rrweb-parser';
-import { extractKeyTimestamps, captureKeyframes, type KeyframeCapture } from '@/lib/replay-screenshotter';
+import type { KeyframeCapture } from '@/lib/replay-screenshotter';
 import type { MultimodalAnalysis } from '@/types/session';
 
 const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
@@ -18,20 +18,16 @@ function buildFusedPrompt(
   keyframes: KeyframeCapture[]
 ): { system: string; content: Array<{ type: string; text?: string; image_url?: { url: string } }> } {
 
-  const hasVisuals = keyframes.length > 0;
+  const system = `You are an expert UX Researcher performing MULTIMODAL analysis of a recorded user session. You have two data sources:
 
-  const system = `You are an expert UX Researcher performing ${hasVisuals ? 'MULTIMODAL' : 'DEEP DOM'} analysis of a recorded user session. You have ${hasVisuals ? 'two data sources' : 'one data source'}:
-
-1. DOM EVENT LOG — the actual browser event stream (clicks, hovers, scrolls, rage clicks, dead clicks, page loads). This is GROUND TRUTH for user behavior.${hasVisuals ? `
-2. VISUAL KEYFRAMES — screenshots captured at key moments during the session. These show what was VISUALLY on screen when events occurred.` : ''}
+1. DOM EVENT LOG — the actual browser event stream (clicks, hovers, scrolls, rage clicks, dead clicks, page loads). This is GROUND TRUTH for user behavior.
+2. VISUAL KEYFRAMES — screenshots captured at key moments during the session. These show what was VISUALLY on screen when events occurred.
 
 ANALYSIS RULES:
 1. ONLY reference events that actually appear in the session log
-2. Use the EXACT timestamps from the logs when referencing events${hasVisuals ? `
+2. Use the EXACT timestamps from the logs when referencing events
 3. Cross-reference DOM events with visual frames at matching timestamps
-4. For each friction point, cite BOTH the DOM evidence AND the visual evidence` : `
-3. For each friction point, cite the DOM evidence and infer likely visual state from context
-4. Set visual_evidence to your best inference of what the UI likely looked like based on DOM context`}
+4. For each friction point, cite BOTH the DOM evidence AND the visual evidence
 5. Pay special attention to friction indicators like [RAGE CLICK], [NO RESPONSE], [CONSOLE ERROR]
 6. Be specific about element names from the logs
 7. Factor in hover/hesitation patterns — high hesitations suggest UI confusion or unclear CTAs
@@ -42,10 +38,9 @@ ANALYSIS RULES:
 12. Cleared inputs suggest form friction or user changing their mind
 13. Pay attention to URL paths in "Navigated to" events — they reveal which specific pages the user visited
 14. When interactions include ancestor context like "(in heading: ..., section: ...)", use that to understand WHAT SPECIFIC CONTENT the user was engaging with
-15. Failed network request paths reveal which specific resources failed to load${hasVisuals ? `
+15. Failed network request paths reveal which specific resources failed to load
 16. USE THE VISUAL FRAMES to identify: layout issues, unclear CTAs, missing loading indicators, confusing UI states, broken layouts, content not rendering, or any visual problem the DOM log alone cannot capture
-17. If a visual frame shows something interesting that the DOM log doesn't capture (e.g., a broken layout, misleading visual hierarchy, poor contrast), call it out as a VISUAL-ONLY insight` : `
-16. Infer likely visual issues from DOM patterns (e.g., rage clicks suggest unclear CTAs, dead clicks suggest broken elements)`}
+17. If a visual frame shows something interesting that the DOM log doesn't capture (e.g., a broken layout, misleading visual hierarchy, poor contrast), call it out as a VISUAL-ONLY insight
 
 SESSION CONTEXT:
 ${sessionContext}`;
@@ -53,20 +48,18 @@ ${sessionContext}`;
   // Build content array with interleaved images and text
   const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
 
-  // Add keyframes with timestamps (if available)
-  if (keyframes.length > 0) {
-    for (const frame of keyframes) {
-      content.push({
-        type: 'image_url',
-        image_url: { url: `data:image/jpeg;base64,${frame.base64}` },
-      });
-      const mins = Math.floor(frame.timestamp / 60);
-      const secs = frame.timestamp % 60;
-      content.push({
-        type: 'text',
-        text: `[Frame at ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} — captured because: ${frame.reason}]`,
-      });
-    }
+  // Add keyframes with timestamps
+  for (const frame of keyframes) {
+    content.push({
+      type: 'image_url',
+      image_url: { url: `data:image/jpeg;base64,${frame.base64}` },
+    });
+    const mins = Math.floor(frame.timestamp / 60);
+    const secs = frame.timestamp % 60;
+    content.push({
+      type: 'text',
+      text: `[Frame at ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} — captured because: ${frame.reason}]`,
+    });
   }
 
   // Add the DOM event log and analysis instructions
@@ -153,10 +146,17 @@ async function callFireworksVLM(
 }
 
 /**
- * Run full multimodal analysis for a session.
- * Sequential pipeline: DOM analysis first -> extract key timestamps -> capture screenshots -> VLM fusion.
+ * Run multimodal analysis for a session.
+ * Keyframes are captured client-side and passed in. Server does DOM parsing + VLM fusion.
  */
-export async function runMultimodalAnalysis(sessionId: string): Promise<MultimodalAnalysis> {
+export async function runMultimodalAnalysis(
+  sessionId: string,
+  keyframes: KeyframeCapture[]
+): Promise<MultimodalAnalysis> {
+  if (!keyframes || keyframes.length === 0) {
+    throw new Error('Keyframes are required for multimodal analysis');
+  }
+
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
     select: { id: true, events: true, analysisStatus: true, analysis: true },
@@ -180,15 +180,9 @@ export async function runMultimodalAnalysis(sessionId: string): Promise<Multimod
       throw new Error('No meaningful user interactions found');
     }
 
-    // Step 2: Extract key timestamps from DOM analysis
-    const keyTimestamps = extractKeyTimestamps(semanticSession);
-    console.log(`[Multimodal] Session ${sessionId}: ${keyTimestamps.length} key timestamps identified`);
+    console.log(`[Multimodal] Session ${sessionId}: ${keyframes.length} client-captured keyframes received`);
 
-    // Step 3: Capture screenshots at those timestamps (gracefully degrades on serverless)
-    const keyframes = await captureKeyframes(events, keyTimestamps);
-    console.log(`[Multimodal] Session ${sessionId}: ${keyframes.length} keyframes captured${keyframes.length === 0 ? ' (DOM-only mode)' : ''}`);
-
-    // Step 4: Build session context (same as session-analysis.ts)
+    // Step 2: Build session context
     const sessionLog = semanticSession.logs
       .map(log => {
         const flagStr = log.flags.length > 0 ? ` ${log.flags.join(' ')}` : '';
@@ -247,12 +241,12 @@ export async function runMultimodalAnalysis(sessionId: string): Promise<Multimod
       signals.completedGoal ? '- User COMPLETED GOAL (form submission or conversion detected)' : null,
     ].filter(Boolean).join('\n');
 
-    // Step 5: Call VLM with fused prompt
+    // Step 3: Call VLM with fused prompt (DOM log + client-captured keyframes)
     const { system, content } = buildFusedPrompt(sessionLog, sessionContext, keyframes);
     const analysis = await callFireworksVLM(system, content);
     analysis.frames_analyzed = keyframes.length;
 
-    // Step 6: Save result
+    // Step 4: Save result
     await prisma.session.update({
       where: { id: sessionId },
       data: {
