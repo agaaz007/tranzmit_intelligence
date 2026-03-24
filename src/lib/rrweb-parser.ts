@@ -152,115 +152,84 @@ interface NodeInfo {
     textContent?: string;
     href?: string;
     src?: string;
+    dataAttributes?: Record<string, string>;
+    parentId?: number;
 }
 
 function getSemanticName(info: NodeInfo): string {
-    const { tagName, id, className, type, placeholder, name, role, ariaLabel, textContent, href } = info;
-    
+    const { tagName, id, className, type, placeholder, name, role, ariaLabel, textContent, href, dataAttributes } = info;
+
     // Start with the element type
     const tag = tagName?.toLowerCase() || 'element';
+
+    // Build a data-attribute suffix if meaningful attributes exist
+    let dataSuffix = '';
+    if (dataAttributes) {
+        const meaningful = Object.entries(dataAttributes)
+            .filter(([k]) => k.match(/data-(testid|name|title|label|slug|type|action)/))
+            .map(([, v]) => v)
+            .slice(0, 2);
+        if (meaningful.length > 0) {
+            dataSuffix = ` [${meaningful.join(', ')}]`;
+        }
+    }
     
-    // Special handling for common interactive elements
+    // Resolve base name then append data-attribute context
+    let baseName = tag;
+
     if (tag === 'button' || role === 'button') {
-        if (textContent) {
-            return `"${redact(textContent)}" button`;
-        }
-        if (ariaLabel) {
-            return `"${ariaLabel}" button`;
-        }
-        return 'button';
-    }
-    
-    if (tag === 'a') {
-        if (textContent) {
-            return `"${redact(textContent)}" link`;
-        }
-        if (ariaLabel) {
-            return `"${ariaLabel}" link`;
-        }
-        if (href) {
-            return `link to ${href.split('/').pop() || href}`;
-        }
-        return 'link';
-    }
-    
-    if (tag === 'input') {
+        baseName = textContent ? `"${redact(textContent)}" button`
+            : ariaLabel ? `"${ariaLabel}" button`
+            : 'button';
+    } else if (tag === 'a') {
+        baseName = textContent ? `"${redact(textContent)}" link`
+            : ariaLabel ? `"${ariaLabel}" link`
+            : href ? `link to ${href.split('/').pop() || href}`
+            : 'link';
+    } else if (tag === 'input') {
         const inputType = type || 'text';
-        if (placeholder) {
-            return `"${placeholder}" ${inputType} field`;
-        }
-        if (name) {
-            return `"${name}" ${inputType} field`;
-        }
-        if (ariaLabel) {
-            return `"${ariaLabel}" ${inputType} field`;
-        }
-        return `${inputType} input field`;
-    }
-    
-    if (tag === 'textarea') {
-        if (placeholder) {
-            return `"${placeholder}" text area`;
-        }
-        if (name) {
-            return `"${name}" text area`;
-        }
-        return 'text area';
-    }
-    
-    if (tag === 'select') {
-        if (name) {
-            return `"${name}" dropdown`;
-        }
-        return 'dropdown';
-    }
-    
-    if (tag === 'img') {
-        if (info.src) {
-            const filename = info.src.split('/').pop()?.split('?')[0] || 'image';
-            return `image (${filename})`;
-        }
-        return 'image';
-    }
-    
-    // For divs/spans with meaningful content
-    if ((tag === 'div' || tag === 'span') && textContent && textContent.length < 50) {
-        return `"${redact(textContent)}"`;
-    }
-    
-    // Use aria-label if available
-    if (ariaLabel) {
-        return `"${ariaLabel}" ${tag}`;
-    }
-    
-    // Use ID if meaningful (not auto-generated)
-    if (id && !id.match(/^[a-z0-9]{8,}$/i) && !id.startsWith(':r')) {
-        return `#${id} ${tag}`;
-    }
-    
-    // Use first meaningful class
-    if (className) {
-        const classes = className.split(' ').filter(c => 
-            c.length > 2 && 
-            !c.startsWith('_') && 
+        baseName = placeholder ? `"${placeholder}" ${inputType} field`
+            : name ? `"${name}" ${inputType} field`
+            : ariaLabel ? `"${ariaLabel}" ${inputType} field`
+            : `${inputType} input field`;
+    } else if (tag === 'textarea') {
+        baseName = placeholder ? `"${placeholder}" text area`
+            : name ? `"${name}" text area`
+            : 'text area';
+    } else if (tag === 'select') {
+        baseName = name ? `"${name}" dropdown` : 'dropdown';
+    } else if (tag === 'img') {
+        baseName = info.src
+            ? `image (${info.src.split('/').pop()?.split('?')[0] || 'image'})`
+            : 'image';
+    } else if ((tag === 'div' || tag === 'span') && textContent && textContent.length < 50) {
+        baseName = `"${redact(textContent)}"`;
+    } else if (ariaLabel) {
+        baseName = `"${ariaLabel}" ${tag}`;
+    } else if (id && !id.match(/^[a-z0-9]{8,}$/i) && !id.startsWith(':r')) {
+        baseName = `#${id} ${tag}`;
+    } else if (className) {
+        const classes = className.split(' ').filter(c =>
+            c.length > 2 &&
+            !c.startsWith('_') &&
             !c.match(/^[a-z0-9]{8,}$/i)
         );
         if (classes.length > 0) {
-            return `.${classes[0]} ${tag}`;
+            baseName = `.${classes[0]} ${tag}`;
         }
     }
-    
-    return tag;
+
+    return baseName + dataSuffix;
 }
 
-function buildNodeMap(node: any, map: Map<number, NodeInfo>, parentText?: string) {
+function buildNodeMap(node: any, map: Map<number, NodeInfo>, parentNodeId?: number) {
     if (!node) return;
 
     if (node.id) {
         const info: NodeInfo = {
             tagName: node.tagName || '',
         };
-        
+
         if (node.type === NodeType.Element) {
             if (node.attributes) {
                 info.id = node.attributes.id;
@@ -272,8 +241,24 @@ function buildNodeMap(node: any, map: Map<number, NodeInfo>, parentText?: string
                 info.ariaLabel = node.attributes['aria-label'];
                 info.href = node.attributes.href;
                 info.src = node.attributes.src;
+
+                // Extract data-* attributes for contextual richness
+                const dataAttrs: Record<string, string> = {};
+                for (const [key, value] of Object.entries(node.attributes)) {
+                    if (key.startsWith('data-') && typeof value === 'string' && value.length < 200) {
+                        dataAttrs[key] = value;
+                    }
+                }
+                if (Object.keys(dataAttrs).length > 0) {
+                    info.dataAttributes = dataAttrs;
+                }
             }
-            
+
+            // Track parent for ancestor context walking
+            if (parentNodeId) {
+                info.parentId = parentNodeId;
+            }
+
             // Get text content from direct text children
             if (node.childNodes) {
                 const textNodes = node.childNodes.filter((c: any) => c.type === NodeType.Text);
@@ -288,14 +273,57 @@ function buildNodeMap(node: any, map: Map<number, NodeInfo>, parentText?: string
                     }
                 }
             }
-            
+
             map.set(node.id, info);
         }
     }
 
     if (node.childNodes) {
-        node.childNodes.forEach((child: any) => buildNodeMap(child, map));
+        node.childNodes.forEach((child: any) => buildNodeMap(child, map, node.id));
     }
+}
+
+/**
+ * Walk up the DOM ancestor chain to find contextual information
+ * around an interacted element (e.g., post title, author, section heading).
+ */
+function getAncestorContext(nodeId: number, nodeMap: Map<number, NodeInfo>, maxDepth = 8): string {
+    const contextParts: string[] = [];
+    let currentId: number | undefined = nodeMap.get(nodeId)?.parentId;
+    let depth = 0;
+
+    while (currentId && depth < maxDepth) {
+        const ancestor = nodeMap.get(currentId);
+        if (!ancestor) break;
+
+        // Collect meaningful text from ancestors (card titles, headings, section names)
+        const tag = ancestor.tagName?.toLowerCase();
+        const isHeading = tag && /^h[1-6]$/.test(tag);
+        const isSection = tag === 'section' || tag === 'article' || tag === 'main' || tag === 'nav';
+        const isCard = ancestor.role === 'listitem' || ancestor.role === 'article' ||
+                       ancestor.className?.match(/card|post|thread|message|comment|item/i);
+
+        if (isHeading && ancestor.textContent) {
+            contextParts.push(`heading: "${ancestor.textContent}"`);
+        } else if ((isSection || isCard) && ancestor.ariaLabel) {
+            contextParts.push(`section: "${ancestor.ariaLabel}"`);
+        }
+
+        // Pick up data attributes from ancestor containers
+        if (ancestor.dataAttributes) {
+            for (const [key, value] of Object.entries(ancestor.dataAttributes)) {
+                // Only include semantically meaningful data attributes
+                if (key.match(/data-(post|thread|message|community|channel|room|conversation|item|card|user|author|topic|category|id|name|title|slug)/)) {
+                    contextParts.push(`${key.replace('data-', '')}: "${value}"`);
+                }
+            }
+        }
+
+        currentId = ancestor.parentId;
+        depth++;
+    }
+
+    return contextParts.length > 0 ? ` (in ${contextParts.join(', ')})` : '';
 }
 
 export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
@@ -428,12 +456,20 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
         }
     }
 
-    // Add initial context log
+    // Track current URL for SPA navigation context
+    let currentUrl = pageUrl;
+
+    // Add initial context log — preserve full URL path for route-level context
     if (pageUrl) {
+        let urlDisplay = pageUrl;
+        try {
+            const parsed = new URL(pageUrl);
+            urlDisplay = `${parsed.hostname}${parsed.pathname}${parsed.search}`;
+        } catch {}
         logs.push({
             timestamp: '[00:00]',
             action: 'Session Started',
-            details: `on ${new URL(pageUrl).hostname}${pageTitle ? ` - "${pageTitle}"` : ''}`,
+            details: `on ${urlDisplay}${pageTitle ? ` - "${pageTitle}"` : ''}`,
             flags: [],
             rawTimestamp: startTime,
         });
@@ -450,6 +486,23 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
         // Track idle time
         if (event.timestamp - lastInteractionTime > IDLE_THRESHOLD) {
             totalIdleTime += event.timestamp - lastInteractionTime - IDLE_THRESHOLD;
+        }
+
+        // Track SPA navigation via subsequent Meta events (route changes)
+        if (event.type === EventType.Meta && event.data?.href && event.data.href !== currentUrl) {
+            currentUrl = event.data.href;
+            let urlDisplay = currentUrl;
+            try {
+                const parsed = new URL(currentUrl);
+                urlDisplay = `${parsed.hostname}${parsed.pathname}${parsed.search}`;
+            } catch {}
+            logs.push({
+                timestamp: timeStr,
+                action: 'Navigated to',
+                details: urlDisplay,
+                flags: [],
+                rawTimestamp: event.timestamp,
+            });
         }
 
         // Handle mutations to update node map
@@ -497,7 +550,8 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
                 if (data.type === MouseInteractionType.Click) {
                     totalClicks++;
                     action = 'Clicked';
-                    details = nodeName;
+                    const ancestorCtx = nodeId ? getAncestorContext(nodeId, nodeMap) : '';
+                    details = nodeName + ancestorCtx;
 
                     // Rage Click Detection - 3+ clicks on same element within 2 seconds
                     const recentClicks = clickHistory.filter(
@@ -573,7 +627,8 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
                     const tag = nodeInfo?.tagName?.toLowerCase();
                     if (tag === 'input' || tag === 'textarea' || tag === 'select') {
                         action = 'Focused on';
-                        details = nodeName;
+                        const focusCtx = nodeId ? getAncestorContext(nodeId, nodeMap) : '';
+                        details = nodeName + focusCtx;
                         // Initialize input tracking
                         if (!inputState.has(nodeId)) {
                             inputState.set(nodeId, { lastText: '', lastTimestamp: event.timestamp, hadContent: false });
@@ -675,7 +730,8 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
                                     if (hoverDuration > 2000) {
                                         hesitations++;
                                         action = 'Hesitated over';
-                                        details = nodeName;
+                                        const hesitationCtx = nodeId ? getAncestorContext(nodeId, nodeMap) : '';
+                                        details = nodeName + hesitationCtx;
                                         flags.push('[HESITATION]');
                                     } else {
                                         action = 'Hovered over';
@@ -1053,8 +1109,17 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
                 
                 // PostHog specific events
                 if (tag === '$pageview') {
-                    action = 'Viewed page';
-                    details = payload.$current_url || '';
+                    const rawUrl = payload.$current_url || '';
+                    let urlDisplay = rawUrl;
+                    try {
+                        const parsed = new URL(rawUrl);
+                        urlDisplay = `${parsed.hostname}${parsed.pathname}${parsed.search}`;
+                    } catch {}
+                    if (rawUrl && rawUrl !== currentUrl) {
+                        currentUrl = rawUrl;
+                    }
+                    action = 'Navigated to';
+                    details = urlDisplay;
                 }
                 if (tag === '$pageleave') {
                     action = 'Left page';
@@ -1078,14 +1143,27 @@ export function parseRRWebSession(events: RRWebEvent[]): SemanticSession {
                 // Network request tracking
                 if (payload.requests && Array.isArray(payload.requests)) {
                     // Track failed network requests
-                    const failedRequests = payload.requests.filter((r: any) => 
+                    const failedRequests = payload.requests.filter((r: any) =>
                         r.responseStatus >= 400 || r.responseStatus === 0
                     );
                     if (failedRequests.length > 0) {
                         networkErrors += failedRequests.length;
                         action = 'Network error';
                         const errorCodes = [...new Set(failedRequests.map((r: any) => r.responseStatus))];
-                        details = `${failedRequests.length} failed request(s) - ${errorCodes.join(', ')}`;
+                        // Include request URLs for API context (strip query params for privacy)
+                        const failedUrls = failedRequests
+                            .slice(0, 3)
+                            .map((r: any) => {
+                                try {
+                                    const u = new URL(r.name || r.url || '');
+                                    return `${u.pathname} (${r.responseStatus})`;
+                                } catch {
+                                    return null;
+                                }
+                            })
+                            .filter(Boolean);
+                        const urlInfo = failedUrls.length > 0 ? ` — ${failedUrls.join(', ')}` : '';
+                        details = `${failedRequests.length} failed request(s)${urlInfo}`;
                         flags.push('[NETWORK ERROR]');
                     }
                     
