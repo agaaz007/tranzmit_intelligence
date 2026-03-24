@@ -4,6 +4,11 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
+    server: {
+      deps: {
+        inline: ['rrweb'],
+      },
+    },
   },
   resolve: {
     alias: {
