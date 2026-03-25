@@ -31,7 +31,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)]`}
       >
-        <ClerkProvider>
+        <ClerkProvider afterSignUpUrl="/onboarding" signUpForceRedirectUrl="/onboarding">
           <PostHogProvider>
             <ThemeProvider>
               {children}

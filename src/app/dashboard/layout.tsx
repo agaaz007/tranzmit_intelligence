@@ -14,17 +14,36 @@ export default function DashboardLayout({
     const [checking, setChecking] = useState(true);
 
     useEffect(() => {
-        // Check if user already completed onboarding this session
-        const cameFromOnboarding = sessionStorage.getItem('onboardingComplete');
+        const checkOnboarding = async () => {
+            // Fast path: if we already verified this session, skip the API call
+            const verified = sessionStorage.getItem('onboardingVerified');
+            if (verified) {
+                setChecking(false);
+                return;
+            }
 
-        if (cameFromOnboarding) {
-            // User completed onboarding this session, let them through
-            setChecking(false);
-            return;
-        }
+            try {
+                const res = await fetch('/api/onboarding/status');
+                const data = await res.json();
 
-        // Always redirect to onboarding to ask for org ID
-        router.replace('/onboarding');
+                if (data.onboarded) {
+                    // Store project ID and mark as verified for this session
+                    if (data.projectId) {
+                        localStorage.setItem('currentProjectId', data.projectId);
+                    }
+                    sessionStorage.setItem('onboardingVerified', 'true');
+                    setChecking(false);
+                } else {
+                    // Not configured — send to onboarding
+                    router.replace('/onboarding');
+                }
+            } catch {
+                // On error, let them through rather than blocking
+                setChecking(false);
+            }
+        };
+
+        checkOnboarding();
     }, [router]);
 
     if (checking) {
