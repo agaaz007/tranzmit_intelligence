@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { generateProjectApiKey } from '@/lib/account-provisioning';
 
 // Auto-create the juno-demo organization and project if they don't exist
 async function ensureJunoDemoExists() {
@@ -21,7 +22,7 @@ async function ensureJunoDemoExists() {
         create: {
           id: 'juno-demo',
           name: 'Juno Health Companion',
-          apiKey: `demo_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          apiKey: generateProjectApiKey(),
         },
       },
     },
