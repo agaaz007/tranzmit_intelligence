@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import Script from 'next/script';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Save, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, Activity, X, ChevronDown, ChevronUp, LogOut } from 'lucide-react';
@@ -60,7 +60,7 @@ interface ProjectSettings {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const { signOut } = useClerk();
   const [project, setProject] = useState<ProjectSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -195,11 +195,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     localStorage.removeItem('currentProjectId');
     sessionStorage.removeItem('onboardingVerified');
     sessionStorage.removeItem('onboardingComplete');
-    router.push('/onboarding?force=1');
+    await signOut({ redirectUrl: '/sign-in' });
   };
 
   const handleCreate = async () => {

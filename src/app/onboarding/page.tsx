@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Radio, Sparkles, ArrowRight, ArrowLeft, Loader2, Check, Cloud, BarChart3 } from 'lucide-react';
 
 type Step = 'welcome' | 'choose-source' | 'configure' | 'done';
 type Source = 'posthog' | 'amplitude';
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const forcedOnboarding = searchParams.get('force') === '1';
@@ -546,5 +546,17 @@ export default function OnboardingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
