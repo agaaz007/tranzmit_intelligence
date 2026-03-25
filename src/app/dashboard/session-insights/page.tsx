@@ -1096,6 +1096,11 @@ function SessionInsightsContent() {
                                         }>
                                             {dbSelectedSession.source === 'posthog' ? 'PostHog' : dbSelectedSession.source === 'mixpanel' ? 'Mixpanel' : dbSelectedSession.source === 'amplitude' ? 'Amplitude' : 'Upload'}
                                         </Badge>
+                                        {dbSelectedSession.multimodalStatus === 'completed' && (
+                                            <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/30">
+                                                Multimodal
+                                            </Badge>
+                                        )}
                                     </CardTitle>
                                     <Button variant="ghost" size="sm" onClick={handleCloseDetail}>
                                         <X className="w-4 h-4" />
@@ -1163,6 +1168,72 @@ function SessionInsightsContent() {
                                     </ul>
                                 </CardContent>
                             </Card>
+                            {dbSelectedSession.multimodalAnalysis && (
+                                <Card className="bg-[var(--card)] border-purple-500/20">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-purple-500 text-sm">
+                                            <Zap className="w-4 h-4" />Multimodal Analysis
+                                            <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-[10px] ml-auto">
+                                                {dbSelectedSession.multimodalAnalysis.frames_analyzed} frames
+                                            </Badge>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div>
+                                            <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{dbSelectedSession.multimodalAnalysis.summary}</p>
+                                        </div>
+                                        {dbSelectedSession.multimodalAnalysis.visual_insights && dbSelectedSession.multimodalAnalysis.visual_insights.length > 0 && (
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-purple-500 uppercase tracking-wider mb-2">Visual Insights</h4>
+                                                <ul className="space-y-1.5">
+                                                    {dbSelectedSession.multimodalAnalysis.visual_insights.map((insight: string, i: number) => (
+                                                        <li key={i} className="flex items-start gap-2 text-sm text-[var(--muted-foreground)]">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                                                            {insight}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {dbSelectedSession.multimodalAnalysis.friction_points && dbSelectedSession.multimodalAnalysis.friction_points.length > 0 && (
+                                            <div>
+                                                <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2">Visual Friction Points</h4>
+                                                <div className="space-y-2">
+                                                    {dbSelectedSession.multimodalAnalysis.friction_points.map((pt: any, i: number) => (
+                                                        <div key={i} className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <Badge variant="outline" className="text-purple-400 border-purple-500/30 text-[10px]">{pt.timestamp}</Badge>
+                                                                <Badge variant="outline" className={
+                                                                    pt.severity === 'critical' ? 'text-red-500 border-red-500/30 text-[10px]' :
+                                                                    pt.severity === 'high' ? 'text-orange-500 border-orange-500/30 text-[10px]' :
+                                                                    'text-yellow-500 border-yellow-500/30 text-[10px]'
+                                                                }>{pt.severity}</Badge>
+                                                            </div>
+                                                            <p className="text-sm text-[var(--foreground)]">{pt.issue}</p>
+                                                            {pt.visual_evidence && (
+                                                                <p className="text-xs text-purple-400 mt-1">Visual: {pt.visual_evidence}</p>
+                                                            )}
+                                                            {pt.product_fix && (
+                                                                <p className="text-xs text-emerald-400 mt-1">Fix: {pt.product_fix}</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <span className="text-xs text-[var(--muted-foreground)]">UX Rating:</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className={`text-sm font-bold ${
+                                                    dbSelectedSession.multimodalAnalysis.ux_rating >= 7 ? 'text-emerald-500' :
+                                                    dbSelectedSession.multimodalAnalysis.ux_rating >= 4 ? 'text-yellow-500' :
+                                                    'text-red-500'
+                                                }`}>{dbSelectedSession.multimodalAnalysis.ux_rating}/10</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </section>
                 )}
