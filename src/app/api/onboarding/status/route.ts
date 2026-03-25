@@ -21,6 +21,7 @@ export async function GET() {
       return NextResponse.json({
         onboarded: true,
         projectId: configuredProject.id,
+        organizationId: orgData.organization.id,
       });
     }
 
@@ -30,6 +31,7 @@ export async function GET() {
       onboarded: false,
       reason: 'no_integration',
       projectId: defaultProject?.id || null,
+      organizationId: orgData.organization.id,
       organizationName: orgData.organization.name,
     });
   } catch (error) {

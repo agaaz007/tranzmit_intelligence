@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Radio, Sparkles, ArrowRight, ArrowLeft, Loader2, Check, Cloud, BarChart3 } from 'lucide-react';
+import { Radio, Sparkles, ArrowRight, ArrowLeft, Loader2, Check, Cloud, BarChart3, Copy, Users } from 'lucide-react';
 
-type Step = 'welcome' | 'choose-source' | 'configure' | 'done';
+type Step = 'welcome' | 'org-setup' | 'choose-source' | 'configure' | 'done';
 type Source = 'posthog' | 'amplitude';
 
 function OnboardingContent() {
@@ -14,9 +14,16 @@ function OnboardingContent() {
   const [step, setStep] = useState<Step>('welcome');
   const [source, setSource] = useState<Source | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Org setup state
+  const [joinOrgId, setJoinOrgId] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const [copiedOrgId, setCopiedOrgId] = useState(false);
 
   // PostHog fields
   const [posthogKey, setPosthogKey] = useState('');
@@ -67,12 +74,15 @@ function OnboardingContent() {
         if (data.projectId) {
           setProjectId(data.projectId);
         }
+        if (data.organizationId) {
+          setOrganizationId(data.organizationId);
+        }
 
         if (forcedOnboarding) {
           if (data.projectId) {
             await loadExistingProject(data.projectId);
           } else {
-            setStep('choose-source');
+            setStep('org-setup');
           }
           return;
         }
@@ -92,6 +102,39 @@ function OnboardingContent() {
 
     checkStatus();
   }, [forcedOnboarding, router]);
+
+  const handleJoinOrg = async () => {
+    setJoinError('');
+    const trimmed = joinOrgId.trim();
+    if (!trimmed) {
+      setJoinError('Please enter an Organization ID.');
+      return;
+    }
+    setIsJoining(true);
+    try {
+      const res = await fetch('/api/organizations/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgId: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setJoinError(data.error || 'Organization not found.');
+        return;
+      }
+      // Switch to the joined org's project
+      if (data.projects?.length > 0) {
+        setProjectId(data.projects[0].id);
+        localStorage.setItem('currentProjectId', data.projects[0].id);
+      }
+      setOrganizationId(trimmed);
+      setStep('choose-source');
+    } catch {
+      setJoinError('Something went wrong. Please try again.');
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   const handleSaveIntegration = async () => {
     setError('');
@@ -196,11 +239,11 @@ function OnboardingContent() {
 
         {/* Progress indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {['welcome', 'choose-source', 'configure', 'done'].map((s, i) => (
+          {(['welcome', 'org-setup', 'choose-source', 'configure', 'done'] as const).map((s, i) => (
             <div
               key={s}
               className={`h-1.5 rounded-full transition-all ${
-                i <= ['welcome', 'choose-source', 'configure', 'done'].indexOf(step)
+                i <= (['welcome', 'org-setup', 'choose-source', 'configure', 'done'] as const).indexOf(step)
                   ? 'w-8 bg-[var(--brand-primary)]'
                   : 'w-4 bg-[var(--border)]'
               }`}
@@ -220,12 +263,109 @@ function OnboardingContent() {
             </p>
 
             <button
-              onClick={() => setStep('choose-source')}
+              onClick={() => setStep('org-setup')}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl hover:shadow-lg hover:shadow-[var(--brand-glow)] font-semibold transition-all"
             >
               Get Started
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* Step: Org Setup */}
+        {step === 'org-setup' && (
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-2">
+              <Users className="w-6 h-6 text-[var(--brand-primary)]" />
+              <h1 className="text-2xl font-bold text-[var(--foreground)]">
+                Your Workspace
+              </h1>
+            </div>
+            <p className="text-[var(--foreground-subtle)] text-sm mb-6">
+              A new workspace has been created for you. Share your Organization ID with teammates so they can join.
+            </p>
+
+            {/* Current org ID display */}
+            {organizationId && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
+                  Your Organization ID
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl font-mono text-sm text-[var(--foreground)] truncate">
+                    {organizationId}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(organizationId);
+                      setCopiedOrgId(true);
+                      setTimeout(() => setCopiedOrgId(false), 2000);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl hover:bg-[var(--muted)] transition-all text-[var(--foreground-muted)]"
+                  >
+                    {copiedOrgId ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-[var(--foreground-subtle)] mt-1.5">
+                  Anyone with this ID can join your workspace.
+                </p>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px bg-[var(--border)]" />
+              <span className="text-xs text-[var(--foreground-subtle)]">or join an existing workspace</span>
+              <div className="flex-1 h-px bg-[var(--border)]" />
+            </div>
+
+            {/* Join existing org */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-[var(--foreground-muted)] mb-2">
+                Organization ID
+              </label>
+              <input
+                type="text"
+                value={joinOrgId}
+                onChange={(e) => { setJoinOrgId(e.target.value); setJoinError(''); }}
+                className="w-full px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent text-[var(--foreground)] font-mono text-sm"
+                placeholder="Enter an Organization ID to join"
+              />
+              {joinError && (
+                <p className="text-sm text-red-600 mt-1.5">{joinError}</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('welcome')}
+                className="flex items-center gap-2 px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] text-[var(--foreground-muted)] rounded-xl hover:bg-[var(--muted)] font-medium transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+              {joinOrgId.trim() ? (
+                <button
+                  onClick={handleJoinOrg}
+                  disabled={isJoining}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl hover:shadow-lg hover:shadow-[var(--brand-glow)] disabled:opacity-50 font-semibold transition-all"
+                >
+                  {isJoining ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Joining...</>
+                  ) : (
+                    <><Users className="w-4 h-4" /> Join Workspace</>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setStep('choose-source')}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl hover:shadow-lg hover:shadow-[var(--brand-glow)] font-semibold transition-all"
+                >
+                  Continue with my workspace
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -289,7 +429,7 @@ function OnboardingContent() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep('welcome')}
+                onClick={() => setStep('org-setup')}
                 className="flex items-center gap-2 px-4 py-3 bg-[var(--background-subtle)] border border-[var(--border)] text-[var(--foreground-muted)] rounded-xl hover:bg-[var(--muted)] font-medium transition-all"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -531,7 +671,7 @@ function OnboardingContent() {
         )}
 
         {/* Skip link — only on welcome and choose-source */}
-        {(step === 'welcome' || step === 'choose-source') && (
+        {(step === 'welcome' || step === 'org-setup' || step === 'choose-source') && (
           <div className="text-center mt-6">
             <button
               onClick={() => {
