@@ -236,13 +236,13 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
               {/* Verbatim User Quotes */}
               {allQuotes.length > 0 && (
                 <div className="mt-5">
-                  <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <p className="text-gray-400 dark:text-[#555] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                     <Quote className="w-3 h-3" />
                     Verbatim User Quotes
                   </p>
                   <div className="space-y-2">
                     {allQuotes.map((quote, idx) => (
-                      <div key={idx} className="bg-[var(--muted)] rounded-lg px-4 py-3">
+                      <div key={idx} className="border-l-2 border-blue-500 pl-4 py-2">
                         <p className="text-gray-800 dark:text-white text-sm">{quote}</p>
                       </div>
                     ))}
@@ -252,11 +252,13 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
 
               {/* Recommendation */}
               <div className="mt-5">
-                <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <p className="text-gray-400 dark:text-[#555] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                   <Lightbulb className="w-3 h-3" />
                   Recommendation
                 </p>
-                <p className="text-gray-800 dark:text-white text-sm leading-relaxed whitespace-pre-line">{ticket.recommendation}</p>
+                <div className="border-l-2 border-emerald-500 pl-4 py-1">
+                  <p className="text-gray-700 dark:text-emerald-400 text-sm leading-relaxed">{ticket.recommendation}</p>
+                </div>
               </div>
 
               {/* Evidence & Actions */}
