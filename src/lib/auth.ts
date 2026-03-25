@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from './prisma';
+import { generateSdkApiKey, provisionSdkTenant } from './sdk-db';
 import crypto from 'crypto';
 
 // Get project from external API key (for external API access)
@@ -76,7 +77,7 @@ export async function getCurrentUser() {
       const firstName = clerkUser.firstName;
       const orgName = firstName ? `${firstName}'s Workspace` : 'My Workspace';
       const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomBytes(3).toString('hex');
-      const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+      const apiKey = generateSdkApiKey();
 
       try {
         user = await prisma.user.create({
@@ -113,6 +114,11 @@ export async function getCurrentUser() {
           },
         });
         console.log(`[Auth] Auto-created user ${user.email} with org and project`);
+
+        // Provision tenant + API key in the SDK database
+        provisionSdkTenant({ name: orgName, apiKey }).catch(err =>
+          console.error('[Auth] SDK provisioning failed:', err)
+        );
       } catch (createError: unknown) {
         // Race condition: another concurrent request created the user between our check and create.
         // Re-fetch the user that was just created.
