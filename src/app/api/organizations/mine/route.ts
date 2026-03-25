@@ -21,6 +21,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
       memberships: memberships.map((m) => ({
         org: m.organization,
         role: m.role,
@@ -40,24 +41,33 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name } = await request.json();
+    const { name, orgId } = await request.json();
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
+    if (!orgId || typeof orgId !== 'string') {
+      return NextResponse.json({ error: 'orgId is required' }, { status: 400 });
+    }
 
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: user.id, role: 'owner' },
+    // Verify user owns this organization
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: user.id,
+          organizationId: orgId,
+        },
+      },
       include: { organization: true },
     });
 
-    if (!membership) {
-      return NextResponse.json({ error: 'No owned organization found' }, { status: 404 });
+    if (!membership || membership.role !== 'owner') {
+      return NextResponse.json({ error: 'Not authorized to rename this organization' }, { status: 403 });
     }
 
     const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     const updated = await prisma.organization.update({
-      where: { id: membership.organizationId },
+      where: { id: orgId },
       data: {
         name: name.trim(),
         slug: slug || membership.organization.slug,

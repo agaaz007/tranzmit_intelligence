@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Radio, Sparkles, ArrowRight, ArrowLeft, Loader2, Building2, BarChart3, Rocket, Check, Copy, Share2 } from 'lucide-react';
 
@@ -24,11 +24,10 @@ export default function OnboardingPage() {
   const [error, setError] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
-  // Org/project data (loaded on step 2)
+  // Org/project data (set after creating workspace)
   const [orgData, setOrgData] = useState<OrgData | null>(null);
-  const [loadingOrg, setLoadingOrg] = useState(false);
 
-  // Step 2 state
+  // Step 2 state (creating new workspace)
   const [companyName, setCompanyName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -48,29 +47,7 @@ export default function OnboardingPage() {
 
   const stepIndex = STEPS.indexOf(step);
 
-  // Load org data when entering step 2
-  useEffect(() => {
-    if (step !== 'company' || orgData) return;
-    setLoadingOrg(true);
-    fetch('/api/organizations/mine')
-      .then(r => r.json())
-      .then(data => {
-        const owned = data.memberships?.find((m: { role: string }) => m.role === 'owner');
-        if (owned) {
-          const proj = owned.projects?.[0];
-          setOrgData({
-            orgId: owned.org.id,
-            orgName: owned.org.name,
-            projectId: proj?.id || '',
-            projectName: proj?.name || 'Default Project',
-            apiKey: proj?.apiKey || '',
-          });
-          setCompanyName(owned.org.name);
-        }
-      })
-      .catch(() => setError('Failed to load workspace data'))
-      .finally(() => setLoadingOrg(false));
-  }, [step, orgData]);
+  // No longer auto-load existing org on step 2 — we always create a NEW workspace
 
   // Step 1: Join existing org
   const handleJoin = async (e: React.FormEvent) => {
@@ -98,30 +75,33 @@ export default function OnboardingPage() {
     }
   };
 
-  // Step 2: Save company name
+  // Step 2: Create new workspace
   const handleSaveCompany = async () => {
-    if (!companyName.trim() || !orgData) return;
+    if (!companyName.trim()) return;
     setSaving(true);
     setError('');
     try {
-      // Rename org
-      await fetch('/api/organizations/mine', {
-        method: 'PATCH',
+      const res = await fetch('/api/organizations/create', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: companyName.trim() }),
       });
-      // Rename project to match
-      if (orgData.projectId) {
-        await fetch(`/api/projects/${orgData.projectId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: `${companyName.trim()} — Main` }),
-        });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to create workspace');
+        setSaving(false);
+        return;
       }
-      setOrgData({ ...orgData, orgName: companyName.trim(), projectName: `${companyName.trim()} — Main` });
+      setOrgData({
+        orgId: data.organization.id,
+        orgName: data.organization.name,
+        projectId: data.project.id,
+        projectName: data.project.name,
+        apiKey: data.project.apiKey,
+      });
       setStep('analytics');
     } catch {
-      setError('Failed to save. Please try again.');
+      setError('Failed to create workspace. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -278,47 +258,41 @@ export default function OnboardingPage() {
                 What's your company or team name?
               </p>
 
-              {loadingOrg ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-[var(--foreground-subtle)]" />
+              <div className="space-y-4">
+                <div>
+                  <label className={labelClass}>Company Name</label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className={inputClass.replace('font-mono', '')}
+                    placeholder="Acme Inc."
+                    autoFocus
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className={labelClass}>Company Name</label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className={inputClass.replace('font-mono', '')}
-                      placeholder="Acme Inc."
-                      autoFocus
-                    />
-                  </div>
 
-                  {error && (
-                    <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
-                      {error}
-                    </p>
-                  )}
+                {error && (
+                  <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
+                    {error}
+                  </p>
+                )}
 
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => setStep('join')}
-                      className="px-4 py-3 border border-[var(--border)] rounded-xl text-[var(--foreground-subtle)] hover:text-[var(--foreground)] transition-colors"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleSaveCompany}
-                      disabled={!companyName.trim() || saving}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl disabled:opacity-50 font-semibold transition-all"
-                    >
-                      {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
-                    </button>
-                  </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setStep('join')}
+                    className="px-4 py-3 border border-[var(--border)] rounded-xl text-[var(--foreground-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleSaveCompany}
+                    disabled={!companyName.trim() || saving}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-xl disabled:opacity-50 font-semibold transition-all"
+                  >
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Workspace <ArrowRight className="w-4 h-4" /></>}
+                  </button>
                 </div>
-              )}
+              </div>
             </>
           )}
 

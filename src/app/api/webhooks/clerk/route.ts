@@ -2,18 +2,6 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
-import { generateSdkApiKey, provisionSdkTenant } from '@/lib/sdk-db';
-import crypto from 'crypto';
-
-// Generate URL-friendly slug from name
-function generateSlug(name: string): string {
-  const baseSlug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  const randomSuffix = crypto.randomBytes(3).toString('hex');
-  return `${baseSlug}-${randomSuffix}`;
-}
 
 export async function POST(req: Request) {
   // Get the webhook secret from environment
@@ -69,8 +57,9 @@ export async function POST(req: Request) {
           return new Response('No email found', { status: 400 });
         }
 
-        // Create user in database
-        const user = await prisma.user.create({
+        // Create user row only — org/project/SDK provisioning happens via
+        // getCurrentUser() auto-create or POST /api/organizations/create
+        await prisma.user.create({
           data: {
             clerkId: id,
             email: primaryEmail,
@@ -80,41 +69,7 @@ export async function POST(req: Request) {
           },
         });
 
-        // Create default organization for the user
-        const orgName = first_name
-          ? `${first_name}'s Workspace`
-          : `My Workspace`;
-
-        const organization = await prisma.organization.create({
-          data: {
-            name: orgName,
-            slug: generateSlug(orgName),
-            members: {
-              create: {
-                userId: user.id,
-                role: 'owner',
-              },
-            },
-          },
-        });
-
-        // Generate an SDK-compatible API key (eb_live_* format)
-        const apiKey = generateSdkApiKey();
-        await prisma.project.create({
-          data: {
-            organizationId: organization.id,
-            name: 'Default Project',
-            apiKey,
-          },
-        });
-
-        // Provision tenant + API key in the SDK database
-        const sdkResult = await provisionSdkTenant({ name: orgName, apiKey });
-        if (!sdkResult) {
-          console.warn(`[Clerk Webhook] SDK provisioning failed for org ${organization.id}, API key will not work until manually synced`);
-        }
-
-        console.log(`[Clerk Webhook] Created user ${user.id}, org ${organization.id}, sdk tenant ${sdkResult?.tenantId || 'FAILED'}`);
+        console.log(`[Clerk Webhook] Created user row for ${primaryEmail}`);
         break;
       }
 

@@ -20,6 +20,9 @@ import {
     Moon,
     Sparkles,
     Mic,
+    ChevronDown,
+    Plus,
+    Check,
 } from 'lucide-react';
 
 const navItems = [
@@ -35,13 +38,60 @@ const retentionItems = [
     { href: '/dashboard/triggers', icon: Mic, label: 'Widget Triggers' },
 ];
 
+interface Workspace {
+    orgId: string;
+    orgName: string;
+    projectId: string;
+    projectName: string;
+    apiKey: string;
+    role: string;
+}
+
 export default function Sidebar() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+    const [currentProjectId, setCurrentProjectId] = useState<string>('');
+    const [showSwitcher, setShowSwitcher] = useState(false);
+    const [userName, setUserName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
 
     useEffect(() => {
         setMounted(true);
+        // Load current project from localStorage
+        const stored = localStorage.getItem('currentProjectId');
+        if (stored) setCurrentProjectId(stored);
+
+        // Fetch all workspaces
+        fetch('/api/organizations/mine')
+            .then(r => r.json())
+            .then(data => {
+                if (data.memberships) {
+                    const ws: Workspace[] = data.memberships.flatMap((m: any) =>
+                        (m.projects || []).map((p: any) => ({
+                            orgId: m.org.id,
+                            orgName: m.org.name,
+                            projectId: p.id,
+                            projectName: p.name,
+                            apiKey: p.apiKey,
+                            role: m.role,
+                        }))
+                    );
+                    setWorkspaces(ws);
+                    // Auto-select first if nothing stored
+                    if (!stored && ws.length > 0) {
+                        setCurrentProjectId(ws[0].projectId);
+                        localStorage.setItem('currentProjectId', ws[0].projectId);
+                    }
+                }
+                // Get user info from the memberships response
+                if (data.user) {
+                    setUserName(data.user.firstName || data.user.email?.split('@')[0] || '');
+                    setUserEmail(data.user.email || '');
+                }
+            })
+            .catch(() => {});
     }, []);
 
     return (
@@ -70,11 +120,52 @@ export default function Sidebar() {
             {/* Divider with accent */}
             <div className="mx-4 h-px bg-[var(--border)] dark:bg-gradient-to-r dark:from-transparent dark:via-[var(--border)] dark:to-transparent" />
 
-            {/* Workspace Label */}
-            <div className="px-4 py-3">
-                <span className="text-[10px] font-semibold text-[var(--foreground-subtle)] uppercase tracking-widest">
-                    Workspace
-                </span>
+            {/* Workspace Switcher */}
+            <div className="px-3 py-2 relative">
+                <button
+                    onClick={() => setShowSwitcher(!showSwitcher)}
+                    className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-[var(--muted)] transition-colors group"
+                >
+                    <span className="text-[13px] font-semibold text-[var(--foreground)] truncate">
+                        {workspaces.find(w => w.projectId === currentProjectId)?.orgName || 'Workspace'}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-[var(--foreground-subtle)] transition-transform ${showSwitcher ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown */}
+                {showSwitcher && (
+                    <div className="absolute left-3 right-3 top-full z-50 mt-1 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-lg py-1 max-h-60 overflow-y-auto">
+                        {workspaces.map(ws => (
+                            <button
+                                key={ws.projectId}
+                                onClick={() => {
+                                    setCurrentProjectId(ws.projectId);
+                                    localStorage.setItem('currentProjectId', ws.projectId);
+                                    setShowSwitcher(false);
+                                    window.location.reload();
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-[var(--muted)] transition-colors ${
+                                    ws.projectId === currentProjectId ? 'text-[var(--brand-primary)]' : 'text-[var(--foreground)]'
+                                }`}
+                            >
+                                {ws.projectId === currentProjectId && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                                <span className="truncate">{ws.orgName}</span>
+                            </button>
+                        ))}
+                        <div className="border-t border-[var(--border)] mt-1 pt-1">
+                            <button
+                                onClick={() => {
+                                    setShowSwitcher(false);
+                                    window.location.href = '/onboarding';
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                New workspace
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Navigation */}
@@ -179,11 +270,11 @@ export default function Sidebar() {
                 <div className="px-3 py-3 border-t border-[var(--border)] dark:border-[var(--border)]/50">
                     <div className="flex items-center gap-2.5 group cursor-pointer">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-blue-600 flex items-center justify-center text-white text-xs font-semibold shadow-md dark:shadow-[0_0_12px_var(--brand-glow)] transition-shadow group-hover:shadow-lg">
-                            T
+                            {(userName || userEmail || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-medium text-[var(--foreground)] truncate">Tranzmit</div>
-                            <div className="text-[11px] text-[var(--foreground-subtle)] truncate">contact@tranzmit.com</div>
+                            <div className="text-[13px] font-medium text-[var(--foreground)] truncate">{userName || 'User'}</div>
+                            <div className="text-[11px] text-[var(--foreground-subtle)] truncate">{userEmail || ''}</div>
                         </div>
                     </div>
                 </div>
