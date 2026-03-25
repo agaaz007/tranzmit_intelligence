@@ -199,7 +199,7 @@ export default function SettingsPage() {
     localStorage.removeItem('currentProjectId');
     sessionStorage.removeItem('onboardingVerified');
     sessionStorage.removeItem('onboardingComplete');
-    router.push('/onboarding');
+    router.push('/onboarding?force=1');
   };
 
   const handleCreate = async () => {

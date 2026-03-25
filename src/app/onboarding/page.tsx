@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Radio, Sparkles, ArrowRight, ArrowLeft, Loader2, Check, Cloud, BarChart3 } from 'lucide-react';
 
 type Step = 'welcome' | 'choose-source' | 'configure' | 'done';
@@ -9,6 +9,8 @@ type Source = 'posthog' | 'amplitude';
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const forcedOnboarding = searchParams.get('force') === '1';
   const [step, setStep] = useState<Step>('welcome');
   const [source, setSource] = useState<Source | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -27,20 +29,59 @@ export default function OnboardingPage() {
   const [amplitudeProjId, setAmplitudeProjId] = useState('');
 
   useEffect(() => {
+    const loadExistingProject = async (targetProjectId: string) => {
+      try {
+        const projectRes = await fetch(`/api/projects/${targetProjectId}`);
+        const projectData = await projectRes.json();
+
+        if (!projectData.project) return;
+
+        const existingProject = projectData.project;
+        const inferredSource = existingProject.replaySource ||
+          (existingProject.posthogKey ? 'posthog' : existingProject.amplitudeKey ? 'amplitude' : null);
+
+        if (existingProject.posthogKey) setPosthogKey(existingProject.posthogKey);
+        if (existingProject.posthogProjId) setPosthogProjId(existingProject.posthogProjId);
+        if (existingProject.posthogHost) setPosthogHost(existingProject.posthogHost);
+
+        if (existingProject.amplitudeKey) setAmplitudeKey(existingProject.amplitudeKey);
+        if (existingProject.amplitudeSecret) setAmplitudeSecret(existingProject.amplitudeSecret);
+        if (existingProject.amplitudeProjId) setAmplitudeProjId(existingProject.amplitudeProjId);
+
+        if (inferredSource === 'posthog' || inferredSource === 'amplitude') {
+          setSource(inferredSource);
+          setStep('configure');
+        } else {
+          setStep('choose-source');
+        }
+      } catch {
+        // Ignore prefill failures and continue into onboarding flow
+      }
+    };
+
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/onboarding/status');
         const data = await res.json();
+
+        if (data.projectId) {
+          setProjectId(data.projectId);
+        }
+
+        if (forcedOnboarding) {
+          if (data.projectId) {
+            await loadExistingProject(data.projectId);
+          } else {
+            setStep('choose-source');
+          }
+          return;
+        }
 
         if (data.onboarded) {
           // Already set up — go straight to dashboard
           localStorage.setItem('currentProjectId', data.projectId);
           router.replace('/dashboard');
           return;
-        }
-
-        if (data.projectId) {
-          setProjectId(data.projectId);
         }
       } catch {
         // Continue with onboarding even if check fails
@@ -50,7 +91,7 @@ export default function OnboardingPage() {
     };
 
     checkStatus();
-  }, [router]);
+  }, [forcedOnboarding, router]);
 
   const handleSaveIntegration = async () => {
     setError('');
