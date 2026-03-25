@@ -195,7 +195,8 @@ export default function QualitativePage() {
   };
 
   const filtered = conversations.filter((c) => {
-    if (filter !== 'all' && c.source !== filter) return false;
+    if (filter === 'elevenlabs' && c.source !== 'elevenlabs' && c.source !== 'AI PM Agent') return false;
+    if (filter === 'manual' && c.source !== 'manual') return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -209,7 +210,7 @@ export default function QualitativePage() {
   });
 
   const totalConversations = conversations.length;
-  const elevenlabsCount = conversations.filter((c) => c.source === 'elevenlabs').length;
+  const elevenlabsCount = conversations.filter((c) => c.source === 'elevenlabs' || c.source === 'AI PM Agent').length;
   const manualCount = conversations.filter((c) => c.source === 'manual').length;
   const totalDuration = conversations.reduce((sum, c) => sum + (c.duration || 0), 0);
 
@@ -389,9 +390,9 @@ export default function QualitativePage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        conv.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-blue-500/10'
+                        conv.source === 'elevenlabs' || conv.source === 'AI PM Agent' ? 'bg-violet-500/10' : 'bg-blue-500/10'
                       }`}>
-                        {conv.source === 'elevenlabs' ? (
+                        {conv.source === 'elevenlabs' || conv.source === 'AI PM Agent' ? (
                           <Bot className="w-4 h-4 text-violet-500" />
                         ) : (
                           <User className="w-4 h-4 text-blue-500" />
@@ -409,11 +410,11 @@ export default function QualitativePage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      conv.source === 'elevenlabs'
+                      conv.source === 'elevenlabs' || conv.source === 'AI PM Agent'
                         ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
                         : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                     }`}>
-                      {conv.source === 'elevenlabs' ? 'AI PM Agent' : 'Manual'}
+                      {conv.source === 'elevenlabs' || conv.source === 'AI PM Agent' ? 'AI PM Agent' : 'Manual'}
                     </span>
                   </td>
                   <td className="px-4 py-3">{getStatusBadge(conv.status)}</td>
@@ -457,9 +458,9 @@ export default function QualitativePage() {
             <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  selectedConversation?.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-blue-500/10'
+                  selectedConversation?.source === 'elevenlabs' || selectedConversation?.source === 'AI PM Agent' ? 'bg-violet-500/10' : 'bg-blue-500/10'
                 }`}>
-                  {selectedConversation?.source === 'elevenlabs' ? (
+                  {selectedConversation?.source === 'elevenlabs' || selectedConversation?.source === 'AI PM Agent' ? (
                     <Bot className="w-5 h-5 text-violet-500" />
                   ) : (
                     <User className="w-5 h-5 text-blue-500" />
@@ -470,7 +471,7 @@ export default function QualitativePage() {
                     {selectedConversation?.participantName || selectedConversation?.participantEmail || 'Conversation'}
                   </h3>
                   <span className="text-xs text-[var(--foreground-muted)]">
-                    {selectedConversation?.source === 'elevenlabs' ? 'ElevenLabs' : 'Manual Upload'}
+                    {selectedConversation?.source === 'elevenlabs' || selectedConversation?.source === 'AI PM Agent' ? 'AI PM Agent' : 'Manual Upload'}
                   </span>
                 </div>
               </div>

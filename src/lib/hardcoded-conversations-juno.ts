@@ -41,7 +41,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-001",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-001",
     participantName: "Call 1 — Churned User",
     participantEmail: null,
@@ -119,7 +119,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-002",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-002",
     participantName: "Call 2 — Churned User",
     participantEmail: null,
@@ -191,7 +191,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-003",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-003",
     participantName: "Call 3 — Active New User",
     participantEmail: null,
@@ -280,7 +280,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-004",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-004",
     participantName: "Call 4 — Churned User",
     participantEmail: null,
@@ -353,7 +353,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-005",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-005",
     participantName: "Call 5 — Active User",
     participantEmail: null,
@@ -414,7 +414,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-006",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-006",
     participantName: "Call 6 — Active Power User (MS)",
     participantEmail: null,
@@ -489,7 +489,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-007",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-007",
     participantName: "Call 7 — Active User",
     participantEmail: null,
@@ -573,7 +573,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-008",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-008",
     participantName: "Call 8 — Churned User",
     participantEmail: null,
@@ -654,7 +654,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-009",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-009",
     participantName: "Call 9 — Active User",
     participantEmail: null,
@@ -706,7 +706,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-010",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-010",
     participantName: "Call 10 — Active User",
     participantEmail: null,
@@ -782,7 +782,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-011",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-011",
     participantName: "Call 11 — Churned User",
     participantEmail: null,
@@ -847,7 +847,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-012",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-012",
     participantName: "Call 12 — Active Elderly User",
     participantEmail: null,
@@ -927,7 +927,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-013",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-013",
     participantName: "Call 13 — Churned User (ADHD)",
     participantEmail: null,
@@ -1004,7 +1004,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-014",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-014",
     participantName: "Call 14 — Churned User (Chronic Pain)",
     participantEmail: null,
@@ -1078,7 +1078,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-015",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-015",
     participantName: "Call 15 — Active User (OCD)",
     participantEmail: null,
@@ -1152,7 +1152,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-016",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-016",
     participantName: "Call 16 — Churned User (Relationship pressure)",
     participantEmail: null,
@@ -1227,7 +1227,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-017",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-017",
     participantName: "Call 17 — Natural Churn (Pregnancy)",
     participantEmail: null,
@@ -1290,7 +1290,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-018",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-018",
     participantName: "Call 18 — Active User (Crohn's)",
     participantEmail: null,
@@ -1365,7 +1365,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-019",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-019",
     participantName: "Call 19 — Churned User (AI skeptic)",
     participantEmail: null,
@@ -1436,7 +1436,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-020",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-020",
     participantName: "Call 20 — Churned User (Lupus)",
     participantEmail: null,
@@ -1517,7 +1517,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-021",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-021",
     participantName: "Call 21 — Active Power User",
     participantEmail: null,
@@ -1587,7 +1587,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-022",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-022",
     participantName: "Call 22 — Churned User",
     participantEmail: null,
@@ -1657,7 +1657,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-023",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-023",
     participantName: "Call 23 — Churned User",
     participantEmail: null,
@@ -1727,7 +1727,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-024",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-024",
     participantName: "Call 24 — Active User",
     participantEmail: null,
@@ -1799,7 +1799,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-025",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-025",
     participantName: "Call 25 — Churned User",
     participantEmail: null,
@@ -1871,7 +1871,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-026",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-026",
     participantName: "Call 26 — Active User",
     participantEmail: null,
@@ -1940,7 +1940,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-027",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-027",
     participantName: "Call 27 — Churned User",
     participantEmail: null,
@@ -2004,7 +2004,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-028",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-028",
     participantName: "Call 28 — Churned User",
     participantEmail: null,
@@ -2073,7 +2073,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-029",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-029",
     participantName: "Call 29 — Active User",
     participantEmail: null,
@@ -2143,7 +2143,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-030",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-030",
     participantName: "Call 30 — Churned User",
     participantEmail: null,
@@ -2215,7 +2215,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-031",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-031",
     participantName: "Call 31 — Active User",
     participantEmail: null,
@@ -2261,7 +2261,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-032",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-032",
     participantName: "Call 32 — Churned User",
     participantEmail: null,
@@ -2306,7 +2306,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-033",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-033",
     participantName: "Call 33 — Active User",
     participantEmail: null,
@@ -2351,7 +2351,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-034",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-034",
     participantName: "Call 34 — Churned User",
     participantEmail: null,
@@ -2395,7 +2395,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-035",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-035",
     participantName: "Call 35 — Churned User",
     participantEmail: null,
@@ -2439,7 +2439,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-036",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-036",
     participantName: "Call 36 — Active User",
     participantEmail: null,
@@ -2484,7 +2484,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-037",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-037",
     participantName: "Call 37 — Churned User",
     participantEmail: null,
@@ -2528,7 +2528,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-038",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-038",
     participantName: "Call 38 — Active User",
     participantEmail: null,
@@ -2573,7 +2573,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-039",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-039",
     participantName: "Call 39 — Churned User",
     participantEmail: null,
@@ -2615,7 +2615,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-040",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-040",
     participantName: "Call 40 — Active User",
     participantEmail: null,
@@ -2660,7 +2660,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-041",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-041",
     participantName: "Call 41 — Churned User",
     participantEmail: null,
@@ -2705,7 +2705,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-042",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-042",
     participantName: "Call 42 — Active User",
     participantEmail: null,
@@ -2750,7 +2750,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-043",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-043",
     participantName: "Call 43 — Churned User",
     participantEmail: null,
@@ -2792,7 +2792,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-044",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-044",
     participantName: "Call 44 — Active User",
     participantEmail: null,
@@ -2837,7 +2837,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-045",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-045",
     participantName: "Call 45 — Churned User",
     participantEmail: null,
@@ -2879,7 +2879,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-046",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-046",
     participantName: "Call 46 — Active User",
     participantEmail: null,
@@ -2922,7 +2922,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-047",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-047",
     participantName: "Call 47 — Churned User",
     participantEmail: null,
@@ -2964,7 +2964,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-048",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-048",
     participantName: "Call 48 — Active User",
     participantEmail: null,
@@ -3007,7 +3007,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-049",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-049",
     participantName: "Call 49 — Churned User",
     participantEmail: null,
@@ -3051,7 +3051,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-050",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-050",
     participantName: "Call 50 — Active User",
     participantEmail: null,
@@ -3098,7 +3098,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-051",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-051",
     participantName: "Call 51 — Churned User",
     participantEmail: null,
@@ -3140,7 +3140,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-052",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-052",
     participantName: "Call 52 — Active User",
     participantEmail: null,
@@ -3183,7 +3183,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-053",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-053",
     participantName: "Call 53 — Churned User",
     participantEmail: null,
@@ -3225,7 +3225,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-054",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-054",
     participantName: "Call 54 — Active User",
     participantEmail: null,
@@ -3268,7 +3268,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-055",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-055",
     participantName: "Call 55 — Churned User",
     participantEmail: null,
@@ -3310,7 +3310,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-056",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-056",
     participantName: "Call 56 — Active User",
     participantEmail: null,
@@ -3353,7 +3353,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-057",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-057",
     participantName: "Call 57 — Churned User",
     participantEmail: null,
@@ -3397,7 +3397,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-058",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-058",
     participantName: "Call 58 — Active User",
     participantEmail: null,
@@ -3440,7 +3440,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-059",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-059",
     participantName: "Call 59 — Churned User",
     participantEmail: null,
@@ -3480,7 +3480,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-060",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-060",
     participantName: "Call 60 — Active User",
     participantEmail: null,
@@ -3523,7 +3523,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-061",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-061",
     participantName: "Call 61 — Churned User",
     participantEmail: null,
@@ -3565,7 +3565,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-062",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-062",
     participantName: "Call 62 — Active User",
     participantEmail: null,
@@ -3608,7 +3608,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-063",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-063",
     participantName: "Call 63 — Churned User",
     participantEmail: null,
@@ -3647,7 +3647,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-064",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-064",
     participantName: "Call 64 — Active User",
     participantEmail: null,
@@ -3690,7 +3690,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-065",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-065",
     participantName: "Call 65 — Churned User",
     participantEmail: null,
@@ -3730,7 +3730,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-066",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-066",
     participantName: "Call 66 — Active User",
     participantEmail: null,
@@ -3773,7 +3773,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-067",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-067",
     participantName: "Call 67 — Churned User",
     participantEmail: null,
@@ -3813,7 +3813,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-068",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-068",
     participantName: "Call 68 — Active User",
     participantEmail: null,
@@ -3856,7 +3856,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-069",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-069",
     participantName: "Call 69 — Churned User",
     participantEmail: null,
@@ -3899,7 +3899,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-070",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-070",
     participantName: "Call 70 — Active User",
     participantEmail: null,
@@ -3944,7 +3944,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-071",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-071",
     participantName: "Call 71 — Churned User",
     participantEmail: null,
@@ -3986,7 +3986,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-072",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-072",
     participantName: "Call 72 — Active User",
     participantEmail: null,
@@ -4031,7 +4031,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-073",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-073",
     participantName: "Call 73 — Churned User",
     participantEmail: null,
@@ -4073,7 +4073,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-074",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-074",
     participantName: "Call 74 — Active User",
     participantEmail: null,
@@ -4116,7 +4116,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-075",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-075",
     participantName: "Call 75 — Churned User",
     participantEmail: null,
@@ -4158,7 +4158,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-076",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-076",
     participantName: "Call 76 — Active User",
     participantEmail: null,
@@ -4201,7 +4201,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-077",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-077",
     participantName: "Call 77 — Churned User",
     participantEmail: null,
@@ -4243,7 +4243,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-078",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-078",
     participantName: "Call 78 — Active User",
     participantEmail: null,
@@ -4286,7 +4286,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-079",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-079",
     participantName: "Call 79 — Churned User",
     participantEmail: null,
@@ -4328,7 +4328,7 @@ export const junoHardcodedConversations: JunoConversation[] = [
   {
     id: "session-080",
     projectId: "juno-demo",
-    source: "elevenlabs",
+    source: "AI PM Agent",
     externalId: "juno-call-080",
     participantName: "Call 80 — Active User",
     participantEmail: null,
