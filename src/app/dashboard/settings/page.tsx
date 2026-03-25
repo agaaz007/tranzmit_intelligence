@@ -131,8 +131,8 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     localStorage.removeItem('currentProjectId');
+    localStorage.removeItem('onboardingComplete');
     sessionStorage.removeItem('onboardingVerified');
-    sessionStorage.removeItem('onboardingComplete');
     await signOut({ redirectUrl: '/sign-in' });
   };
 

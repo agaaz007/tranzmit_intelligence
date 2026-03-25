@@ -15,7 +15,7 @@ export default function DashboardLayout({
 
     useEffect(() => {
         // Check if user already completed onboarding this session
-        const cameFromOnboarding = sessionStorage.getItem('onboardingComplete');
+        const cameFromOnboarding = localStorage.getItem('onboardingComplete');
 
         if (cameFromOnboarding) {
             // User completed onboarding this session, let them through

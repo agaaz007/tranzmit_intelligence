@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -29,6 +29,45 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[My Orgs] Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { name } = await request.json();
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: user.id, role: 'owner' },
+      include: { organization: true },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ error: 'No owned organization found' }, { status: 404 });
+    }
+
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    const updated = await prisma.organization.update({
+      where: { id: membership.organizationId },
+      data: {
+        name: name.trim(),
+        slug: slug || membership.organization.slug,
+      },
+      include: { projects: true },
+    });
+
+    return NextResponse.json({ organization: updated });
+  } catch (error) {
+    console.error('[My Orgs PATCH] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
