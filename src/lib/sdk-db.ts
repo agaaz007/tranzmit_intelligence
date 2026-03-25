@@ -5,17 +5,16 @@
  * with tenants, api_keys, and sessions tables. This client lets the
  * dashboard provision and sync tenant data in that DB.
  *
+ * Uses @neondatabase/serverless for Vercel edge/serverless compatibility.
  * Requires env: SDK_DATABASE_URL
  */
 
-import pg from 'pg';
+import { Pool } from '@neondatabase/serverless';
 import crypto from 'crypto';
 
-const { Pool } = pg;
+let pool: Pool | null = null;
 
-let pool: pg.Pool | null = null;
-
-function getPool(): pg.Pool | null {
+function getPool(): Pool | null {
   if (pool) return pool;
   const url = process.env.SDK_DATABASE_URL;
   if (!url) {
@@ -54,7 +53,6 @@ export async function provisionSdkTenant(opts: {
   try {
     await client.query('BEGIN');
 
-    // Create tenant
     const tenantResult = await client.query(
       `INSERT INTO tenants (name, api_key_hash, posthog_api_key, posthog_project_id, posthog_host, amplitude_api_key, amplitude_secret_key)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -71,7 +69,6 @@ export async function provisionSdkTenant(opts: {
     );
     const tenantId = tenantResult.rows[0].id;
 
-    // Create api_key row (prefix = first 12 chars of the key)
     const keyPrefix = opts.apiKey.substring(0, 12);
     await client.query(
       `INSERT INTO api_keys (tenant_id, key_prefix, key_hash, name)

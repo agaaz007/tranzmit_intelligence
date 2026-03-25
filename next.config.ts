@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   },
   // Allow importing CSS from node_modules
   transpilePackages: ['rrweb-player'],
+  serverExternalPackages: ['@neondatabase/serverless'],
 };
 
 export default nextConfig;
