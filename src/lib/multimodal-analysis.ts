@@ -4,7 +4,7 @@ import type { KeyframeCapture } from '@/lib/replay-screenshotter';
 import type { MultimodalAnalysis } from '@/types/session';
 
 const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
-const FIREWORKS_MODEL = process.env.FIREWORKS_VLM_MODEL || 'accounts/fireworks/models/qwen2-vl-72b-instruct';
+const FIREWORKS_MODEL = process.env.FIREWORKS_VLM_MODEL || 'accounts/fireworks/models/qwen3-vl-30b-a3b-instruct';
 const FIREWORKS_BASE_URL = 'https://api.fireworks.ai/inference/v1/chat/completions';
 
 /**
