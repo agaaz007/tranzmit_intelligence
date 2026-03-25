@@ -17,7 +17,52 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Quote,
+  Lightbulb,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Parse KEY EVIDENCE blocks from description into structured quotes
+// ---------------------------------------------------------------------------
+interface QuoteBlock {
+  speaker: string;
+  context: string;
+  quote: string;
+  notes: string[];
+}
+
+function parseTicketDescription(description: string): { intro: string; quotes: QuoteBlock[] } {
+  const sepIdx = description.indexOf('KEY EVIDENCE:');
+  if (sepIdx === -1) return { intro: description.trim(), quotes: [] };
+
+  const intro = description.substring(0, sepIdx).trim();
+  const evidencePart = description.substring(sepIdx + 'KEY EVIDENCE:'.length);
+
+  const quotes: QuoteBlock[] = [];
+  const lines = evidencePart.split('\n');
+  let current: QuoteBlock | null = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('━')) continue;
+    if (/^[A-Z][A-Z\s]+:$/.test(line) && !line.startsWith('[')) {
+      if (current) { quotes.push(current); current = null; }
+      continue;
+    }
+    if (line.startsWith('[')) {
+      if (current) quotes.push(current);
+      const m = line.match(/^\[([^\]]+)\]\s*(.*)/);
+      current = { speaker: m?.[1] || '', context: m?.[2]?.replace(/:$/, '').trim() || '', quote: '', notes: [] };
+    } else if (current && line.startsWith('"')) {
+      current.quote += (current.quote ? ' ' : '') + line;
+    } else if (current && line.startsWith('→')) {
+      current.notes.push(line.substring(1).trim());
+    }
+  }
+  if (current) quotes.push(current);
+
+  return { intro, quotes };
+}
 
 // Ticket type matching the Prisma Ticket model
 interface TicketData {
@@ -92,6 +137,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
   onToggle: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const parsed = parseTicketDescription(ticket.description);
 
   const handleCopyJira = () => {
     const markdown = ticket.jiraMarkdown || `**${ticket.title}**\n\n${ticket.description}\n\n${ticket.recommendation}`;
@@ -100,7 +146,11 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const firstQuote = ticket.evidence.quotes[0];
+  // Use parsed quotes if evidence.quotes is empty
+  const displayQuotes = ticket.evidence.quotes.length > 0
+    ? ticket.evidence.quotes
+    : parsed.quotes.filter(q => q.quote).map(q => q.quote);
+  const firstQuote = displayQuotes[0];
   const sourceCount = ticket.evidence.sessionIds.length + ticket.evidence.conversationIds.length;
 
   return (
@@ -128,7 +178,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
             </div>
             {firstQuote && (
               <p className="text-gray-500 dark:text-[#666] text-sm italic pl-4 border-l-2 border-gray-300 dark:border-[#333] line-clamp-1">
-                &ldquo;{firstQuote}&rdquo;
+                {typeof firstQuote === 'string' ? <>&ldquo;{firstQuote}&rdquo;</> : firstQuote}
               </p>
             )}
           </div>
@@ -152,7 +202,8 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 border-t border-[var(--border)]">
-              <p className="text-gray-600 dark:text-[#888] text-sm mt-4">{ticket.description}</p>
+              {/* Summary */}
+              <p className="text-gray-600 dark:text-[#999] text-sm mt-4 leading-relaxed">{parsed.intro}</p>
 
               {/* Score Breakdown */}
               <div className="mt-4 grid grid-cols-4 gap-2">
@@ -181,14 +232,49 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                 </div>
               )}
 
-              {/* User Quotes */}
-              {ticket.evidence.quotes.length > 0 && (
+              {/* Verbatim User Quotes — parsed from KEY EVIDENCE */}
+              {parsed.quotes.filter(q => q.quote).length > 0 && (
                 <div className="mt-5">
-                  <p className="text-gray-400 dark:text-[#666] text-xs uppercase tracking-wide mb-3">Verbatim User Quotes</p>
+                  <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Quote className="w-3 h-3" />
+                    Verbatim User Quotes
+                  </p>
+                  <div className="space-y-3">
+                    {parsed.quotes.filter(q => q.quote).map((q, idx) => (
+                      <div key={idx} className="rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--muted)]/20">
+                        <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--muted)]/40">
+                          <span className="text-[11px] font-semibold text-gray-700 dark:text-[#ccc]">{q.speaker}</span>
+                          {q.context && (
+                            <span className="text-[11px] text-gray-500 dark:text-[#777] ml-1.5">· {q.context}</span>
+                          )}
+                        </div>
+                        <div className="px-3 py-2.5">
+                          <p className="text-sm text-gray-800 dark:text-white leading-relaxed italic">{q.quote}</p>
+                          {q.notes.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {q.notes.map((note, j) => (
+                                <p key={j} className="text-xs text-gray-500 dark:text-[#777] leading-relaxed">{note}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback: evidence.quotes from API (non-juno) */}
+              {parsed.quotes.length === 0 && ticket.evidence.quotes.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Quote className="w-3 h-3" />
+                    Verbatim User Quotes
+                  </p>
                   <div className="space-y-2">
                     {ticket.evidence.quotes.map((quote, idx) => (
                       <div key={idx} className="border-l-2 border-blue-500 pl-4 py-2">
-                        <p className="text-gray-800 dark:text-white text-sm">&ldquo;{quote}&rdquo;</p>
+                        <p className="text-gray-800 dark:text-white text-sm italic">&ldquo;{quote}&rdquo;</p>
                       </div>
                     ))}
                   </div>
@@ -197,8 +283,11 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
 
               {/* Recommendation */}
               <div className="mt-5 bg-emerald-50 dark:bg-[#0d1f17] rounded-lg p-4">
-                <p className="text-gray-500 dark:text-[#666] text-xs uppercase tracking-wide mb-2">Recommendation</p>
-                <p className="text-emerald-700 dark:text-emerald-400 text-sm">{ticket.recommendation}</p>
+                <p className="text-gray-500 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Lightbulb className="w-3 h-3" />
+                  Recommendation
+                </p>
+                <p className="text-emerald-700 dark:text-emerald-400 text-sm leading-relaxed whitespace-pre-line">{ticket.recommendation}</p>
               </div>
 
               {/* Evidence & Actions */}
