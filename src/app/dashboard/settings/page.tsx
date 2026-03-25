@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, Activity, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, Activity, X, ChevronDown, ChevronUp, LogOut } from 'lucide-react';
 
 // PostHog hedgehog logo (simplified)
 function PostHogLogo({ className }: { className?: string }) {
@@ -59,6 +60,7 @@ interface ProjectSettings {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [project, setProject] = useState<ProjectSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -191,6 +193,13 @@ export default function SettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('currentProjectId');
+    sessionStorage.removeItem('onboardingVerified');
+    sessionStorage.removeItem('onboardingComplete');
+    router.push('/onboarding');
   };
 
   const handleCreate = async () => {
@@ -735,6 +744,13 @@ export default function SettingsPage() {
 
         {/* Save/Create & Cancel */}
         <div className="flex justify-end gap-3">
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-6 py-3 bg-[var(--card)] border border-[var(--border)] text-[var(--foreground-muted)] rounded-2xl hover:bg-[var(--muted)] hover:border-[var(--border-hover)] font-semibold transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
           <button
             id="cancel-btn"
             onClick={() => {
