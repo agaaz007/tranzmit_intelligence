@@ -2,8 +2,59 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, Target, CheckCircle2, ChevronDown, RefreshCw, Sparkles, TrendingUp, Zap, ExternalLink } from 'lucide-react';
+import { Loader2, AlertTriangle, Target, CheckCircle2, ChevronDown, RefreshCw, Sparkles, TrendingUp, Zap, ExternalLink, Quote, Lightbulb } from 'lucide-react';
 import type { SynthesizedInsightData, EnhancedCriticalIssue } from '@/types/session';
+
+interface QuoteBlock {
+  speaker: string;
+  context: string;
+  quote: string;
+  notes: string[];
+}
+
+interface ParsedDescription {
+  intro: string;
+  quotes: QuoteBlock[];
+}
+
+function parseIssueDescription(description: string): ParsedDescription {
+  const sepIdx = description.indexOf('KEY EVIDENCE:');
+  if (sepIdx === -1) return { intro: description.trim(), quotes: [] };
+
+  const intro = description.substring(0, sepIdx).trim();
+  const evidencePart = description.substring(sepIdx + 'KEY EVIDENCE:'.length);
+
+  const quotes: QuoteBlock[] = [];
+  const lines = evidencePart.split('\n');
+
+  let current: QuoteBlock | null = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('━') || line === 'ROOT CAUSE ANALYSIS:' || line === 'CHURN IMPACT:' || line === 'CONTRAST WITH RETAINED USERS:') continue;
+
+    // Stop at section headers that aren't quotes
+    if (/^[A-Z][A-Z\s]+:$/.test(line) && !line.startsWith('[')) {
+      if (current) { quotes.push(current); current = null; }
+      continue;
+    }
+
+    if (line.startsWith('[')) {
+      if (current) quotes.push(current);
+      const labelMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
+      current = { speaker: labelMatch?.[1] || '', context: labelMatch?.[2]?.replace(/:$/, '').trim() || '', quote: '', notes: [] };
+    } else if (current && line.startsWith('"')) {
+      current.quote += (current.quote ? ' ' : '') + line;
+    } else if (current && line.startsWith('→')) {
+      current.notes.push(line.substring(1).trim());
+    } else if (current && line.startsWith('User:')) {
+      current.notes.push(line);
+    }
+  }
+  if (current) quotes.push(current);
+
+  return { intro, quotes };
+}
 
 interface IssuesPanelProps {
   insights: SynthesizedInsightData | null;
@@ -52,6 +103,7 @@ function IssueCard({ issue, onSessionClick }: {
   const [isExpanded, setIsExpanded] = useState(false);
   const config = severityConfig[issue.severity];
   const sessionCount = issue.sessionIds?.length || 0;
+  const parsed = parseIssueDescription(issue.description);
 
   return (
     <div className={`group relative rounded-xl border border-[var(--border)] bg-[var(--card)] transition-all duration-200 ${config.glow} ${isExpanded ? 'border-[var(--border-hover)]' : 'hover:border-[var(--border-hover)]'}`}>
@@ -80,40 +132,97 @@ function IssueCard({ issue, onSessionClick }: {
       </button>
 
       {/* Expandable content */}
-      <div className={`overflow-hidden transition-all duration-250 ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      {isExpanded && (
         <div className="px-5 pb-5 border-t border-[var(--border)]">
+          {/* Summary */}
           <p className="text-sm text-[var(--muted-foreground)] leading-relaxed mt-4">
-            {issue.description}
+            {parsed.intro}
           </p>
 
           {issue.frequency && (
-            <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] mt-3">
+            <div className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] mt-2.5">
               <TrendingUp className="w-3 h-3 opacity-60" />
               <span>{issue.frequency}</span>
             </div>
           )}
 
+          {/* Verbatim Quotes */}
+          {parsed.quotes.length > 0 && (
+            <div className="mt-5">
+              <p className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <Quote className="w-3 h-3" />
+                User Quotes
+              </p>
+              <div className="space-y-3">
+                {parsed.quotes.filter(q => q.quote).map((q, i) => (
+                  <div key={i} className="rounded-lg border border-[var(--border)] bg-[var(--background-subtle,var(--muted))/30] overflow-hidden">
+                    <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--muted)]/40">
+                      <span className="text-[11px] font-semibold text-[var(--foreground-muted,var(--muted-foreground))]">
+                        {q.speaker}
+                      </span>
+                      {q.context && (
+                        <span className="text-[11px] text-[var(--muted-foreground)] ml-1.5 opacity-70">
+                          · {q.context}
+                        </span>
+                      )}
+                    </div>
+                    <div className="px-3 py-2.5">
+                      <p className="text-sm text-[var(--foreground)] leading-relaxed italic">
+                        {q.quote}
+                      </p>
+                      {q.notes.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {q.notes.map((note, j) => (
+                            <p key={j} className="text-xs text-[var(--muted-foreground)] leading-relaxed">
+                              {note}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recommendation */}
+          {issue.recommendation && (
+            <div className="mt-5">
+              <p className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                <Lightbulb className="w-3 h-3" />
+                Recommendation
+              </p>
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3.5 py-3">
+                <p className="text-sm text-emerald-300 leading-relaxed whitespace-pre-line">
+                  {issue.recommendation}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Affected Sessions */}
           {sessionCount > 0 && (
-            <div className="mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="mt-5 pt-4 border-t border-[var(--border)]">
               <p className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-widest mb-2.5">
                 Affected Sessions
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 {(issue.sessionIds || []).map((sid, i) => (
                   <button
                     key={sid}
                     onClick={(e) => { e.stopPropagation(); onSessionClick(sid); }}
-                    className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-colors font-medium ${config.sessionBtn}`}
+                    className={`inline-flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-colors font-medium text-left ${config.sessionBtn}`}
                   >
-                    {issue.sessionNames?.[i] || sid.substring(0, 8)}
-                    <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                    <span className="flex-1">{issue.sessionNames?.[i] || sid}</span>
+                    <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
                   </button>
                 ))}
               </div>
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
