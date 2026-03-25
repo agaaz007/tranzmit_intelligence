@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from './prisma';
-import crypto from 'crypto';
+import { provisionUserAccount } from './account-provisioning';
 
 // Get project from external API key (for external API access)
 // Supports header (x-tranzmit-api-key) or query param (key) for sendBeacon compatibility
@@ -36,104 +36,40 @@ export async function getCurrentUser() {
     include: {
       memberships: {
         include: {
-          organization: true,
+          organization: {
+            include: {
+              projects: true,
+            },
+          },
         },
       },
     },
   });
 
+  const missingWorkspace =
+    !!user &&
+    !user.memberships.some(
+      (membership) =>
+        membership.role === 'owner' && membership.organization.projects.length > 0
+    );
+
   // Auto-create user if not found (handles local dev without webhook)
-  if (!user) {
+  if (!user || missingWorkspace) {
     const clerkUser = await currentUser();
     if (!clerkUser) return null;
 
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) return null;
 
-    // Check if user already exists by email (e.g. created via webhook with different clerkId)
-    const existingByEmail = await prisma.user.findUnique({ where: { email } });
-    if (existingByEmail) {
-      // Update clerkId and re-fetch with memberships
-      user = await prisma.user.update({
-        where: { email },
-        data: {
-          clerkId: userId,
-          firstName: clerkUser.firstName,
-          lastName: clerkUser.lastName,
-          imageUrl: clerkUser.imageUrl,
-        },
-        include: {
-          memberships: {
-            include: {
-              organization: true,
-            },
-          },
-        },
-      });
-      console.log(`[Auth] Linked existing user ${user.email} to clerkId ${userId}`);
-    } else {
-      // Create user, org, and default project in one transaction
-      const firstName = clerkUser.firstName;
-      const orgName = firstName ? `${firstName}'s Workspace` : 'My Workspace';
-      const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomBytes(3).toString('hex');
-      const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+    user = await provisionUserAccount({
+      clerkId: userId,
+      email,
+      firstName: clerkUser.firstName,
+      lastName: clerkUser.lastName,
+      imageUrl: clerkUser.imageUrl,
+    });
 
-      try {
-        user = await prisma.user.create({
-          data: {
-            clerkId: userId,
-            email,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            imageUrl: clerkUser.imageUrl,
-            memberships: {
-              create: {
-                role: 'owner',
-                organization: {
-                  create: {
-                    name: orgName,
-                    slug,
-                    projects: {
-                      create: {
-                        name: 'Default Project',
-                        apiKey,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          include: {
-            memberships: {
-              include: {
-                organization: true,
-              },
-            },
-          },
-        });
-        console.log(`[Auth] Auto-created user ${user.email} with org and project`);
-      } catch (createError: unknown) {
-        // Race condition: another concurrent request created the user between our check and create.
-        // Re-fetch the user that was just created.
-        if ((createError as { code?: string }).code === 'P2002') {
-          console.log(`[Auth] Race condition detected, re-fetching user ${email}`);
-          user = await prisma.user.findUnique({
-            where: { email },
-            include: {
-              memberships: {
-                include: {
-                  organization: true,
-                },
-              },
-            },
-          });
-          if (!user) throw createError;
-        } else {
-          throw createError;
-        }
-      }
-    }
+    console.log(`[Auth] Provisioned user ${user.email} with default workspace and project`);
   }
 
   return user;

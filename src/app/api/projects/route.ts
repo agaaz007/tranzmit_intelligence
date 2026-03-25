@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { generateProjectApiKey } from '@/lib/account-provisioning';
 import { getUserProjects, getDefaultOrganization } from '@/lib/auth';
-import crypto from 'crypto';
 
 export async function GET() {
     try {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate a random API key for the project
-        const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+        const apiKey = generateProjectApiKey();
 
         const project = await prisma.project.create({
             data: {

@@ -7,7 +7,11 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+import {
+  generateOrganizationSlug,
+  generateProjectApiKey,
+  getDefaultWorkspaceName,
+} from '../src/lib/account-provisioning';
 
 const prisma = new PrismaClient();
 
@@ -48,8 +52,8 @@ async function createLocalUser() {
     console.log('Created user:', user.id);
 
     // Create organization
-    const orgName = firstName ? `${firstName}'s Workspace` : 'My Workspace';
-    const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + crypto.randomBytes(3).toString('hex');
+    const orgName = getDefaultWorkspaceName(firstName);
+    const slug = generateOrganizationSlug(orgName);
 
     const organization = await prisma.organization.create({
       data: {
@@ -66,7 +70,7 @@ async function createLocalUser() {
     console.log('Created organization:', organization.name);
 
     // Create default project
-    const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+    const apiKey = generateProjectApiKey();
     const project = await prisma.project.create({
       data: {
         organizationId: organization.id,
