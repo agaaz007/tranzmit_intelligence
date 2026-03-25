@@ -32,7 +32,8 @@ function getDemoTickets() {
       compositeScore: score,
       evidence: {
         sessionIds: issue.sessionIds,
-        conversationIds: [],
+        sessionNames: issue.sessionNames,
+        conversationIds: issue.sessionIds,
         quotes: [],
       },
       scoreBreakdown: { frequency: 20, churn: 20, severity: score > 80 ? 20 : 14, recency: 16 },

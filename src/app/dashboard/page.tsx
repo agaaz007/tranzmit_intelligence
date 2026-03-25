@@ -75,6 +75,7 @@ interface TicketData {
   recommendation: string;
   evidence: {
     sessionIds: string[];
+    sessionNames?: string[];
     conversationIds: string[];
     quotes: string[];
   };
@@ -281,9 +282,6 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   )}
-                  <span className="text-gray-400 dark:text-[#444] text-xs">
-                    {sourceCount} source{sourceCount !== 1 ? 's' : ''}
-                  </span>
                 </div>
 
                 <Script
