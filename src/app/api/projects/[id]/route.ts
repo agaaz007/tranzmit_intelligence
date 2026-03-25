@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProjectWithAccess } from '@/lib/auth';
+import { syncTenantAnalytics } from '@/lib/sdk-db';
 
 /**
  * GET /api/projects/[id] - Get project details
@@ -93,6 +94,20 @@ export async function PATCH(
       where: { id },
       data: updateData,
     });
+
+    // Sync analytics credentials to SDK database if any were updated
+    const hasAnalyticsUpdate = posthogKey !== undefined || posthogProjId !== undefined
+      || posthogHost !== undefined || amplitudeKey !== undefined || amplitudeSecret !== undefined;
+    if (hasAnalyticsUpdate) {
+      syncTenantAnalytics({
+        apiKey: project.apiKey,
+        posthogApiKey: posthogKey,
+        posthogProjectId: posthogProjId,
+        posthogHost: posthogHost,
+        amplitudeApiKey: amplitudeKey,
+        amplitudeSecretKey: amplitudeSecret,
+      }).catch(err => console.error('[Projects API] SDK sync error:', err));
+    }
 
     return NextResponse.json({ project });
   } catch (error: any) {

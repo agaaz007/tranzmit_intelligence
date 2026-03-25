@@ -2,6 +2,7 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { generateSdkApiKey, provisionSdkTenant } from '@/lib/sdk-db';
 import crypto from 'crypto';
 
 // Generate URL-friendly slug from name
@@ -97,8 +98,8 @@ export async function POST(req: Request) {
           },
         });
 
-        // Create a default project for the organization
-        const apiKey = `tranzmit_${crypto.randomBytes(16).toString('hex')}`;
+        // Generate an SDK-compatible API key (eb_live_* format)
+        const apiKey = generateSdkApiKey();
         await prisma.project.create({
           data: {
             organizationId: organization.id,
@@ -107,7 +108,13 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`[Clerk Webhook] Created user ${user.id}, org ${organization.id}`);
+        // Provision tenant + API key in the SDK database
+        const sdkResult = await provisionSdkTenant({ name: orgName, apiKey });
+        if (!sdkResult) {
+          console.warn(`[Clerk Webhook] SDK provisioning failed for org ${organization.id}, API key will not work until manually synced`);
+        }
+
+        console.log(`[Clerk Webhook] Created user ${user.id}, org ${organization.id}, sdk tenant ${sdkResult?.tenantId || 'FAILED'}`);
         break;
       }
 
