@@ -218,6 +218,7 @@ function SessionInsightsContent() {
     const searchParams = useSearchParams();
     const distinctIdFilter = searchParams.get('distinctId');
     const conversationIdParam = searchParams.get('conversationId');
+    const highlightParam = searchParams.get('highlight');
 
     // Load current project ID and replay source preference
     useEffect(() => {
@@ -290,6 +291,34 @@ function SessionInsightsContent() {
 
         loadConversationFromParam();
     }, [conversationIdParam]);
+
+    // Load session/conversation from highlight param (deep link from ticket)
+    useEffect(() => {
+        if (!highlightParam) return;
+
+        const loadHighlighted = async () => {
+            try {
+                // Try as conversation first (covers juno-demo sessions)
+                const convoRes = await fetch(`/api/conversations/${highlightParam}`);
+                if (convoRes.ok) {
+                    const { conversation } = await convoRes.json();
+                    if (conversation) {
+                        setDbSelectedSession(null);
+                        setDbSessionEvents([]);
+                        setSelectedConversation(conversation);
+                        setTimeout(() => {
+                            document.getElementById('conversation-detail-area')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 300);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load highlighted session:', err);
+            }
+        };
+
+        loadHighlighted();
+    }, [highlightParam]);
 
     // Auto-sync trigger
     const triggerAutoSync = useCallback(async () => {
