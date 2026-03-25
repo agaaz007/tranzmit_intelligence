@@ -12,11 +12,14 @@ export default function OnboardingPage() {
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = orgId.trim();
+    let trimmed = orgId.trim();
     if (!trimmed) {
       setError('Please enter an Organization ID');
       return;
     }
+
+    // Accept "juno" as shorthand for the demo org
+    if (trimmed.toLowerCase() === 'juno') trimmed = 'juno-demo';
 
     setIsJoining(true);
     setError('');

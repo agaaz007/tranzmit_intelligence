@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useClerk } from '@clerk/nextjs';
 import Script from 'next/script';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, BarChart3, Cloud, Activity, X } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Globe, Bell, Shield, Loader2, Plus, Bot, Users, Copy, Check, Code, BarChart3, Cloud, Activity, X, LogOut } from 'lucide-react';
 
 interface ProjectSettings {
   id: string;
@@ -25,6 +26,7 @@ interface ProjectSettings {
 }
 
 export default function SettingsPage() {
+  const { signOut } = useClerk();
   const [project, setProject] = useState<ProjectSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -125,6 +127,13 @@ export default function SettingsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    localStorage.removeItem('currentProjectId');
+    sessionStorage.removeItem('onboardingVerified');
+    sessionStorage.removeItem('onboardingComplete');
+    await signOut({ redirectUrl: '/sign-in' });
   };
 
   const handleSave = async () => {
@@ -711,6 +720,13 @@ export default function SettingsPage() {
 
         {/* Save/Create & Cancel Buttons */}
         <div className="flex justify-end gap-3">
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-6 py-3 bg-[var(--card)] border border-[var(--border)] text-[var(--foreground-muted)] rounded-2xl hover:bg-[var(--muted)] hover:border-[var(--border-hover)] font-semibold transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
           <button
             id="cancel-btn"
             onClick={() => {
