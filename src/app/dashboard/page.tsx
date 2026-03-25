@@ -147,10 +147,10 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
   };
 
   // Use parsed quotes if evidence.quotes is empty
-  const displayQuotes = ticket.evidence.quotes.length > 0
+  const allQuotes = ticket.evidence.quotes.length > 0
     ? ticket.evidence.quotes
     : parsed.quotes.filter(q => q.quote).map(q => q.quote);
-  const firstQuote = displayQuotes[0];
+  const firstQuote = allQuotes[0];
   const sourceCount = ticket.evidence.sessionIds.length + ticket.evidence.conversationIds.length;
 
   return (
@@ -232,49 +232,17 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                 </div>
               )}
 
-              {/* Verbatim User Quotes — parsed from KEY EVIDENCE */}
-              {parsed.quotes.filter(q => q.quote).length > 0 && (
-                <div className="mt-5">
-                  <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Quote className="w-3 h-3" />
-                    Verbatim User Quotes
-                  </p>
-                  <div className="space-y-3">
-                    {parsed.quotes.filter(q => q.quote).map((q, idx) => (
-                      <div key={idx} className="rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--muted)]/20">
-                        <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--muted)]/40">
-                          <span className="text-[11px] font-semibold text-gray-700 dark:text-[#ccc]">{q.speaker}</span>
-                          {q.context && (
-                            <span className="text-[11px] text-gray-500 dark:text-[#777] ml-1.5">· {q.context}</span>
-                          )}
-                        </div>
-                        <div className="px-3 py-2.5">
-                          <p className="text-sm text-gray-800 dark:text-white leading-relaxed italic">{q.quote}</p>
-                          {q.notes.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {q.notes.map((note, j) => (
-                                <p key={j} className="text-xs text-gray-500 dark:text-[#777] leading-relaxed">{note}</p>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback: evidence.quotes from API (non-juno) */}
-              {parsed.quotes.length === 0 && ticket.evidence.quotes.length > 0 && (
+              {/* Verbatim User Quotes */}
+              {allQuotes.length > 0 && (
                 <div className="mt-5">
                   <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                     <Quote className="w-3 h-3" />
                     Verbatim User Quotes
                   </p>
                   <div className="space-y-2">
-                    {ticket.evidence.quotes.map((quote, idx) => (
-                      <div key={idx} className="border-l-2 border-blue-500 pl-4 py-2">
-                        <p className="text-gray-800 dark:text-white text-sm italic">&ldquo;{quote}&rdquo;</p>
+                    {allQuotes.map((quote, idx) => (
+                      <div key={idx} className="bg-[var(--muted)] rounded-lg px-4 py-3">
+                        <p className="text-gray-800 dark:text-white text-sm">{quote}</p>
                       </div>
                     ))}
                   </div>
@@ -282,12 +250,12 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
               )}
 
               {/* Recommendation */}
-              <div className="mt-5 bg-emerald-50 dark:bg-[#0d1f17] rounded-lg p-4">
-                <p className="text-gray-500 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <div className="mt-5">
+                <p className="text-gray-400 dark:text-[#666] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                   <Lightbulb className="w-3 h-3" />
                   Recommendation
                 </p>
-                <p className="text-emerald-700 dark:text-emerald-400 text-sm leading-relaxed whitespace-pre-line">{ticket.recommendation}</p>
+                <p className="text-gray-800 dark:text-white text-sm leading-relaxed whitespace-pre-line">{ticket.recommendation}</p>
               </div>
 
               {/* Evidence & Actions */}
