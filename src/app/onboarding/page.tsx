@@ -105,11 +105,13 @@ function OnboardingContent() {
 
   const handleJoinOrg = async () => {
     setJoinError('');
-    const trimmed = joinOrgId.trim();
+    let trimmed = joinOrgId.trim();
     if (!trimmed) {
       setJoinError('Please enter an Organization ID.');
       return;
     }
+    // Accept "juno" as shorthand for the demo org
+    if (trimmed.toLowerCase() === 'juno') trimmed = 'juno-demo';
     setIsJoining(true);
     try {
       const res = await fetch('/api/organizations/join', {
@@ -124,8 +126,14 @@ function OnboardingContent() {
       }
       // Switch to the joined org's project
       if (data.projects?.length > 0) {
-        setProjectId(data.projects[0].id);
-        localStorage.setItem('currentProjectId', data.projects[0].id);
+        const joinedProjectId = data.projects[0].id;
+        localStorage.setItem('currentProjectId', joinedProjectId);
+        // Demo org — skip analytics setup and go straight to dashboard
+        if (trimmed === 'juno-demo') {
+          router.replace('/dashboard');
+          return;
+        }
+        setProjectId(joinedProjectId);
       }
       setOrganizationId(trimmed);
       setStep('choose-source');
