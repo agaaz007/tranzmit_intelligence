@@ -47,9 +47,11 @@ export async function captureKeyframes(
     // Load a minimal page with rrweb-player
     await page.setContent(getReplayerHtml(), { waitUntil: 'domcontentloaded' });
 
-    // Inject rrweb-player JS (from node_modules)
-    await page.addScriptTag({ path: require.resolve('rrweb-player/dist/index.js') });
-    await page.addStyleTag({ path: require.resolve('rrweb-player/dist/style.css') });
+    // Inject rrweb-player JS — resolve via node_modules path directly to avoid exports map issues
+    const path = await import('path');
+    const playerDir = path.join(process.cwd(), 'node_modules', 'rrweb-player', 'dist');
+    await page.addScriptTag({ path: path.join(playerDir, 'rrweb-player.js') });
+    await page.addStyleTag({ path: path.join(playerDir, 'style.css') });
 
     // Initialize the replayer with events
     await page.evaluate((eventsJson: string) => {
