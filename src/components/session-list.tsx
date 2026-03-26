@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, PlayCircle, Trash2, RefreshCw, Cloud, Upload, ChevronLeft, ChevronRight, BarChart3, Eye } from 'lucide-react';
 import type { SessionListItem, SessionsListResponse, RRWebEvent } from '@/types/session';
-import { captureKeyframesClientSide } from '@/lib/client-keyframe-capture';
 
 interface SessionListProps {
   projectId: string;
@@ -110,47 +109,6 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
       }
     } catch (err) {
       console.error('Failed to analyze session:', err);
-    }
-  };
-
-  const handleMultimodalAnalyze = async (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSessions(prev => prev.map(s =>
-      s.id === sessionId ? { ...s, multimodalStatus: 'analyzing' as const } : s
-    ));
-    try {
-      // Step 1: Fetch events (use cache if available)
-      let events = eventsCache.get(sessionId);
-      if (!events) {
-        const eventsRes = await fetch(`/api/sessions/${sessionId}/events`);
-        if (!eventsRes.ok) throw new Error('Failed to fetch events');
-        const eventsData = await eventsRes.json();
-        events = eventsData.events as RRWebEvent[];
-        setEventsCache(prev => new Map(prev).set(sessionId, events!));
-      }
-
-      // Step 2: Capture screenshots client-side
-      const keyframes = await captureKeyframesClientSide(events);
-      if (keyframes.length === 0) throw new Error('No frames captured');
-
-      // Step 3: Send keyframes to API for VLM analysis
-      const res = await fetch(`/api/sessions/${sessionId}/multimodal-analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyframes }),
-      });
-      if (res.ok) {
-        fetchSessions();
-      } else {
-        setSessions(prev => prev.map(s =>
-          s.id === sessionId ? { ...s, multimodalStatus: 'failed' as const } : s
-        ));
-      }
-    } catch (err) {
-      console.error('Failed to run multimodal analysis:', err);
-      setSessions(prev => prev.map(s =>
-        s.id === sessionId ? { ...s, multimodalStatus: 'failed' as const } : s
-      ));
     }
   };
 
@@ -341,20 +299,11 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                         Analyze
                       </Button>
                     )}
-                    {session.analysisStatus === 'completed' && session.multimodalStatus !== 'completed' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleMultimodalAnalyze(session.id, e)}
-                        disabled={session.multimodalStatus === 'analyzing'}
-                        className="h-8 px-2 gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10"
-                      >
-                        {session.multimodalStatus === 'analyzing' ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing...</>
-                        ) : (
-                          <><Eye className="w-3 h-3" /> Multimodal</>
-                        )}
-                      </Button>
+                    {session.multimodalStatus === 'analyzing' && (
+                      <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                        MM
+                      </Badge>
                     )}
                     {session.multimodalStatus === 'completed' && (
                       <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
