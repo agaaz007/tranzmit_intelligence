@@ -1,10 +1,11 @@
 /**
  * Playwright-based rrweb replay and screenshot capture.
- * 2-pass approach: fast scan (pixel-diff) then quality capture for selected keyframes.
+ * 2-pass approach: fast scan (pixel-diff via screenshots) then quality capture for selected keyframes.
  */
 
-import { chromium, Browser, Page } from 'playwright';
-import { computePixelDiffScores, selectKeyframes, computeScanFps, extractDomEventTimestamps, type ScanFrame, type SelectedFrame } from './selection';
+import path from 'path';
+import { chromium, Browser } from 'playwright';
+import { selectKeyframes, computeScanFps, type ScanFrame, type SelectedFrame } from './selection';
 
 export interface KeyframeCapture {
   timestamp: number;
@@ -16,6 +17,25 @@ const THUMB_WIDTH = 320;
 const THUMB_HEIGHT = 180;
 const FULL_WIDTH = 1280;
 const FULL_HEIGHT = 720;
+
+/**
+ * Simple pixel-diff between two same-size JPEG/PNG buffers.
+ * Compares raw byte values — not perfect for compressed formats but good enough
+ * for detecting visual changes between frames.
+ */
+function bufferDiffScore(a: Buffer, b: Buffer): number {
+  const len = Math.min(a.length, b.length);
+  if (len === 0) return 0;
+  // Sample every 64th byte for speed
+  const step = 64;
+  let totalDiff = 0;
+  let samples = 0;
+  for (let i = 0; i < len; i += step) {
+    totalDiff += Math.abs(a[i] - b[i]);
+    samples++;
+  }
+  return samples > 0 ? totalDiff / samples : 0;
+}
 
 /**
  * Replay rrweb events in a headless browser and capture keyframes using the 4-layer selection algorithm.
@@ -44,60 +64,63 @@ export async function captureKeyframes(
     });
     const page = await context.newPage();
 
-    // Load a minimal page with rrweb-player
+    // Load a minimal page
     await page.setContent(getReplayerHtml(), { waitUntil: 'domcontentloaded' });
 
-    // Inject rrweb-player JS — resolve via node_modules path directly to avoid exports map issues
-    const path = await import('path');
-    const playerDir = path.join(process.cwd(), 'node_modules', 'rrweb-player', 'dist');
-    await page.addScriptTag({ path: path.join(playerDir, 'rrweb-player.js') });
-    await page.addStyleTag({ path: path.join(playerDir, 'style.css') });
+    // Inject @rrweb/replay UMD build (exposes global rrweb.Replayer)
+    const replayDir = path.join(process.cwd(), 'node_modules', '@rrweb', 'replay', 'dist');
+    await page.addScriptTag({ path: path.join(replayDir, 'replay.umd.cjs') });
+    await page.addStyleTag({ path: path.join(replayDir, 'style.css') });
 
-    // Initialize the replayer with events
+    // Initialize the Replayer with events
     await page.evaluate((eventsJson: string) => {
       const events = JSON.parse(eventsJson);
       const container = document.getElementById('player-container')!;
-      // @ts-ignore — rrweb-player is loaded via script tag
-      const player = new rrwebPlayer({
-        target: container,
-        props: {
-          events,
-          width: 1280,
-          height: 720,
-          autoPlay: false,
-          showController: false,
-          skipInactive: false,
-        },
+      // @ts-ignore — rrweb loaded via UMD script tag
+      const replayer = new rrweb.Replayer(events, {
+        root: container,
+        skipInactive: false,
+        showWarning: false,
+        liveMode: false,
+        triggerFocus: false,
+        mouseTail: false,
       });
-      (window as any).__player = player;
+      (window as any).__replayer = replayer;
     }, JSON.stringify(sorted));
 
-    // Wait for player to initialize
+    // Wait for replayer to initialize
     await page.waitForTimeout(1000);
 
     // ===== Pass 1: Fast scan =====
     console.log(`[Capture] Pass 1: scanning ${totalFrames} frames at ${scanFps.toFixed(2)} fps`);
 
-    const frameBuffers: Uint8Array[] = [];
+    const scanFrames: ScanFrame[] = [];
+    let prevBuf: Buffer | null = null;
 
     for (let i = 0; i < totalFrames; i++) {
       const timestampMs = (i / scanFps) * 1000;
       await page.evaluate((ms: number) => {
-        (window as any).__player?.goto(ms);
+        (window as any).__replayer?.pause(ms);
       }, timestampMs);
-      await page.waitForTimeout(50); // brief settle
+      await page.waitForTimeout(50);
 
-      const screenshot = await page.screenshot({
+      // Take a small, low-quality screenshot for diff comparison
+      const buf = await page.screenshot({
         type: 'jpeg',
-        quality: 20,
+        quality: 10,
         clip: { x: 0, y: 0, width: THUMB_WIDTH, height: THUMB_HEIGHT },
       });
 
-      frameBuffers.push(new Uint8Array(screenshot));
-    }
+      const diffScore = prevBuf ? bufferDiffScore(prevBuf, buf) : 0;
 
-    // Compute pixel-diff scores
-    const scanFrames = computePixelDiffScores(frameBuffers, THUMB_WIDTH, THUMB_HEIGHT, scanFps);
+      scanFrames.push({
+        index: i,
+        timestampSec: i / scanFps,
+        diffScore,
+      });
+
+      prevBuf = buf;
+    }
 
     // ===== 4-Layer Selection =====
     const selected = selectKeyframes(scanFrames, durationSec, domEventTimestamps);
@@ -111,9 +134,9 @@ export async function captureKeyframes(
     for (const frame of selected) {
       const timestampMs = frame.timestampSec * 1000;
       await page.evaluate((ms: number) => {
-        (window as any).__player?.goto(ms);
+        (window as any).__replayer?.pause(ms);
       }, timestampMs);
-      await page.waitForTimeout(300); // full settle for quality
+      await page.waitForTimeout(300);
 
       try {
         const screenshot = await page.screenshot({
@@ -149,7 +172,7 @@ function getReplayerHtml(): string {
   <style>
     * { margin: 0; padding: 0; }
     body { background: #fff; overflow: hidden; }
-    #player-container { width: 1280px; height: 720px; }
+    #player-container { width: ${FULL_WIDTH}px; height: ${FULL_HEIGHT}px; }
   </style>
 </head>
 <body>
