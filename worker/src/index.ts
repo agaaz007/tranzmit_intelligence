@@ -7,26 +7,43 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { captureKeyframes } from './capture';
+import { chromium, Browser } from 'playwright';
+import { captureKeyframesWithBrowser } from './capture';
 import { callVLM, type MultimodalAnalysis } from './analysis';
 import { buildFusedPrompt, buildSessionLog, buildSessionContext } from './prompt';
 import { parseRRWebSession } from './rrweb-parser';
 import { extractDomEventTimestamps } from './selection';
 
 const prisma = new PrismaClient();
-const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '120', 10) * 1000; // default 2 min
+const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '120', 10) * 1000;
+
+let browser: Browser | null = null;
+
+async function getBrowser(): Promise<Browser> {
+  if (browser && browser.isConnected()) return browser;
+  browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+      '--no-zygote',
+    ],
+  });
+  return browser;
+}
 
 async function processSession(sessionId: string): Promise<void> {
   console.log(`[Worker] Processing session ${sessionId}`);
 
-  // Mark as analyzing
   await prisma.session.update({
     where: { id: sessionId },
     data: { multimodalStatus: 'analyzing' },
   });
 
   try {
-    // Load events
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
       select: { id: true, events: true },
@@ -38,33 +55,29 @@ async function processSession(sessionId: string): Promise<void> {
 
     const events = JSON.parse(session.events);
 
-    // Parse events for DOM log and behavioral signals
     const semanticSession = parseRRWebSession(events);
     if (semanticSession.logs.length === 0) {
       throw new Error('No meaningful user interactions found');
     }
 
-    // Extract DOM event timestamps for Layer 4
     const domTimestamps = extractDomEventTimestamps(semanticSession.logs);
 
-    // Capture keyframes via Playwright (2-pass with 4-layer selection)
-    const keyframes = await captureKeyframes(events, domTimestamps);
+    // Reuse global browser instance
+    const b = await getBrowser();
+    const keyframes = await captureKeyframesWithBrowser(b, events, domTimestamps);
     console.log(`[Worker] Session ${sessionId}: ${keyframes.length} keyframes captured`);
 
     if (keyframes.length === 0) {
       throw new Error('No frames captured');
     }
 
-    // Build prompt
     const sessionLog = buildSessionLog(semanticSession as any);
     const sessionContext = buildSessionContext(semanticSession as any);
     const { system, content } = buildFusedPrompt(sessionLog, sessionContext, keyframes);
 
-    // Call GPT-5.4 mini
     const analysis = await callVLM(system, content);
     analysis.frames_analyzed = keyframes.length;
 
-    // Save results
     await prisma.session.update({
       where: { id: sessionId },
       data: {
@@ -86,7 +99,6 @@ async function processSession(sessionId: string): Promise<void> {
 
 async function pollAndProcess(): Promise<void> {
   try {
-    // Find sessions that need multimodal analysis
     const pendingSessions = await prisma.session.findMany({
       where: {
         analysisStatus: 'completed',
@@ -94,16 +106,13 @@ async function pollAndProcess(): Promise<void> {
       },
       select: { id: true },
       orderBy: { createdAt: 'desc' },
-      take: 5, // process up to 5 per cycle
+      take: 1, // process 1 at a time to control memory
     });
 
-    if (pendingSessions.length === 0) {
-      return;
-    }
+    if (pendingSessions.length === 0) return;
 
-    console.log(`[Worker] Found ${pendingSessions.length} sessions to process`);
+    console.log(`[Worker] Found ${pendingSessions.length} session(s) to process`);
 
-    // Process one at a time to control memory
     for (const session of pendingSessions) {
       await processSession(session.id);
     }
@@ -116,10 +125,7 @@ async function main(): Promise<void> {
   console.log('[Worker] Multimodal analysis worker started');
   console.log(`[Worker] Polling every ${POLL_INTERVAL / 1000}s`);
 
-  // Run immediately on startup
   await pollAndProcess();
-
-  // Then poll on interval
   setInterval(pollAndProcess, POLL_INTERVAL);
 }
 

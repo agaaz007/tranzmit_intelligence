@@ -1,10 +1,11 @@
 /**
  * Playwright-based rrweb replay and screenshot capture.
  * 2-pass approach: fast scan (pixel-diff via screenshots) then quality capture for selected keyframes.
+ * Accepts an existing Browser instance to avoid repeated launches.
  */
 
 import path from 'path';
-import { chromium, Browser } from 'playwright';
+import { Browser } from 'playwright';
 import { selectKeyframes, computeScanFps, type ScanFrame, type SelectedFrame } from './selection';
 
 export interface KeyframeCapture {
@@ -19,14 +20,12 @@ const FULL_WIDTH = 1280;
 const FULL_HEIGHT = 720;
 
 /**
- * Simple pixel-diff between two same-size JPEG/PNG buffers.
- * Compares raw byte values — not perfect for compressed formats but good enough
- * for detecting visual changes between frames.
+ * Simple pixel-diff between two same-size JPEG buffers.
+ * Compares raw byte values — approximate but effective for change detection.
  */
 function bufferDiffScore(a: Buffer, b: Buffer): number {
   const len = Math.min(a.length, b.length);
   if (len === 0) return 0;
-  // Sample every 64th byte for speed
   const step = 64;
   let totalDiff = 0;
   let samples = 0;
@@ -38,9 +37,10 @@ function bufferDiffScore(a: Buffer, b: Buffer): number {
 }
 
 /**
- * Replay rrweb events in a headless browser and capture keyframes using the 4-layer selection algorithm.
+ * Replay rrweb events using a shared browser and capture keyframes via 4-layer selection.
  */
-export async function captureKeyframes(
+export async function captureKeyframesWithBrowser(
+  browser: Browser,
   events: any[],
   domEventTimestamps: number[]
 ): Promise<KeyframeCapture[]> {
@@ -55,16 +55,13 @@ export async function captureKeyframes(
 
   const { fps: scanFps, totalFrames } = computeScanFps(durationSec);
 
-  let browser: Browser | null = null;
+  const context = await browser.newContext({
+    viewport: { width: FULL_WIDTH, height: FULL_HEIGHT },
+  });
 
   try {
-    browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext({
-      viewport: { width: FULL_WIDTH, height: FULL_HEIGHT },
-    });
     const page = await context.newPage();
 
-    // Load a minimal page
     await page.setContent(getReplayerHtml(), { waitUntil: 'domcontentloaded' });
 
     // Inject @rrweb/replay UMD build (exposes global rrweb.Replayer)
@@ -72,7 +69,7 @@ export async function captureKeyframes(
     await page.addScriptTag({ path: path.join(replayDir, 'replay.umd.cjs') });
     await page.addStyleTag({ path: path.join(replayDir, 'style.css') });
 
-    // Initialize the Replayer with events
+    // Initialize the Replayer
     await page.evaluate((eventsJson: string) => {
       const events = JSON.parse(eventsJson);
       const container = document.getElementById('player-container')!;
@@ -88,7 +85,6 @@ export async function captureKeyframes(
       (window as any).__replayer = replayer;
     }, JSON.stringify(sorted));
 
-    // Wait for replayer to initialize
     await page.waitForTimeout(1000);
 
     // ===== Pass 1: Fast scan =====
@@ -104,7 +100,6 @@ export async function captureKeyframes(
       }, timestampMs);
       await page.waitForTimeout(50);
 
-      // Take a small, low-quality screenshot for diff comparison
       const buf = await page.screenshot({
         type: 'jpeg',
         quality: 10,
@@ -155,12 +150,9 @@ export async function captureKeyframes(
       }
     }
 
-    await context.close();
     return keyframes;
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    await context.close();
   }
 }
 
