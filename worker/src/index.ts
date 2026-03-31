@@ -6,6 +6,7 @@
  * call GPT-5.4 mini, and write results back to the DB.
  */
 
+import http from 'http';
 import { PrismaClient } from '@prisma/client';
 import { chromium, Browser } from 'playwright';
 import { captureKeyframesWithBrowser } from './capture';
@@ -29,6 +30,20 @@ async function launchBrowser(): Promise<Browser> {
   });
 }
 
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute hard cap per session
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
 async function processSession(sessionId: string): Promise<void> {
   console.log(`[Worker] Processing session ${sessionId}`);
 
@@ -47,7 +62,16 @@ async function processSession(sessionId: string): Promise<void> {
       throw new Error('No events stored for this session');
     }
 
-    const events = JSON.parse(session.events);
+    let events: any[];
+    try {
+      events = JSON.parse(session.events);
+    } catch {
+      throw new Error('Failed to parse session events JSON — data may be corrupted');
+    }
+
+    if (!Array.isArray(events) || events.length < 2) {
+      throw new Error(`Invalid events data: expected array with 2+ items, got ${typeof events}`);
+    }
 
     const semanticSession = parseRRWebSession(events);
     if (semanticSession.logs.length === 0) {
@@ -57,10 +81,20 @@ async function processSession(sessionId: string): Promise<void> {
     const domTimestamps = extractDomEventTimestamps(semanticSession.logs);
 
     // Launch a fresh browser per session to avoid stale process issues
-    const b = await launchBrowser();
+    let b: Browser;
+    try {
+      b = await withTimeout(launchBrowser(), 30_000, 'Browser launch');
+    } catch (err) {
+      throw new Error(`Browser launch failed: ${err instanceof Error ? err.message : err}`);
+    }
+
     let keyframes;
     try {
-      keyframes = await captureKeyframesWithBrowser(b, events, domTimestamps);
+      keyframes = await withTimeout(
+        captureKeyframesWithBrowser(b, events, domTimestamps),
+        SESSION_TIMEOUT_MS,
+        'Keyframe capture',
+      );
     } finally {
       await b.close().catch(() => {});
     }
@@ -120,13 +154,65 @@ async function pollAndProcess(): Promise<void> {
   }
 }
 
+const TRIGGER_PORT = parseInt(process.env.TRIGGER_PORT || '3001', 10);
+
+// Track whether we're currently processing to avoid overlapping runs
+let processing = false;
+
+async function safePollAndProcess(): Promise<void> {
+  if (processing) {
+    console.log('[Worker] Already processing, skipping trigger');
+    return;
+  }
+  processing = true;
+  try {
+    await pollAndProcess();
+  } finally {
+    processing = false;
+  }
+}
+
+function startTriggerServer(): void {
+  const server = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/trigger') {
+      console.log('[Worker] Received trigger — running immediate poll');
+      // Fire-and-forget: start processing, respond immediately
+      safePollAndProcess().catch(err => console.error('[Worker] Triggered poll failed:', err));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'triggered' }));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  server.listen(TRIGGER_PORT, () => {
+    console.log(`[Worker] Trigger server listening on port ${TRIGGER_PORT}`);
+  });
+}
+
 async function main(): Promise<void> {
   console.log('[Worker] Multimodal analysis worker started');
   console.log(`[Worker] Polling every ${POLL_INTERVAL / 1000}s`);
 
-  await pollAndProcess();
-  setInterval(pollAndProcess, POLL_INTERVAL);
+  // Ensure Prisma can connect before starting the loop
+  try {
+    await prisma.$connect();
+  } catch (err) {
+    console.error('[Worker] Failed to connect to database:', err);
+    process.exit(1);
+  }
+
+  startTriggerServer();
+
+  await safePollAndProcess();
+  setInterval(safePollAndProcess, POLL_INTERVAL);
 }
+
+// Prevent unhandled rejections from killing the worker
+process.on('unhandledRejection', (err) => {
+  console.error('[Worker] Unhandled rejection:', err);
+});
 
 main().catch((err) => {
   console.error('[Worker] Fatal error:', err);

@@ -27,19 +27,32 @@ export interface MultimodalAnalysis {
 
 const client = new OpenAI(); // reads OPENAI_API_KEY from env
 
+const VLM_TIMEOUT_MS = 120_000; // 2 minute timeout for VLM calls
+
 export async function callVLM(
   system: string,
   content: Array<{ type: string; text?: string; image_url?: { url: string } }>
 ): Promise<MultimodalAnalysis> {
-  const response = await client.chat.completions.create({
-    model: 'gpt-5.4-mini',
-    max_completion_tokens: 4096,
-    temperature: 0.4,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: content as any },
-    ],
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), VLM_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await client.chat.completions.create(
+      {
+        model: 'gpt-5.4-mini',
+        max_completion_tokens: 4096,
+        temperature: 0.4,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: content as any },
+        ],
+      },
+      { signal: controller.signal },
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 
   const raw = response.choices?.[0]?.message?.content;
   if (!raw) {
@@ -48,5 +61,10 @@ export async function callVLM(
 
   // Strip markdown fences if present
   const cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-  return JSON.parse(cleaned) as MultimodalAnalysis;
+
+  try {
+    return JSON.parse(cleaned) as MultimodalAnalysis;
+  } catch {
+    throw new Error(`Failed to parse VLM response as JSON: ${cleaned.slice(0, 200)}`);
+  }
 }
