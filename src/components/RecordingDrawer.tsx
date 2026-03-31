@@ -155,7 +155,7 @@ export default function RecordingDrawer({
                             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10">
                                 {isLoading ? (
                                     <div className="flex flex-col items-center justify-center h-64">
-                                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+                                        <Loader2 className="w-8 h-8 text-[var(--brand-primary)] animate-spin mb-3" />
                                         <p className="text-sm text-white/40">Fetching failed sessions...</p>
                                     </div>
                                 ) : recordings.length > 0 ? (
@@ -176,14 +176,14 @@ export default function RecordingDrawer({
                                                             rel="noopener noreferrer"
                                                             className="block group"
                                                         >
-                                                            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 group-hover:border-blue-500/30 group-hover:bg-blue-500/5 transition-all">
+                                                            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 group-hover:border-[var(--brand-primary)]/30 group-hover:bg-[var(--brand-light)] transition-all">
                                                                 <div className="flex items-center justify-between mb-2">
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-blue-400">
+                                                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[var(--brand-primary)]">
                                                                             <Play className="w-4 h-4 fill-current" />
                                                                         </div>
                                                                         <div>
-                                                                            <div className="text-sm text-white/80 font-medium group-hover:text-blue-400 transition-colors">
+                                                                            <div className="text-sm text-white/80 font-medium group-hover:text-[var(--brand-primary)] transition-colors">
                                                                                 Watch Session
                                                                             </div>
                                                                             <div className="text-[10px] text-white/30">

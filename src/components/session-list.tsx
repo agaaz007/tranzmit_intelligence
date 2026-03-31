@@ -217,7 +217,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
       </div>
 
       {/* Session Table */}
-      <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] overflow-hidden">
+      <div className="bg-[var(--card)] rounded-lg border border-[var(--border)] overflow-hidden">
         <table className="w-full">
           <thead className="bg-[var(--muted)]/50 border-b border-[var(--border)]">
             <tr>
@@ -237,14 +237,14 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                 onClick={() => loadEventsAndSelect(session)}
                 className={`cursor-pointer transition-colors ${
                   selectedSessionId === session.id
-                    ? 'bg-blue-500/10 dark:bg-blue-500/15'
+                    ? 'bg-[var(--brand-light)]'
                     : 'hover:bg-[var(--muted)]/40'
                 }`}
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {loadingEvents === session.id && (
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-primary)]" />
                     )}
                     <span className="font-medium text-[var(--foreground)] text-sm truncate max-w-[200px]">
                       {session.name}
@@ -253,7 +253,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={
-                    session.source === 'posthog' ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                    session.source === 'posthog' ? 'border-[var(--info)]/30 text-[var(--info)] bg-[var(--info-bg)]' :
                     session.source === 'mixpanel' ? 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5' :
                     session.source === 'amplitude' ? 'border-violet-500/30 text-violet-600 dark:text-violet-400 bg-violet-500/5' :
                     'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5'
@@ -279,7 +279,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                   {session.analysisStatus === 'completed' ? (
                     <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Analyzed</Badge>
                   ) : session.analysisStatus === 'analyzing' ? (
-                    <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    <Badge className="bg-[var(--info-bg)] text-[var(--info)] border border-[var(--info)]/20">
                       <Loader2 className="w-3 h-3 animate-spin mr-1" />
                       Analyzing
                     </Badge>
@@ -308,7 +308,7 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                         variant="ghost"
                         size="sm"
                         onClick={(e) => handleAnalyze(session.id, e)}
-                        className="h-8 px-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-500/10"
+                        className="h-8 px-2 text-[var(--brand-primary)] hover:text-[var(--brand-hover)] hover:bg-[var(--brand-light)]"
                       >
                         Analyze
                       </Button>
@@ -318,20 +318,20 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                         variant="ghost"
                         size="sm"
                         onClick={(e) => handleMultimodalAnalyze(session.id, e)}
-                        className="h-8 px-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10"
+                        className="h-8 px-2 text-[var(--brand-primary)] hover:text-[var(--brand-hover)] hover:bg-[var(--brand-light)]"
                       >
                         <Eye className="w-3 h-3 mr-1" />
                         Multimodal
                       </Button>
                     )}
                     {(session.multimodalStatus === 'pending' || session.multimodalStatus === 'analyzing') && (
-                      <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
+                      <Badge className="bg-[var(--brand-light)] text-[var(--brand-primary)] border border-[var(--brand-primary)]/20 text-xs">
                         <Loader2 className="w-3 h-3 animate-spin mr-1" />
                         MM
                       </Badge>
                     )}
                     {session.multimodalStatus === 'completed' && (
-                      <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
+                      <Badge className="bg-[var(--brand-light)] text-[var(--brand-primary)] border border-[var(--brand-primary)]/20 text-xs">
                         <Eye className="w-3 h-3 mr-1" />
                         MM
                       </Badge>

@@ -316,14 +316,14 @@ export default function InactiveCohortPage() {
       analyzing: 'bg-[var(--info-bg)] text-[var(--info)]',
       completed: 'bg-[var(--success-bg)] text-[var(--success)]',
       failed: 'bg-[var(--error-bg)] text-[var(--error)]',
-      email_sent: 'bg-purple-500/15 text-purple-500 dark:text-purple-400',
-      email_delivered: 'bg-purple-500/15 text-purple-500 dark:text-purple-400',
+      email_sent: 'bg-[var(--brand-primary)]/15 text-[var(--brand-primary)]',
+      email_delivered: 'bg-[var(--brand-primary)]/15 text-[var(--brand-primary)]',
       email_opened: 'bg-[var(--info-bg)] text-[var(--info)]',
       email_clicked: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
       email_replied: 'bg-[var(--success-bg)] text-[var(--success)]',
       call_initiated: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
-      call_completed: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
-      called: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+      call_completed: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
+      called: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
       recovered: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
     };
     const labels: Record<string, string> = {
@@ -399,7 +399,7 @@ export default function InactiveCohortPage() {
       {syncStatus && (
         <div className={`mb-6 flex items-center gap-2 p-3 rounded-lg text-sm ${
           isSyncingPostHog
-            ? 'bg-blue-500/10 border border-blue-500/20 text-blue-500'
+            ? 'bg-[var(--brand-primary)]/10 border border-[var(--brand-primary)]/20 text-[var(--brand-primary)]'
             : syncStatus.includes('No inactive') || syncStatus.includes('No persons')
               ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400'
               : 'bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400'
@@ -441,7 +441,7 @@ export default function InactiveCohortPage() {
             transition={{ delay: 0.2 }}
             className="card p-4"
           >
-            <div className="text-2xl font-bold text-purple-500 dark:text-purple-400">
+            <div className="text-2xl font-bold text-[var(--brand-primary)]">
               {stats.byOutreachStatus?.email_sent || 0}
             </div>
             <div className="text-sm text-[var(--foreground-muted)]">Contacted</div>
@@ -566,7 +566,7 @@ export default function InactiveCohortPage() {
                         <button
                           onClick={() => handleAnalyze(user.id)}
                           disabled={actionLoading === user.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-blue-500/10 rounded-lg text-blue-500 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-[var(--brand-primary)]/10 rounded-lg text-[var(--brand-primary)] transition-colors disabled:opacity-50"
                           title="Analyze PostHog sessions"
                         >
                           {actionLoading === user.id ? (
@@ -582,7 +582,7 @@ export default function InactiveCohortPage() {
                         <button
                           onClick={() => handleGenerateOutreach(user.id)}
                           disabled={actionLoading === user.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-purple-500/10 rounded-lg text-purple-500 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-[var(--brand-primary)]/10 rounded-lg text-[var(--brand-primary)] transition-colors disabled:opacity-50"
                           title="Generate email & call script"
                         >
                           {actionLoading === user.id ? (
@@ -646,7 +646,7 @@ export default function InactiveCohortPage() {
                             setCallUser(user);
                             setShowCallModal(true);
                           }}
-                          className="p-1.5 hover:bg-indigo-500/10 rounded-lg text-indigo-500 transition-colors"
+                          className="p-1.5 hover:bg-[var(--brand-light)] rounded-lg text-[var(--brand-primary)] transition-colors"
                           title="Manual call with script"
                         >
                           <Phone className="w-3 h-3" />
@@ -718,7 +718,7 @@ export default function InactiveCohortPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[var(--card)] rounded-xl p-6 w-full max-w-md border border-[var(--border)]"
+            className="bg-[var(--card)] rounded-lg p-6 w-full max-w-md border border-[var(--border)]"
           >
             <h3 className="text-lg font-semibold mb-4 text-[var(--foreground)]">Initiate Reactivation Call</h3>
             <p className="text-sm text-[var(--foreground-muted)] mb-4">
@@ -855,7 +855,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[var(--card)] rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-[var(--border)]"
+        className="bg-[var(--card)] rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-[var(--border)]"
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Upload Inactive Users</h3>
@@ -872,7 +872,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         )}
 
         {csvData.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--border)] rounded-xl p-12 text-center">
+          <div className="border-2 border-dashed border-[var(--border)] rounded-lg p-12 text-center">
             <Upload className="w-12 h-12 mx-auto text-[var(--foreground-subtle)] mb-4" />
             <p className="text-[var(--foreground-muted)] mb-2">Upload a CSV file with inactive users</p>
             <p className="text-sm text-[var(--foreground-subtle)] mb-4">
@@ -1106,7 +1106,7 @@ function UserDetailPanel({
         {user.analysisStatus === 'completed' && user.phone && (
           <div>
             <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">AI Reactivation Call</h4>
-            <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-lg p-4 border border-violet-500/20">
+            <div className="bg-gradient-to-br from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5 rounded-lg p-4 border border-[var(--brand-primary)]/20">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
                   <Bot className="w-5 h-5 text-violet-500" />
@@ -1252,13 +1252,13 @@ function UserDetailPanel({
             )}
             {user.emailSentAt && (
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-purple-500" />
+                <Mail className="w-4 h-4 text-[var(--brand-primary)]" />
                 <span className="text-sm text-[var(--foreground)]">Email sent {new Date(user.emailSentAt).toLocaleDateString()}</span>
               </div>
             )}
             {user.callCompletedAt && (
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-indigo-500" />
+                <Phone className="w-4 h-4 text-[var(--brand-primary)]" />
                 <span className="text-sm text-[var(--foreground)]">Called {new Date(user.callCompletedAt).toLocaleDateString()}</span>
               </div>
             )}

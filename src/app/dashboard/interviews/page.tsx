@@ -193,7 +193,7 @@ export default function InterviewsPage() {
       case 'completed':
         return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">Completed</span>;
       case 'in_progress':
-        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">In Progress</span>;
+        return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">In Progress</span>;
       case 'scheduled':
         return <span className="px-2 py-0.5 text-[11px] font-medium rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">Scheduled</span>;
       case 'failed':
@@ -308,12 +308,12 @@ export default function InterviewsPage() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2.5 text-sm font-medium text-[var(--foreground)] bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-[#1a56db] hover:text-[#1a56db] transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 text-sm font-medium text-[var(--foreground)] bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors flex items-center gap-2"
             >
               <Upload className="w-4 h-4" />
               Upload HTML Report
             </button>
-            <button className="px-4 py-2.5 text-sm font-medium text-white bg-[#1a56db] rounded-lg hover:bg-[#1e40af] transition-colors flex items-center gap-2">
+            <button className="px-4 py-2.5 text-sm font-medium text-white bg-[var(--brand-primary)] rounded-lg hover:bg-[#1e40af] transition-colors flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Schedule Interview
             </button>
@@ -326,7 +326,7 @@ export default function InterviewsPage() {
             onClick={() => setActiveTab('dashboard')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'dashboard'
-                ? 'bg-[#1a56db] text-white'
+                ? 'bg-[var(--brand-primary)] text-white'
                 : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
             }`}
           >
@@ -336,7 +336,7 @@ export default function InterviewsPage() {
             onClick={() => setActiveTab('conversations')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'conversations'
-                ? 'bg-[#1a56db] text-white'
+                ? 'bg-[var(--brand-primary)] text-white'
                 : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
             }`}
           >
@@ -346,7 +346,7 @@ export default function InterviewsPage() {
             onClick={() => setActiveTab('interviews')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'interviews'
-                ? 'bg-[#1a56db] text-white'
+                ? 'bg-[var(--brand-primary)] text-white'
                 : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]'
             }`}
           >
@@ -360,34 +360,34 @@ export default function InterviewsPage() {
           <>
             {/* Dashboard Stats Row */}
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                 <div className="text-[var(--muted-foreground)] text-xs mb-1">Issues Detected</div>
                 <div className="text-2xl font-semibold text-[var(--foreground)]">{totalIssues}</div>
               </div>
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                 <div className="text-[var(--muted-foreground)] text-xs mb-1">Customer Verbatims</div>
-                <div className="text-2xl font-semibold text-[#1a56db]">{totalVerbatims}</div>
+                <div className="text-2xl font-semibold text-[var(--brand-primary)]">{totalVerbatims}</div>
               </div>
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                 <div className="text-[var(--muted-foreground)] text-xs mb-1">Avg. Sentiment</div>
                 <div className={`text-2xl font-semibold ${avgSentiment < -0.3 ? 'text-red-600 dark:text-red-400' : avgSentiment < 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                   {avgSentiment.toFixed(2)}
                 </div>
               </div>
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                 <div className="text-[var(--muted-foreground)] text-xs mb-1">Top Priority Score</div>
                 <div className={`text-2xl font-semibold ${getPriorityColor(topPriority)}`}>{topPriority}</div>
               </div>
             </div>
 
             {uploadedReports.length === 0 ? (
-              <div className="text-center py-20 bg-[var(--card)] rounded-xl border border-[var(--border)]">
+              <div className="text-center py-20 bg-[var(--card)] rounded-lg border border-[var(--border)]">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
                 <p className="text-[var(--foreground)] font-medium mb-2">No reports uploaded yet</p>
                 <p className="text-[var(--muted-foreground)] text-sm mb-6">Upload an HTML report to see parsed customer insights here.</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-[#1a56db] rounded-lg hover:bg-[#1e40af] transition-colors inline-flex items-center gap-2"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-[var(--brand-primary)] rounded-lg hover:bg-[#1e40af] transition-colors inline-flex items-center gap-2"
                 >
                   <Upload className="w-4 h-4" />
                   Upload Your First Report
@@ -401,7 +401,7 @@ export default function InterviewsPage() {
                     {aggregatedKpis.map((kpi, idx) => (
                       <div
                         key={idx}
-                        className={`rounded-xl border p-4 ${
+                        className={`rounded-lg border p-4 ${
                           kpi.type === 'risk' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' :
                           kpi.type === 'positive' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' :
                           'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800'
@@ -422,11 +422,11 @@ export default function InterviewsPage() {
 
                 {/* Executive Summary */}
                 {uploadedReports[0]?.parsed.executiveSummary && (
-                  <div className="bg-[#0F172A] rounded-xl p-6 mb-6 text-white">
-                    <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2 flex items-center gap-2">
+                  <div className="bg-[#0F172A] rounded-lg p-6 mb-6 text-white">
+                    <div className="text-xs font-semibold text-[var(--brand-primary)] uppercase tracking-wide mb-2 flex items-center gap-2">
                       <Lightbulb className="w-3.5 h-3.5" /> Executive Summary
                     </div>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-sm text-white/70 leading-relaxed">
                       {uploadedReports[0].parsed.executiveSummary}
                     </p>
                   </div>
@@ -435,9 +435,9 @@ export default function InterviewsPage() {
                 {/* Prioritized Issues Table */}
                 <div className="mb-8">
                   <h2 className="text-sm font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-[#1a56db]" /> Prioritized Issues
+                    <Target className="w-4 h-4 text-[var(--brand-primary)]" /> Prioritized Issues
                   </h2>
-                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
                     {/* Table Header */}
                     <div className="grid grid-cols-[50px_1fr_120px_100px_100px] gap-4 px-5 py-3 bg-[var(--muted)] text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide border-b border-[var(--border)]">
                       <div>Priority</div>
@@ -496,7 +496,7 @@ export default function InterviewsPage() {
                                     </h4>
                                     <div className="space-y-3">
                                       {issue.verbatims.map((v, vIdx) => (
-                                        <div key={vIdx} className="bg-[var(--card)] border-l-4 border-[#1a56db] rounded-r-lg p-4">
+                                        <div key={vIdx} className="bg-[var(--card)] border-l-4 border-[var(--brand-primary)] rounded-r-lg p-4">
                                           <p className="text-sm text-[var(--foreground)] italic leading-relaxed">&ldquo;{v.text}&rdquo;</p>
                                           {v.context && (
                                             <p className="text-xs text-[var(--muted-foreground)] mt-2">{v.context}</p>
@@ -551,9 +551,9 @@ export default function InterviewsPage() {
                     </h2>
                     <div className="space-y-3">
                       {aggregatedRecommendations.map((rec, idx) => (
-                        <div key={idx} className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5">
+                        <div key={idx} className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-5">
                           <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-[#1a56db] text-white text-xs flex items-center justify-center font-bold">{idx + 1}</span>
+                            <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white text-xs flex items-center justify-center font-bold">{idx + 1}</span>
                             {rec.title}
                           </h3>
                           <p className="text-sm text-[var(--muted-foreground)] leading-relaxed pl-8">{rec.description}</p>
@@ -572,12 +572,12 @@ export default function InterviewsPage() {
                     {uploadedReports.map(report => (
                       <div
                         key={report.id}
-                        className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[#1a56db] hover:shadow-sm transition-all group"
+                        className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 hover:border-[var(--brand-primary)] hover:shadow-sm transition-all group"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                              <FileText className="w-4 h-4 text-[#1a56db]" />
+                            <div className="w-9 h-9 rounded-lg bg-[var(--brand-primary)]/10 flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4 text-[var(--brand-primary)]" />
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-[var(--foreground)] text-sm truncate">{report.name}</p>
@@ -595,7 +595,7 @@ export default function InterviewsPage() {
                         </div>
                         <button
                           onClick={() => setViewingReport(report)}
-                          className="w-full mt-1 px-3 py-1.5 text-xs font-medium text-[#1a56db] bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-1.5"
+                          className="w-full mt-1 px-3 py-1.5 text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 rounded-lg hover:bg-[var(--brand-primary)]/20 transition-colors flex items-center justify-center gap-1.5"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           View Original
@@ -615,10 +615,10 @@ export default function InterviewsPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Transcript */}
                 <div className="lg:col-span-2">
-                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
                       <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-[#1a56db]" />
+                        <Phone className="w-5 h-5 text-[var(--brand-primary)]" />
                         <div>
                           <h3 className="font-semibold text-[var(--foreground)]">{selectedConversation.participantName}</h3>
                           <p className="text-xs text-[var(--muted-foreground)]">
@@ -640,7 +640,7 @@ export default function InterviewsPage() {
                             <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                               msg.role === 'agent'
                                 ? 'bg-[var(--muted)] text-[var(--foreground)]'
-                                : 'bg-[#1a56db] text-white'
+                                : 'bg-[var(--brand-primary)] text-white'
                             }`}>
                               <p className="text-xs font-semibold mb-1 opacity-70">
                                 {msg.role === 'agent' ? 'Maya (Researcher)' : 'User'}
@@ -657,7 +657,7 @@ export default function InterviewsPage() {
                 {/* Analysis Sidebar */}
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5">
+                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-5">
                     <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3">Summary</h4>
                     <p className="text-sm text-[var(--foreground)] leading-relaxed">{selectedConversation.analysis?.summary}</p>
                     <div className="flex items-center gap-2 mt-4">
@@ -671,7 +671,7 @@ export default function InterviewsPage() {
                       {selectedConversation.analysis?.winback_outcome && (
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           selectedConversation.analysis.winback_outcome === 'accepted'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                         }`}>
                           Win-back: {selectedConversation.analysis.winback_outcome}
@@ -682,7 +682,7 @@ export default function InterviewsPage() {
 
                   {/* Pain Points */}
                   {selectedConversation.analysis?.pain_points && selectedConversation.analysis.pain_points.length > 0 && (
-                    <div className="bg-[var(--card)] border border-red-200 dark:border-red-800 rounded-xl p-5">
+                    <div className="bg-[var(--card)] border border-red-200 dark:border-red-800 rounded-lg p-5">
                       <h4 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
                         <AlertTriangle className="w-3.5 h-3.5" /> Pain Points
                       </h4>
@@ -699,13 +699,13 @@ export default function InterviewsPage() {
 
                   {/* Key Quotes */}
                   {selectedConversation.analysis?.key_quotes && selectedConversation.analysis.key_quotes.length > 0 && (
-                    <div className="bg-[var(--card)] border border-[#1a56db]/20 rounded-xl p-5">
-                      <h4 className="text-xs font-semibold text-[#1a56db] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <div className="bg-[var(--card)] border border-[var(--brand-primary)]/20 rounded-lg p-5">
+                      <h4 className="text-xs font-semibold text-[var(--brand-primary)] uppercase tracking-wide mb-3 flex items-center gap-1.5">
                         <Quote className="w-3.5 h-3.5" /> Key Quotes
                       </h4>
                       <div className="space-y-3">
                         {selectedConversation.analysis.key_quotes.map((quote, i) => (
-                          <blockquote key={i} className="border-l-2 border-[#1a56db] pl-3 italic text-sm text-[var(--muted-foreground)]">
+                          <blockquote key={i} className="border-l-2 border-[var(--brand-primary)] pl-3 italic text-sm text-[var(--muted-foreground)]">
                             &ldquo;{quote}&rdquo;
                           </blockquote>
                         ))}
@@ -715,7 +715,7 @@ export default function InterviewsPage() {
 
                   {/* Feature Requests */}
                   {selectedConversation.analysis?.feature_requests && selectedConversation.analysis.feature_requests.length > 0 && (
-                    <div className="bg-[var(--card)] border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+                    <div className="bg-[var(--card)] border border-emerald-200 dark:border-emerald-800 rounded-lg p-5">
                       <h4 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
                         <Lightbulb className="w-3.5 h-3.5" /> Feature Requests
                       </h4>
@@ -736,10 +736,10 @@ export default function InterviewsPage() {
               <>
                 {isLoadingConversations ? (
                   <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#1a56db]" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
                   </div>
                 ) : conversations.length === 0 ? (
-                  <div className="text-center py-20 bg-[var(--card)] rounded-xl border border-[var(--border)]">
+                  <div className="text-center py-20 bg-[var(--card)] rounded-lg border border-[var(--border)]">
                     <Phone className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
                     <p className="text-[var(--foreground)] font-medium mb-2">No conversations yet</p>
                     <p className="text-[var(--muted-foreground)] text-sm">Conversations from voice research calls will appear here.</p>
@@ -756,7 +756,7 @@ export default function InterviewsPage() {
                             setSelectedConversation(conversation);
                           }
                         }}
-                        className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[#1a56db] hover:shadow-sm transition-all text-left group"
+                        className="w-full bg-[var(--card)] border border-[var(--border)] rounded-lg p-5 hover:border-[var(--brand-primary)] hover:shadow-sm transition-all text-left group"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
@@ -764,7 +764,7 @@ export default function InterviewsPage() {
                               <Phone className="w-5 h-5 text-[var(--muted-foreground)]" />
                             </div>
                             <div>
-                              <h3 className="font-medium text-[var(--foreground)] group-hover:text-[#1a56db] transition-colors">
+                              <h3 className="font-medium text-[var(--foreground)] group-hover:text-[var(--brand-primary)] transition-colors">
                                 {convo.participantName}
                               </h3>
                               <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
@@ -777,7 +777,7 @@ export default function InterviewsPage() {
                               <Clock className="w-3.5 h-3.5" />
                               {Math.floor(convo.duration / 60)}m
                             </div>
-                            <ChevronDown className="w-4 h-4 text-[var(--muted-foreground)] group-hover:text-[#1a56db] transition-colors" />
+                            <ChevronDown className="w-4 h-4 text-[var(--muted-foreground)] group-hover:text-[var(--brand-primary)] transition-colors" />
                           </div>
                         </div>
                       </button>
@@ -791,7 +791,7 @@ export default function InterviewsPage() {
           /* Interviews Tab */
           <>
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                 <div className="text-[var(--muted-foreground)] text-xs mb-1">Total</div>
                 <div className="text-2xl font-semibold text-[var(--foreground)]">{interviewStats.total}</div>
               </div>
@@ -804,8 +804,8 @@ export default function InterviewsPage() {
                 <div className="text-2xl font-semibold text-amber-600 dark:text-amber-400">{interviewStats.scheduled}</div>
               </div>
               <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
-                <div className="text-blue-600 dark:text-blue-400 text-xs mb-1">In Progress</div>
-                <div className="text-2xl font-semibold text-blue-600 dark:text-blue-400">{interviewStats.inProgress}</div>
+                <div className="text-[var(--brand-primary)] text-xs mb-1">In Progress</div>
+                <div className="text-2xl font-semibold text-[var(--brand-primary)]">{interviewStats.inProgress}</div>
               </div>
             </div>
 
@@ -819,7 +819,7 @@ export default function InterviewsPage() {
                     placeholder="Search interviews..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[#1a56db] focus:ring-1 focus:ring-[#1a56db]"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)]/30"
                   />
                 </div>
               </div>
@@ -833,8 +833,8 @@ export default function InterviewsPage() {
                   onClick={() => handleStatusFilter(status)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     statusFilter === status
-                      ? 'bg-[#1a56db] text-white'
-                      : 'bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)] hover:border-[#1a56db] hover:text-[#1a56db]'
+                      ? 'bg-[var(--brand-primary)] text-white'
+                      : 'bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
                   }`}
                 >
                   {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -845,10 +845,10 @@ export default function InterviewsPage() {
             {/* Interviews Grid */}
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-[#1a56db]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
               </div>
             ) : interviews.length === 0 ? (
-              <div className="text-center py-20 bg-[var(--card)] rounded-xl border border-[var(--border)]">
+              <div className="text-center py-20 bg-[var(--card)] rounded-lg border border-[var(--border)]">
                 <MessageCircle className="w-12 h-12 mx-auto mb-4 text-[var(--muted-foreground)]" />
                 <p className="text-[var(--muted-foreground)] mb-2">No interviews found</p>
                 <p className="text-[var(--muted-foreground)] text-sm">Schedule your first interview to get started.</p>
@@ -860,7 +860,7 @@ export default function InterviewsPage() {
                     key={interview.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[#1a56db] hover:shadow-sm transition-all cursor-pointer group"
+                    className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-5 hover:border-[var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer group"
                     whileHover={{ y: -2 }}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -907,7 +907,7 @@ export default function InterviewsPage() {
                           <span className="text-base">{getSentimentEmoji(interview.insights[0].sentiment)}</span>
                         )}
                         {interview.insights.length > 0 && interview.insights[0].satisfaction && (
-                          <div className="flex items-center gap-1 text-xs text-[#1a56db] font-medium">
+                          <div className="flex items-center gap-1 text-xs text-[var(--brand-primary)] font-medium">
                             <TrendingUp className="w-3 h-3" />
                             {interview.insights[0].satisfaction.toFixed(1)}
                           </div>
@@ -939,17 +939,17 @@ export default function InterviewsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
+              className="bg-[var(--card)] rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--background-subtle)] rounded-t-2xl">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-[#1a56db]" />
-                  <span className="font-semibold text-gray-900">{viewingReport.name}</span>
+                  <FileText className="w-5 h-5 text-[var(--brand-primary)]" />
+                  <span className="font-semibold text-[var(--foreground)]">{viewingReport.name}</span>
                 </div>
                 <button
                   onClick={() => setViewingReport(null)}
-                  className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+                  className="p-2 rounded-lg hover:bg-[var(--muted)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>

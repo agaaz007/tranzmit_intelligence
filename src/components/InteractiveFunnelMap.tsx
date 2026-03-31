@@ -66,7 +66,7 @@ function StepNode({ data }: { data: { step: FunnelStep; index: number; isFirst: 
         {/* Step indicator */}
         <div className="flex items-center justify-between mb-2">
           <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-            isFirst ? 'text-indigo-600' : isLast ? 'text-emerald-600' : 'text-slate-400'
+            isFirst ? 'text-[var(--brand-primary)]' : isLast ? 'text-emerald-600' : 'text-slate-400'
           }`}>
             Step {index + 1}
           </span>
@@ -90,7 +90,7 @@ function StepNode({ data }: { data: { step: FunnelStep; index: number; isFirst: 
             animate={{ height: barHeight }}
             transition={{ delay: index * 0.06 + 0.15, duration: 0.4, ease: 'easeOut' }}
             className={`absolute bottom-0 left-0 right-0 ${
-              isFirst ? 'bg-indigo-500' : isLast ? 'bg-emerald-500' : 'bg-slate-700'
+              isFirst ? 'bg-[var(--brand-primary)]' : isLast ? 'bg-emerald-500' : 'bg-slate-700'
             }`}
           />
           <div className="absolute inset-0 flex items-end justify-center pb-2">
@@ -619,7 +619,7 @@ function CohortPanel({
                 {deepAnalysis.lastPages.length > 0 && (
                   <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
                     <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-blue-600" /> Last Pages Visited
+                      <Globe className="w-5 h-5 text-[var(--brand-primary)]" /> Last Pages Visited
                     </h4>
                     <p className="text-xs text-blue-700 mb-3">Pages where users got stuck or left</p>
                     <div className="bg-white rounded-lg border border-blue-200 overflow-hidden">
@@ -775,7 +775,7 @@ function CohortPanel({
               ? 'bg-emerald-100 text-emerald-700' 
               : creating 
                 ? 'bg-slate-200 text-slate-400'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-hover)]'
           }`}
         >
           {creating ? 'Creating...' : created ? '✓ Cohort Created' : 'Create Cohort'}

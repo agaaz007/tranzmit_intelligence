@@ -47,9 +47,9 @@ function generateRecoveryEmailHTML(
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); overflow: hidden;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 32px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #C2715A 0%, #A85D48 100%); padding: 32px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">We miss you!</h1>
-              <p style="margin: 8px 0 0; color: #dbeafe; font-size: 14px;">Let's reconnect</p>
+              <p style="margin: 8px 0 0; color: #EBE6DF; font-size: 14px;">Let's reconnect</p>
             </td>
           </tr>
 
@@ -66,7 +66,7 @@ function generateRecoveryEmailHTML(
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 16px 0 24px;">
-                    <a href="mailto:support@${companyName.toLowerCase().replace(/\s+/g, '')}.com?subject=Re: ${encodeURIComponent(emailContent.subject)}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                    <a href="mailto:support@${companyName.toLowerCase().replace(/\s+/g, '')}.com?subject=Re: ${encodeURIComponent(emailContent.subject)}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #C2715A 0%, #A85D48 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(194, 113, 90, 0.3);">
                       Reply to this email
                     </a>
                   </td>

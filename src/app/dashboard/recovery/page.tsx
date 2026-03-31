@@ -317,8 +317,8 @@ export default function RecoveryPage() {
       completed: 'bg-[var(--success-bg)] text-[var(--success)]',
       failed: 'bg-[var(--error-bg)] text-[var(--error)]',
       // Email statuses
-      email_sent: 'bg-purple-500/15 text-purple-500 dark:text-purple-400',
-      email_delivered: 'bg-purple-500/15 text-purple-500 dark:text-purple-400',
+      email_sent: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
+      email_delivered: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
       email_opened: 'bg-[var(--info-bg)] text-[var(--info)]',
       email_clicked: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
       email_replied: 'bg-[var(--success-bg)] text-[var(--success)]',
@@ -326,8 +326,8 @@ export default function RecoveryPage() {
       email_complained: 'bg-[var(--error-bg)] text-[var(--error)]',
       // Call statuses
       call_initiated: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
-      call_completed: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
-      called: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+      call_completed: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
+      called: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
       // Final
       recovered: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
     };
@@ -417,7 +417,7 @@ export default function RecoveryPage() {
             transition={{ delay: 0.2 }}
             className="card p-4"
           >
-            <div className="text-2xl font-bold text-purple-500 dark:text-purple-400">
+            <div className="text-2xl font-bold text-[var(--brand-primary)]">
               {stats.byOutreachStatus?.email_sent || 0}
             </div>
             <div className="text-sm text-[var(--foreground-muted)]">Contacted</div>
@@ -523,11 +523,11 @@ export default function RecoveryPage() {
                   </td>
                   <td className="px-4 py-3 max-w-xs">
                     {user.analysisResult?.summary ? (
-                      <p className="text-sm text-[#666] truncate">
+                      <p className="text-sm text-[var(--foreground-muted)] truncate">
                         {user.analysisResult.summary}
                       </p>
                     ) : (
-                      <span className="text-sm text-[#999]">Not analyzed</span>
+                      <span className="text-sm text-[var(--foreground-subtle)]">Not analyzed</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -537,7 +537,7 @@ export default function RecoveryPage() {
                         <button
                           onClick={() => handleAnalyze(user.id)}
                           disabled={actionLoading === user.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-blue-50 rounded-lg text-blue-600 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-[var(--brand-light)] rounded-lg text-[var(--brand-primary)] transition-colors disabled:opacity-50"
                           title="Analyze PostHog sessions"
                         >
                           {actionLoading === user.id ? (
@@ -554,7 +554,7 @@ export default function RecoveryPage() {
                         <button
                           onClick={() => handleGenerateOutreach(user.id)}
                           disabled={actionLoading === user.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-purple-50 rounded-lg text-purple-600 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-[var(--brand-light)] rounded-lg text-[var(--brand-primary)] transition-colors disabled:opacity-50"
                           title="Generate email & call script"
                         >
                           {actionLoading === user.id ? (
@@ -585,7 +585,7 @@ export default function RecoveryPage() {
 
                       {/* Email Status Indicator */}
                       {user.emailSentAt && (
-                        <span className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 rounded-lg text-gray-600">
+                        <span className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)]">
                           <CheckCircle className="w-3 h-3" />
                           <span>Sent</span>
                         </span>
@@ -623,7 +623,7 @@ export default function RecoveryPage() {
                             setCallUser(user);
                             setShowCallModal(true);
                           }}
-                          className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
+                          className="p-1.5 hover:bg-[var(--brand-light)] rounded-lg text-[var(--brand-primary)] transition-colors"
                           title="Manual call with script"
                         >
                           <Phone className="w-3 h-3" />
@@ -649,7 +649,7 @@ export default function RecoveryPage() {
                       </button>
                       <button
                         onClick={() => setSelectedUser(user)}
-                        className="p-2 hover:bg-[#f5f5f5] rounded-lg text-[#666] transition-colors"
+                        className="p-2 hover:bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)] transition-colors"
                         title="View details"
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -695,10 +695,10 @@ export default function RecoveryPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl p-6 w-full max-w-md"
+            className="bg-[var(--card)] rounded-lg p-6 w-full max-w-md border border-[var(--border)]"
           >
-            <h3 className="text-lg font-semibold mb-4">Initiate Recovery Call</h3>
-            <p className="text-sm text-[#666] mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-[var(--foreground)]">Initiate Recovery Call</h3>
+            <p className="text-sm text-[var(--foreground-muted)] mb-4">
               Enter your phone number. We&apos;ll call you first, then connect you to {callUser.name || callUser.email}.
             </p>
             <input
@@ -706,15 +706,15 @@ export default function RecoveryPage() {
               placeholder="Your phone number (e.g., +1234567890)"
               value={agentPhone}
               onChange={(e) => setAgentPhone(e.target.value)}
-              className="w-full px-4 py-2 border border-[#e5e5e5] rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[#1a56db]/20"
+              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg mb-4 bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
             />
             {callUser.callScript && (
-              <div className="bg-[#fafafa] rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
-                <div className="text-xs font-medium text-[#666] mb-2">CALL SCRIPT</div>
-                <p className="text-sm text-[#1a1a1a] mb-2">
+              <div className="bg-[var(--muted)] rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+                <div className="text-xs font-medium text-[var(--foreground-muted)] mb-2">CALL SCRIPT</div>
+                <p className="text-sm text-[var(--foreground)] mb-2">
                   <strong>Opening:</strong> {callUser.callScript.openingLine}
                 </p>
-                <div className="text-sm text-[#666]">
+                <div className="text-sm text-[var(--foreground-muted)]">
                   <strong>Key Points:</strong>
                   <ul className="list-disc list-inside mt-1">
                     {callUser.callScript.keyPoints.map((point, i) => (
@@ -730,14 +730,14 @@ export default function RecoveryPage() {
                   setShowCallModal(false);
                   setCallUser(null);
                 }}
-                className="flex-1 px-4 py-2 border border-[#e5e5e5] rounded-lg hover:bg-[#f5f5f5] transition-colors"
+                className="flex-1 px-4 py-2 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] transition-colors text-[var(--foreground)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInitiateCall}
                 disabled={!agentPhone || actionLoading === callUser.id}
-                className="flex-1 px-4 py-2 bg-[#1a56db] text-white rounded-lg hover:bg-[#1648c7] transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50"
               >
                 {actionLoading === callUser.id ? 'Calling...' : 'Start Call'}
               </button>
@@ -831,30 +831,30 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+        className="bg-[var(--card)] rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-[var(--border)]"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Upload Churned Users</h3>
-          <button onClick={onClose} className="p-1 hover:bg-[#f5f5f5] rounded-lg">
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">Upload Churned Users</h3>
+          <button onClick={onClose} className="p-1 hover:bg-[var(--muted)] rounded-lg text-[var(--foreground-muted)]">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-600">
+          <div className="flex items-center gap-2 p-3 bg-[var(--error-bg)] border border-[var(--error)]/20 rounded-lg mb-4 text-sm text-[var(--error)]">
             <AlertCircle className="w-4 h-4" />
             {error}
           </div>
         )}
 
         {csvData.length === 0 ? (
-          <div className="border-2 border-dashed border-[#e5e5e5] rounded-xl p-12 text-center">
-            <Upload className="w-12 h-12 mx-auto text-[#999] mb-4" />
-            <p className="text-[#666] mb-2">Upload a CSV file with churned users</p>
-            <p className="text-sm text-[#999] mb-4">
+          <div className="border-2 border-dashed border-[var(--border)] rounded-lg p-12 text-center">
+            <Upload className="w-12 h-12 mx-auto text-[var(--foreground-subtle)] mb-4" />
+            <p className="text-[var(--foreground-muted)] mb-2">Upload a CSV file with churned users</p>
+            <p className="text-sm text-[var(--foreground-subtle)] mb-4">
               Required: email. Optional: name, phone, posthog_distinct_id
             </p>
-            <label className="inline-block px-4 py-2 bg-[#1a56db] text-white rounded-lg cursor-pointer hover:bg-[#1648c7] transition-colors">
+            <label className="inline-block px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
               Choose File
               <input
                 type="file"
@@ -867,34 +867,34 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-[#666]">
-                <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
+              <span className="text-sm text-[var(--foreground-muted)]">
+                <CheckCircle className="w-4 h-4 inline mr-1 text-[var(--success)]" />
                 {csvData.length} users ready to upload
               </span>
               <button
                 onClick={() => setCsvData([])}
-                className="text-sm text-[#666] hover:text-[#1a1a1a]"
+                className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
               >
                 Clear
               </button>
             </div>
-            <div className="flex-1 overflow-auto border border-[#e5e5e5] rounded-lg mb-4">
+            <div className="flex-1 overflow-auto border border-[var(--border)] rounded-lg mb-4">
               <table className="w-full text-sm">
-                <thead className="bg-[#fafafa] sticky top-0">
+                <thead className="bg-[var(--muted)] sticky top-0">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium text-[#666]">Email</th>
-                    <th className="text-left px-3 py-2 font-medium text-[#666]">Name</th>
-                    <th className="text-left px-3 py-2 font-medium text-[#666]">Phone</th>
-                    <th className="text-left px-3 py-2 font-medium text-[#666]">PostHog ID</th>
+                    <th className="text-left px-3 py-2 font-medium text-[var(--foreground-muted)]">Email</th>
+                    <th className="text-left px-3 py-2 font-medium text-[var(--foreground-muted)]">Name</th>
+                    <th className="text-left px-3 py-2 font-medium text-[var(--foreground-muted)]">Phone</th>
+                    <th className="text-left px-3 py-2 font-medium text-[var(--foreground-muted)]">PostHog ID</th>
                   </tr>
                 </thead>
                 <tbody>
                   {csvData.slice(0, 10).map((row, i) => (
-                    <tr key={i} className="border-t border-[#e5e5e5]">
-                      <td className="px-3 py-2">{row.email}</td>
-                      <td className="px-3 py-2 text-[#666]">{row.name || '-'}</td>
-                      <td className="px-3 py-2 text-[#666]">{row.phone || '-'}</td>
-                      <td className="px-3 py-2 text-[#666] truncate max-w-[150px]">
+                    <tr key={i} className="border-t border-[var(--border)]">
+                      <td className="px-3 py-2 text-[var(--foreground)]">{row.email}</td>
+                      <td className="px-3 py-2 text-[var(--foreground-muted)]">{row.name || '-'}</td>
+                      <td className="px-3 py-2 text-[var(--foreground-muted)]">{row.phone || '-'}</td>
+                      <td className="px-3 py-2 text-[var(--foreground-muted)] truncate max-w-[150px]">
                         {row.posthog_distinct_id || row.distinct_id || '-'}
                       </td>
                     </tr>
@@ -902,7 +902,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 </tbody>
               </table>
               {csvData.length > 10 && (
-                <div className="px-3 py-2 text-sm text-[#666] bg-[#fafafa] border-t border-[#e5e5e5]">
+                <div className="px-3 py-2 text-sm text-[var(--foreground-muted)] bg-[var(--muted)] border-t border-[var(--border)]">
                   + {csvData.length - 10} more users
                 </div>
               )}
@@ -910,14 +910,14 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-[#e5e5e5] rounded-lg hover:bg-[#f5f5f5] transition-colors"
+                className="flex-1 px-4 py-2 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] transition-colors text-[var(--foreground)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="flex-1 px-4 py-2 bg-[#1a56db] text-white rounded-lg hover:bg-[#1648c7] transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {isUploading ? 'Uploading...' : 'Upload Users'}
               </button>
@@ -1012,7 +1012,7 @@ function UserDetailPanel({
               {user.posthogDistinctId && (
                 <Link
                   href={`/dashboard/session-insights?distinctId=${encodeURIComponent(user.posthogDistinctId)}`}
-                  className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-600 hover:underline"
+                  className="flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline"
                 >
                   <PlayCircle className="w-3 h-3" />
                   View Sessions
@@ -1069,7 +1069,7 @@ function UserDetailPanel({
                 {user.posthogDistinctId && (
                   <Link
                     href={`/dashboard/session-insights?distinctId=${encodeURIComponent(user.posthogDistinctId)}`}
-                    className="flex items-center gap-2 mt-4 px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 mt-4 px-3 py-2 bg-[var(--brand-light)] hover:bg-[var(--brand-light)] text-[var(--brand-primary)] rounded-lg text-sm font-medium transition-colors"
                   >
                     <PlayCircle className="w-4 h-4" />
                     Open in Session Insights
@@ -1099,7 +1099,7 @@ function UserDetailPanel({
         {user.analysisStatus === 'completed' && user.phone && (
           <div>
             <h4 className="text-xs font-medium text-[var(--foreground-subtle)] uppercase mb-2">AI Recovery Call</h4>
-            <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-lg p-4 border border-violet-500/20">
+            <div className="bg-gradient-to-br from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5 rounded-lg p-4 border border-[var(--brand-primary)]/20">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
                   <Bot className="w-5 h-5 text-violet-500" />
@@ -1248,13 +1248,13 @@ function UserDetailPanel({
             )}
             {user.emailSentAt && (
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-purple-500" />
+                <Mail className="w-4 h-4 text-[var(--brand-primary)]" />
                 <span className="text-sm text-[var(--foreground)]">Email sent {new Date(user.emailSentAt).toLocaleDateString()}</span>
               </div>
             )}
             {user.callCompletedAt && (
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-indigo-500" />
+                <Phone className="w-4 h-4 text-[var(--brand-primary)]" />
                 <span className="text-sm text-[var(--foreground)]">Called {new Date(user.callCompletedAt).toLocaleDateString()}</span>
               </div>
             )}

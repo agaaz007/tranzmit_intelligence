@@ -65,7 +65,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
               className={twMerge(
                 "max-w-[85%] p-4 rounded-2xl shadow-sm text-sm leading-relaxed",
                 msg.role === 'user'
-                  ? "bg-indigo-600 text-white rounded-br-none"
+                  ? "bg-[var(--brand-primary)] text-white rounded-br-none"
                   : "bg-[var(--muted)] text-[var(--foreground)] rounded-bl-none"
               )}
             >
@@ -99,12 +99,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isTyping
               }
             }}
             placeholder="Type your response..."
-            className="w-full pl-4 pr-12 py-3 bg-[var(--muted)] border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none h-[52px] text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none"
+            className="w-full pl-4 pr-12 py-3 bg-[var(--muted)] border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:border-[var(--brand-primary)] transition-all resize-none h-[52px] text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none"
           />
           <button
             type="submit"
             disabled={!input.trim() || isTyping}
-            className="absolute right-2 top-2 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="absolute right-2 top-2 p-2 bg-[var(--brand-primary)] text-white rounded-lg hover:bg-[var(--brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send size={16} />
           </button>

@@ -60,7 +60,7 @@ export function AnalysisTable({ analyses, selectedId, onView, onDelete }: Analys
                         return (
                             <TableRow 
                                 key={entry.id}
-                                className={`cursor-pointer hover:bg-[var(--muted)]/40 ${entry.isAnalyzing ? 'opacity-60' : ''} ${isSelected ? 'bg-blue-500/10 dark:bg-blue-500/15' : ''}`}
+                                className={`cursor-pointer hover:bg-[var(--muted)]/40 ${entry.isAnalyzing ? 'opacity-60' : ''} ${isSelected ? 'bg-[var(--brand-light)]' : ''}`}
                                 onClick={() => !entry.isAnalyzing && entry.analysis && handleToggleView(entry)}
                             >
                                 <TableCell className="font-medium truncate max-w-[180px]" title={entry.fileName}>
@@ -69,7 +69,7 @@ export function AnalysisTable({ analyses, selectedId, onView, onDelete }: Analys
                                 <TableCell className="text-[var(--muted-foreground)] text-sm">{entry.timestamp}</TableCell>
                                 <TableCell className="max-w-md truncate">
                                     {entry.isAnalyzing ? (
-                                        <span className="flex items-center gap-2 text-blue-500">
+                                        <span className="flex items-center gap-2 text-[var(--brand-primary)]">
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                             Analyzing...
                                         </span>

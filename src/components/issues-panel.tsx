@@ -256,7 +256,7 @@ export function IssuesPanel({ insights, isLoading, onSessionClick, onRefresh, is
 
   const tabs = [
     { id: 'issues' as PanelTab, label: 'Issues', count: insights.criticalIssues.length, icon: AlertTriangle, color: 'text-red-400' },
-    { id: 'goals' as PanelTab, label: 'Goals', count: insights.topUserGoals.length, icon: Target, color: 'text-blue-400' },
+    { id: 'goals' as PanelTab, label: 'Goals', count: insights.topUserGoals.length, icon: Target, color: 'text-[var(--brand-primary)]' },
     { id: 'actions' as PanelTab, label: 'Actions', count: insights.immediateActions.length, icon: CheckCircle2, color: 'text-emerald-400' },
   ];
 
@@ -360,8 +360,8 @@ export function IssuesPanel({ insights, isLoading, onSessionClick, onRefresh, is
                   className="flex items-center justify-between px-4 py-3 rounded-xl border border-[var(--border)] hover:border-[var(--border-hover)] bg-[var(--card)] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/15 flex items-center justify-center shrink-0">
-                      <Target className="w-3.5 h-3.5 text-blue-400" />
+                    <div className="w-7 h-7 rounded-lg bg-[var(--brand-light)] border border-[var(--brand-primary)]/15 flex items-center justify-center shrink-0">
+                      <Target className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                     </div>
                     <span className="text-sm text-[var(--foreground)] truncate">{goal.goal}</span>
                   </div>

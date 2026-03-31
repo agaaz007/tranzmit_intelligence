@@ -420,11 +420,11 @@ export default function FunnelMap({ steps, funnelId, posthogConfig, onAnalyzeDro
                               e.stopPropagation();
                               onAnalyzeDropOff(step, index);
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-3 border-t border-slate-100 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 text-slate-700 transition-all group"
+                            className="w-full flex items-center gap-3 px-4 py-3 border-t border-slate-100 hover:bg-[var(--brand-light)] text-slate-700 transition-all group"
                           >
-                            <Zap className="w-4 h-4 text-purple-600" />
+                            <Zap className="w-4 h-4 text-[var(--brand-primary)]" />
                             <span className="font-medium text-sm">Analyze Drop-off</span>
-                            <ArrowRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-purple-600" />
+                            <ArrowRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-[var(--brand-primary)]" />
                           </button>
                         )}
                       </div>
@@ -564,7 +564,7 @@ export default function FunnelMap({ steps, funnelId, posthogConfig, onAnalyzeDro
                               </div>
                               <Link
                                 href="/dashboard/cohorts"
-                                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-hover)] transition-all"
                               >
                                 <ExternalLink className="w-4 h-4" />
                                 View in Smart Cohorts
@@ -749,7 +749,7 @@ export default function FunnelMap({ steps, funnelId, posthogConfig, onAnalyzeDro
                         <p className="text-slate-600">{correlationData[`${fullScreenCohort.stepIndex}`]?.error}</p>
                         <button
                           onClick={() => fetchCorrelationData(fullScreenCohort.stepIndex)}
-                          className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          className="mt-3 text-sm text-[var(--brand-primary)] hover:text-[var(--brand-hover)] font-medium"
                         >
                           Try again
                         </button>
@@ -843,7 +843,7 @@ export default function FunnelMap({ steps, funnelId, posthogConfig, onAnalyzeDro
                 {cohortCreated?.stepIndex === fullScreenCohort.stepIndex && cohortCreated?.type === fullScreenCohort.type ? (
                   <Link
                     href="/dashboard/cohorts"
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-blue-600 text-white hover:bg-blue-700"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-hover)]"
                   >
                     <CheckCircle className="w-4 h-4" />
                     View in Smart Cohorts

@@ -16,7 +16,7 @@ interface WidgetTrigger {
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-500' },
-  shown: { label: 'Shown', icon: Eye, color: 'text-blue-500' },
+  shown: { label: 'Shown', icon: Eye, color: 'text-[var(--brand-primary)]' },
   clicked: { label: 'Started', icon: CheckCircle, color: 'text-green-500' },
   dismissed: { label: 'Dismissed', icon: XCircle, color: 'text-[var(--foreground-muted)]' },
 };

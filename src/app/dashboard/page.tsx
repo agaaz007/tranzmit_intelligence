@@ -128,8 +128,8 @@ const categoryLabels: Record<string, string> = {
 const trendIcon = (direction?: string) => {
   if (direction === 'rising') return <TrendingUp className="w-3.5 h-3.5 text-red-500" />;
   if (direction === 'declining') return <TrendingDown className="w-3.5 h-3.5 text-emerald-500" />;
-  if (direction === 'new') return <span className="text-xs text-blue-500 font-medium">NEW</span>;
-  return <Minus className="w-3.5 h-3.5 text-gray-400" />;
+  if (direction === 'new') return <span className="text-xs text-[var(--info)] font-medium">NEW</span>;
+  return <Minus className="w-3.5 h-3.5 text-[var(--foreground-subtle)]" />;
 };
 
 function TicketCard({ ticket, isExpanded, onToggle }: {
@@ -155,7 +155,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
   const sourceCount = ticket.evidence.sessionIds.length + ticket.evidence.conversationIds.length;
 
   return (
-    <div className="bg-[var(--card)] rounded-xl overflow-hidden border border-[var(--border)]">
+    <div className="bg-[var(--card)] rounded-lg overflow-hidden border border-[var(--border)]">
       <button
         onClick={onToggle}
         className="w-full p-5 text-left hover:bg-[var(--muted)] transition-colors"
@@ -167,8 +167,8 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                 ticket.severity === 'critical' ? 'bg-red-500' :
                 ticket.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
               }`} />
-              <span className="text-gray-900 dark:text-white font-medium">{ticket.title}</span>
-              <span className="text-gray-400 dark:text-[#444] text-xs">{categoryLabels[ticket.category] || ticket.category}</span>
+              <span className="text-[var(--foreground)] font-medium">{ticket.title}</span>
+              <span className="text-[var(--foreground-subtle)] text-xs">{categoryLabels[ticket.category] || ticket.category}</span>
               {ticket.churnImpact && ticket.churnImpact.atRiskUsers > 0 && (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400">
                   <AlertTriangle className="w-3 h-3" />
@@ -178,17 +178,17 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
               {trendIcon(ticket.trending?.direction)}
             </div>
             {firstQuote && (
-              <p className="text-gray-500 dark:text-[#666] text-sm italic pl-4 border-l-2 border-gray-300 dark:border-[#333] line-clamp-1">
+              <p className="text-[var(--foreground-muted)] text-sm italic pl-4 border-l-2 border-[var(--border)] line-clamp-1">
                 {typeof firstQuote === 'string' ? <>&ldquo;{firstQuote}&rdquo;</> : firstQuote}
               </p>
             )}
           </div>
           <div className="flex items-center gap-4 shrink-0">
             <div className="text-right">
-              <span className="text-lg font-medium text-gray-900 dark:text-white">{ticket.compositeScore}</span>
-              <span className="text-gray-400 dark:text-[#666] text-xs">/100</span>
+              <span className="text-lg font-medium text-[var(--foreground)]">{ticket.compositeScore}</span>
+              <span className="text-[var(--foreground-subtle)] text-xs">/100</span>
             </div>
-            <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-[#666] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 text-[var(--foreground-subtle)] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
         </div>
       </button>
@@ -204,7 +204,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
           >
             <div className="px-5 pb-5 border-t border-[var(--border)]">
               {/* Summary */}
-              <p className="text-gray-600 dark:text-[#999] text-sm mt-4 leading-relaxed">{parsed.intro}</p>
+              <p className="text-[var(--foreground-muted)] text-sm mt-4 leading-relaxed">{parsed.intro}</p>
 
               {/* Score Breakdown */}
               <div className="mt-4 grid grid-cols-4 gap-2">
@@ -215,16 +215,16 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                   { label: 'Recency', value: ticket.scoreBreakdown.recency, weight: '20%' },
                 ].map(({ label, value, weight }) => (
                   <div key={label} className="bg-[var(--muted)] rounded-lg p-2.5 text-center">
-                    <p className="text-gray-400 dark:text-[#555] text-[10px] uppercase tracking-wider">{label}</p>
-                    <p className="text-gray-900 dark:text-white text-sm font-medium mt-0.5">{value}</p>
-                    <p className="text-gray-400 dark:text-[#444] text-[10px]">{weight}</p>
+                    <p className="text-[var(--foreground-subtle)] text-[10px] uppercase tracking-wider">{label}</p>
+                    <p className="text-[var(--foreground)] text-sm font-medium mt-0.5">{value}</p>
+                    <p className="text-[var(--foreground-subtle)] text-[10px]">{weight}</p>
                   </div>
                 ))}
               </div>
 
               {/* Churn Impact Detail */}
               {ticket.churnImpact && ticket.churnImpact.atRiskUsers > 0 && (
-                <div className="mt-4 bg-red-50 dark:bg-red-500/5 rounded-lg p-3 flex items-center gap-3">
+                <div className="mt-4 bg-[var(--error-bg)] rounded-lg p-3 flex items-center gap-3">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                   <p className="text-sm text-red-700 dark:text-red-400">
                     {ticket.churnImpact.atRiskUsers} at-risk user{ticket.churnImpact.atRiskUsers > 1 ? 's' : ''} affected
@@ -236,14 +236,14 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
               {/* Verbatim User Quotes */}
               {allQuotes.length > 0 && (
                 <div className="mt-5">
-                  <p className="text-gray-400 dark:text-[#555] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <p className="text-[var(--foreground-subtle)] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                     <Quote className="w-3 h-3" />
                     Verbatim User Quotes
                   </p>
                   <div className="space-y-2">
                     {allQuotes.map((quote, idx) => (
-                      <div key={idx} className="border-l-2 border-blue-500 pl-4 py-2">
-                        <p className="text-gray-800 dark:text-white text-sm">{quote}</p>
+                      <div key={idx} className="border-l-2 border-[var(--brand-primary)] pl-4 py-2">
+                        <p className="text-[var(--foreground)] text-sm">{quote}</p>
                       </div>
                     ))}
                   </div>
@@ -252,12 +252,12 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
 
               {/* Recommendation */}
               <div className="mt-5">
-                <p className="text-gray-400 dark:text-[#555] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <p className="text-[var(--foreground-subtle)] text-[10px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
                   <Lightbulb className="w-3 h-3" />
                   Recommendation
                 </p>
                 <div className="border-l-2 border-emerald-500 pl-4 py-1">
-                  <p className="text-gray-700 dark:text-emerald-400 text-sm leading-relaxed">{ticket.recommendation}</p>
+                  <p className="text-emerald-700 dark:text-emerald-400 text-sm leading-relaxed">{ticket.recommendation}</p>
                 </div>
               </div>
 
@@ -267,7 +267,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                   {ticket.evidence.sessionIds.length > 0 && (
                     <Link
                       href={`/dashboard/session-insights?highlight=${ticket.evidence.sessionIds[0]}`}
-                      className="text-sm text-gray-500 dark:text-[#888] hover:text-gray-900 dark:hover:text-white flex items-center gap-1.5 transition-colors"
+                      className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] flex items-center gap-1.5 transition-colors"
                     >
                       <PlayCircle className="w-4 h-4" />
                       {ticket.evidence.sessionIds.length} Session{ticket.evidence.sessionIds.length > 1 ? 's' : ''}
@@ -277,13 +277,16 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                   {ticket.evidence.conversationIds.length > 0 && (
                     <Link
                       href={`/dashboard/hypotheses?conversationId=${ticket.evidence.conversationIds[0]}`}
-                      className="text-sm text-gray-500 dark:text-[#888] hover:text-gray-900 dark:hover:text-white flex items-center gap-1.5 transition-colors"
+                      className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] flex items-center gap-1.5 transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
                       {ticket.evidence.conversationIds.length} Conversation{ticket.evidence.conversationIds.length > 1 ? 's' : ''}
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   )}
+                  <span className="text-[var(--foreground-subtle)] text-xs">
+                    {sourceCount} source{sourceCount !== 1 ? 's' : ''}
+                  </span>
                 </div>
 
                 <Script
@@ -300,7 +303,7 @@ function TicketCard({ ticket, isExpanded, onToggle }: {
                     e.stopPropagation();
                     handleCopyJira();
                   }}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-hover)] transition-colors"
                 >
                   {copied ? (
                     <>
@@ -416,20 +419,20 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-gray-900 dark:text-white" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--foreground)]" />
       </div>
     );
   }
 
   if (tickets.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] p-8">
-        <h1 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Product Insights</h1>
-        <p className="text-gray-500 dark:text-[#666] text-sm mb-12">Prioritized tickets from user sessions and conversations</p>
+      <div className="min-h-screen bg-[var(--background)] p-8">
+        <h1 className="text-xl font-medium text-[var(--foreground)] mb-2">Product Insights</h1>
+        <p className="text-[var(--foreground-muted)] text-sm mb-12">Prioritized tickets from user sessions and conversations</p>
 
         <div className="max-w-sm">
-          <p className="text-gray-500 dark:text-[#666] text-sm mb-6">
+          <p className="text-[var(--foreground-muted)] text-sm mb-6">
             {projectId
               ? 'No tickets synthesized yet. Generate insights from your existing sessions and conversations, or sync new data.'
               : 'No data yet. Sync sessions or upload conversations to get started.'}
@@ -439,7 +442,7 @@ export default function DashboardPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isSynthesizing || cooldownSeconds > 0}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium bg-[var(--brand-primary)] text-white rounded-full hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isSynthesizing ? 'animate-spin' : ''}`} />
                 {isSynthesizing
@@ -452,13 +455,13 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard/session-insights"
-                className="px-5 py-2.5 text-sm font-medium bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-transparent"
+                className="px-5 py-2.5 text-sm font-medium bg-[var(--card)] text-[var(--foreground)] rounded-full hover:bg-[var(--muted)] transition-colors border border-[var(--border)]"
               >
                 Sync Sessions
               </Link>
               <Link
                 href="/dashboard/interviews"
-                className="px-5 py-2.5 text-sm font-medium bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors border border-gray-200 dark:border-transparent"
+                className="px-5 py-2.5 text-sm font-medium bg-[var(--card)] text-[var(--foreground)] rounded-full hover:bg-[var(--muted)] transition-colors border border-[var(--border)]"
               >
                 Upload Conversations
               </Link>
@@ -472,18 +475,18 @@ export default function DashboardPage() {
   const criticalCount = stats?.critical || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Header */}
       <div className="px-8 pt-8 pb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-medium text-gray-900 dark:text-white">Product Insights</h1>
-            <p className="text-gray-500 dark:text-[#666] text-sm mt-1">Prioritized tickets from user sessions and conversations</p>
+            <h1 className="text-xl font-medium text-[var(--foreground)]">Product Insights</h1>
+            <p className="text-[var(--foreground-muted)] text-sm mt-1">Prioritized tickets from user sessions and conversations</p>
           </div>
           <button
             onClick={handleRefresh}
             disabled={isSynthesizing || cooldownSeconds > 0}
-            className="px-5 py-2.5 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-medium bg-[var(--brand-primary)] text-white rounded-full hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${isSynthesizing ? 'animate-spin' : ''}`} />
             {isSynthesizing ? 'Synthesizing...' : cooldownSeconds > 0 ? `${Math.floor(cooldownSeconds / 60)}:${String(cooldownSeconds % 60).padStart(2, '0')}` : 'Refresh'}
@@ -494,30 +497,30 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="px-8 pb-8">
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
-            <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Total Tickets</p>
+          <div className="bg-[var(--card)] rounded-lg p-5 border border-[var(--border)]">
+            <p className="text-[var(--foreground-muted)] text-sm mb-2">Total Tickets</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-medium text-gray-900 dark:text-white">{stats?.total || 0}</span>
+              <span className="text-4xl font-medium text-[var(--foreground)]">{stats?.total || 0}</span>
             </div>
           </div>
-          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
-            <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Critical Issues</p>
+          <div className="bg-[var(--card)] rounded-lg p-5 border border-[var(--border)]">
+            <p className="text-[var(--foreground-muted)] text-sm mb-2">Critical Issues</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-medium text-gray-900 dark:text-white">{criticalCount}</span>
+              <span className="text-4xl font-medium text-[var(--foreground)]">{criticalCount}</span>
               {criticalCount > 0 && <span className="text-red-500 text-sm">needs attention</span>}
             </div>
           </div>
-          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
-            <p className="text-gray-500 dark:text-[#666] text-sm mb-2">High Priority</p>
+          <div className="bg-[var(--card)] rounded-lg p-5 border border-[var(--border)]">
+            <p className="text-[var(--foreground-muted)] text-sm mb-2">High Priority</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-medium text-gray-900 dark:text-white">{stats?.high || 0}</span>
+              <span className="text-4xl font-medium text-[var(--foreground)]">{stats?.high || 0}</span>
               <span className="text-orange-500 text-sm">tickets</span>
             </div>
           </div>
-          <div className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)]">
-            <p className="text-gray-500 dark:text-[#666] text-sm mb-2">Last Synthesized</p>
+          <div className="bg-[var(--card)] rounded-lg p-5 border border-[var(--border)]">
+            <p className="text-[var(--foreground-muted)] text-sm mb-2">Last Synthesized</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-gray-900 dark:text-white text-sm font-medium">
+              <span className="text-[var(--foreground)] text-sm font-medium">
                 {stats?.lastSynthesized
                   ? new Date(stats.lastSynthesized).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                   : 'Never'}
@@ -531,10 +534,10 @@ export default function DashboardPage() {
       <div className="px-8 pb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            <h2 className="text-gray-900 dark:text-white font-medium">Prioritized Tickets</h2>
+            <span className="w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
+            <h2 className="text-[var(--foreground)] font-medium">Prioritized Tickets</h2>
           </div>
-          <span className="text-xs text-gray-400 dark:text-[#666]">Sorted by composite score</span>
+          <span className="text-xs text-[var(--foreground-subtle)]">Sorted by composite score</span>
         </div>
         <div className="space-y-2">
           {tickets.map((ticket) => (

@@ -269,23 +269,23 @@ export default function PriorityQueuePage() {
   const signalTypeInfo: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
     step_retry: { label: 'Step Retries', icon: <Repeat className="w-4 h-4" />, color: 'text-orange-600 bg-orange-100 border-orange-200' },
     step_loop: { label: 'Step Loops', icon: <RotateCcw className="w-4 h-4" />, color: 'text-red-600 bg-red-100 border-red-200' },
-    time_variance: { label: 'High Time Variance', icon: <Timer className="w-4 h-4" />, color: 'text-purple-600 bg-purple-100 border-purple-200' },
+    time_variance: { label: 'High Time Variance', icon: <Timer className="w-4 h-4" />, color: 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20' },
     feature_abandoned: { label: 'Feature Abandoned', icon: <TrendingDown className="w-4 h-4" />, color: 'text-amber-600 bg-amber-100 border-amber-200' },
     feature_regression: { label: 'Feature Regression', icon: <TrendingDown className="w-4 h-4" />, color: 'text-rose-600 bg-rose-100 border-rose-200' },
-    engagement_decay: { label: 'Engagement Decay', icon: <Activity className="w-4 h-4" />, color: 'text-blue-600 bg-blue-100 border-blue-200' },
+    engagement_decay: { label: 'Engagement Decay', icon: <Activity className="w-4 h-4" />, color: 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20' },
     power_user_churning: { label: 'Power User Churning', icon: <Star className="w-4 h-4" />, color: 'text-yellow-600 bg-yellow-100 border-yellow-200' },
-    activated_abandoned: { label: 'Activated & Abandoned', icon: <UserX className="w-4 h-4" />, color: 'text-slate-600 bg-slate-100 border-slate-200' },
-    excessive_navigation: { label: 'Excessive Navigation', icon: <Navigation className="w-4 h-4" />, color: 'text-indigo-600 bg-indigo-100 border-indigo-200' },
+    activated_abandoned: { label: 'Activated & Abandoned', icon: <UserX className="w-4 h-4" />, color: 'text-[var(--foreground-muted)] bg-[var(--muted)] border-[var(--border)]' },
+    excessive_navigation: { label: 'Excessive Navigation', icon: <Navigation className="w-4 h-4" />, color: 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20' },
     idle_after_action: { label: 'Idle After Action', icon: <Clock className="w-4 h-4" />, color: 'text-cyan-600 bg-cyan-100 border-cyan-200' },
     rage_click: { label: 'Rage Clicks', icon: <MousePointer className="w-4 h-4" />, color: 'text-red-600 bg-red-100 border-red-200' },
     error_encounter: { label: 'Errors', icon: <Bug className="w-4 h-4" />, color: 'text-red-600 bg-red-100 border-red-200' },
-    high_intent_friction: { label: 'High-Intent Friction', icon: <Zap className="w-4 h-4" />, color: 'text-fuchsia-600 bg-fuchsia-100 border-fuchsia-200' },
+    high_intent_friction: { label: 'High-Intent Friction', icon: <Zap className="w-4 h-4" />, color: 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20' },
     funnel_dropoff: { label: 'Funnel Drop-off', icon: <TrendingDown className="w-4 h-4" />, color: 'text-orange-600 bg-orange-100 border-orange-200' },
     churn_risk: { label: 'Churn Risk', icon: <AlertCircle className="w-4 h-4" />, color: 'text-red-600 bg-red-100 border-red-200' },
   };
 
   const getSignalInfo = (type: string) => {
-    return signalTypeInfo[type] || { label: type.replace(/_/g, ' '), icon: <Zap className="w-4 h-4" />, color: 'text-slate-600 bg-slate-100 border-slate-200' };
+    return signalTypeInfo[type] || { label: type.replace(/_/g, ' '), icon: <Zap className="w-4 h-4" />, color: 'text-[var(--foreground-muted)] bg-[var(--muted)] border-[var(--border)]' };
   };
 
   // Get direct link to PostHog person page
@@ -331,7 +331,7 @@ export default function PriorityQueuePage() {
     switch (type) {
       case 'technical_victim': return 'bg-red-100 text-red-700 border-red-300';
       case 'confused_browser': return 'bg-amber-100 text-amber-700 border-amber-300';
-      case 'wrong_fit': return 'bg-slate-100 text-slate-600 border-slate-300';
+      case 'wrong_fit': return 'bg-[var(--muted)] text-[var(--foreground-muted)] border-[var(--border)]';
       case 'high_value': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
     }
   };
@@ -365,37 +365,37 @@ export default function PriorityQueuePage() {
   }, [advancedUsers.length, users.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-[var(--background)] p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-              <Zap className="w-10 h-10 text-indigo-600" />
+            <h1 className="text-4xl font-bold text-[var(--foreground)] tracking-tight flex items-center gap-3">
+              <Zap className="w-10 h-10 text-[var(--brand-primary)]" />
               Signal Detection
             </h1>
-            <p className="text-slate-600 mt-2">
+            <p className="text-[var(--foreground-muted)] mt-2">
               Detect → Classify → Interview
             </p>
           </div>
         </div>
 
         {/* Journey Progress */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+        <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-4">
           <div className="flex items-center justify-between">
             {/* Step 1: Detect */}
             <button
               onClick={() => setActiveStep(1)}
               className={`flex-1 flex items-center gap-3 p-4 rounded-xl transition-all ${
                 activeStep === 1 
-                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-500/25' 
+                  ? 'bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-hover)] text-white shadow-lg shadow-[var(--brand-glow)]'
                   : activeStep > 1
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-slate-50 text-slate-600'
+                  : 'bg-[var(--muted)] text-[var(--foreground-muted)]'
               }`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                activeStep === 1 ? 'bg-white/20' : activeStep > 1 ? 'bg-emerald-200' : 'bg-slate-200'
+                activeStep === 1 ? 'bg-white/20' : activeStep > 1 ? 'bg-emerald-200' : 'bg-[var(--muted)]'
               }`}>
                 {activeStep > 1 ? '✓' : '1'}
               </div>
@@ -408,7 +408,7 @@ export default function PriorityQueuePage() {
             </button>
 
             {/* Arrow */}
-            <div className="px-2 text-slate-300">→</div>
+            <div className="px-2 text-[var(--border)]">→</div>
 
             {/* Step 2: Classify */}
             <button
@@ -416,14 +416,14 @@ export default function PriorityQueuePage() {
               disabled={advancedUsers.length === 0 && users.length === 0}
               className={`flex-1 flex items-center gap-3 p-4 rounded-xl transition-all ${
                 activeStep === 2 
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25' 
+                  ? 'bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-hover)] text-white shadow-lg shadow-[var(--brand-glow)]'
                   : activeStep > 2
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-slate-50 text-slate-400'
+                  : 'bg-[var(--muted)] text-[var(--foreground-subtle)]'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                activeStep === 2 ? 'bg-white/20' : activeStep > 2 ? 'bg-emerald-200' : 'bg-slate-200'
+                activeStep === 2 ? 'bg-white/20' : activeStep > 2 ? 'bg-emerald-200' : 'bg-[var(--muted)]'
               }`}>
                 {activeStep > 2 ? '✓' : '2'}
               </div>
@@ -436,7 +436,7 @@ export default function PriorityQueuePage() {
             </button>
 
             {/* Arrow */}
-            <div className="px-2 text-slate-300">→</div>
+            <div className="px-2 text-[var(--border)]">→</div>
 
             {/* Step 3: Act */}
             <button
@@ -445,11 +445,11 @@ export default function PriorityQueuePage() {
               className={`flex-1 flex items-center gap-3 p-4 rounded-xl transition-all ${
                 activeStep === 3 
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25' 
-                  : 'bg-slate-50 text-slate-400'
+                  : 'bg-[var(--muted)] text-[var(--foreground-subtle)]'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                activeStep === 3 ? 'bg-white/20' : 'bg-slate-200'
+                activeStep === 3 ? 'bg-white/20' : 'bg-[var(--muted)]'
               }`}>
                 3
               </div>
@@ -489,13 +489,13 @@ export default function PriorityQueuePage() {
             className="space-y-6"
           >
             {/* Detection Panel */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+            <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-8 text-center">
               <div className="max-w-md mx-auto">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-100 to-fuchsia-100 rounded-2xl flex items-center justify-center">
-                  <Zap className="w-10 h-10 text-purple-600" />
+                <div className="w-20 h-20 mx-auto mb-6 bg-[var(--brand-primary)]/10 rounded-2xl flex items-center justify-center">
+                  <Zap className="w-10 h-10 text-[var(--brand-primary)]" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Detect Behavioral Signals</h2>
-                <p className="text-slate-600 mb-6">
+                <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Detect Behavioral Signals</h2>
+                <p className="text-[var(--foreground-muted)] mb-6">
                   Analyze your PostHog data to find users showing friction signals like rage clicks, 
                   step retries, engagement decay, and feature abandonment.
                 </p>
@@ -505,7 +505,7 @@ export default function PriorityQueuePage() {
                       loadAdvancedSignals();
                     }}
                     disabled={isLoadingAdvanced || !projectId}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all font-semibold disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white rounded-lg hover:shadow-lg hover:shadow-[var(--brand-glow)] transition-all font-semibold disabled:opacity-50"
                   >
                     {isLoadingAdvanced ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -519,7 +519,7 @@ export default function PriorityQueuePage() {
                       classifyUsers();
                     }}
                     disabled={isClassifying || !projectId}
-                    className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:border-slate-300 transition-all font-semibold disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-[var(--card)] border-2 border-[var(--border)] text-[var(--foreground-muted)] rounded-lg hover:border-[var(--border-hover)] transition-all font-semibold disabled:opacity-50"
                   >
                     {isClassifying ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -536,11 +536,11 @@ export default function PriorityQueuePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { icon: <Repeat className="w-5 h-5" />, label: 'Step Retries', desc: 'Users struggling with steps', color: 'text-orange-600 bg-orange-50 border-orange-200' },
-                { icon: <TrendingDown className="w-5 h-5" />, label: 'Engagement Decay', desc: 'Declining activity over time', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+                { icon: <TrendingDown className="w-5 h-5" />, label: 'Engagement Decay', desc: 'Declining activity over time', color: 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border-[var(--brand-primary)]/20' },
                 { icon: <MousePointer className="w-5 h-5" />, label: 'Rage Clicks', desc: 'Frustrated clicking patterns', color: 'text-red-600 bg-red-50 border-red-200' },
                 { icon: <Activity className="w-5 h-5" />, label: 'Feature Abandoned', desc: 'Tried once, never returned', color: 'text-amber-600 bg-amber-50 border-amber-200' },
               ].map((item, idx) => (
-                <div key={idx} className={`p-4 rounded-xl border ${item.color}`}>
+                <div key={idx} className={`p-4 rounded-lg border ${item.color}`}>
                   <div className="flex items-center gap-2 mb-2">
                     {item.icon}
                     <span className="font-semibold text-sm">{item.label}</span>
@@ -562,47 +562,47 @@ export default function PriorityQueuePage() {
             {/* Stats Summary */}
             {advancedStats && (
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 text-slate-600 text-sm mb-2 font-medium">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[var(--foreground-muted)] text-sm mb-2 font-medium">
                     <Users className="w-4 h-4" />
                     Users Detected
                   </div>
-                  <div className="text-3xl font-bold text-slate-900">{advancedStats.totalUsers}</div>
+                  <div className="text-3xl font-bold text-[var(--foreground)]">{advancedStats.totalUsers}</div>
                 </div>
-                <div className="bg-white border border-purple-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 text-purple-600 text-sm mb-2 font-medium">
+                <div className="bg-[var(--card)] border border-[var(--brand-primary)]/20 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[var(--brand-primary)] text-sm mb-2 font-medium">
                     <Zap className="w-4 h-4" />
                     Total Signals
                   </div>
-                  <div className="text-3xl font-bold text-purple-600">{advancedStats.totalSignals}</div>
+                  <div className="text-3xl font-bold text-[var(--brand-primary)]">{advancedStats.totalSignals}</div>
                 </div>
-                <div className="bg-white border border-fuchsia-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 text-fuchsia-600 text-sm mb-2 font-medium">
+                <div className="bg-[var(--card)] border border-[var(--brand-primary)]/20 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[var(--brand-primary)] text-sm mb-2 font-medium">
                     <Activity className="w-4 h-4" />
                     Avg Priority
                   </div>
-                  <div className="text-3xl font-bold text-fuchsia-600">{advancedStats.avgPriorityScore}</div>
+                  <div className="text-3xl font-bold text-[var(--brand-primary)]">{advancedStats.avgPriorityScore}</div>
                 </div>
-                <div className="bg-white border border-indigo-200 rounded-2xl p-5">
-                  <div className="flex items-center gap-2 text-indigo-600 text-sm mb-2 font-medium">
+                <div className="bg-[var(--card)] border border-[var(--brand-primary)]/20 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[var(--brand-primary)] text-sm mb-2 font-medium">
                     <Sparkles className="w-4 h-4" />
                     Signal Types
                   </div>
-                  <div className="text-3xl font-bold text-indigo-600">{advancedStats.topSignalTypes.length}</div>
+                  <div className="text-3xl font-bold text-[var(--brand-primary)]">{advancedStats.topSignalTypes.length}</div>
                 </div>
               </div>
             )}
 
             {/* Signal Type Filters */}
             {advancedStats?.topSignalTypes && advancedStats.topSignalTypes.length > 0 && (
-              <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 border-2 border-purple-200 rounded-2xl p-5">
+              <div className="bg-[var(--brand-primary)]/5 border-2 border-[var(--brand-primary)]/20 rounded-2xl p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 rounded-xl">
-                    <Sparkles className="w-5 h-5 text-purple-600" />
+                  <div className="p-2 bg-[var(--brand-primary)]/10 rounded-lg">
+                    <Sparkles className="w-5 h-5 text-[var(--brand-primary)]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-purple-900">Filter by Signal Type</h2>
-                    <p className="text-purple-700 text-sm">Click to filter users by specific signals</p>
+                    <h2 className="text-lg font-bold text-[var(--foreground)]">Filter by Signal Type</h2>
+                    <p className="text-[var(--foreground-muted)] text-sm">Click to filter users by specific signals</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -611,10 +611,10 @@ export default function PriorityQueuePage() {
                       setAdvancedSignalFilter('all');
                       loadAdvancedSignals(projectId);
                     }}
-                    className={`px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                       advancedSignalFilter === 'all'
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-white/80 text-purple-700 border border-purple-200 hover:border-purple-300'
+                        ? 'bg-[var(--brand-primary)] text-white shadow-md'
+                        : 'bg-[var(--card)] text-[var(--brand-primary)] border border-[var(--brand-primary)]/20 hover:border-[var(--brand-primary)]/40'
                     }`}
                   >
                     All ({advancedStats.totalUsers})
@@ -628,10 +628,10 @@ export default function PriorityQueuePage() {
                           setAdvancedSignalFilter(sig.type);
                           loadAdvancedSignals(projectId, sig.type);
                         }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                           advancedSignalFilter === sig.type
                             ? info.color + ' shadow-md border-2 border-current'
-                            : 'bg-white/80 text-slate-700 border border-slate-200 hover:border-slate-300'
+                            : 'bg-[var(--card)] text-[var(--foreground-muted)] border border-[var(--border)] hover:border-[var(--border-hover)]'
                         }`}
                       >
                         {info.icon}
@@ -650,7 +650,7 @@ export default function PriorityQueuePage() {
                   { type: 'technical_victim' as InterviewCohortType, label: 'Technical Victims', count: stats.technicalVictims, color: 'bg-red-50 text-red-700 border-red-200', icon: Bug },
                   { type: 'confused_browser' as InterviewCohortType, label: 'Confused Browsers', count: stats.confusedBrowsers, color: 'bg-amber-50 text-amber-700 border-amber-200', icon: HelpCircle },
                   { type: 'high_value' as InterviewCohortType, label: 'High Value', count: stats.highValue, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Star },
-                  { type: 'wrong_fit' as InterviewCohortType, label: 'Wrong Fit', count: stats.wrongFit, color: 'bg-slate-50 text-slate-500 border-slate-200', icon: UserX },
+                  { type: 'wrong_fit' as InterviewCohortType, label: 'Wrong Fit', count: stats.wrongFit, color: 'bg-[var(--muted)] text-[var(--foreground-subtle)] border-[var(--border)]', icon: UserX },
                 ].map(({ type, label, count, color, icon: Icon }) => (
                   <button
                     key={type}
@@ -661,7 +661,7 @@ export default function PriorityQueuePage() {
                     className={`p-4 rounded-2xl border-2 transition-all ${
                       cohortFilter === type
                         ? `${color} border-current shadow-md`
-                        : 'bg-white border-slate-200 hover:border-slate-300'
+                        : 'bg-[var(--card)] border-[var(--border)] hover:border-[var(--border-hover)]'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -677,13 +677,13 @@ export default function PriorityQueuePage() {
             {/* User List - Advanced Signals */}
             {isLoadingAdvanced ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
               </div>
             ) : advancedUsers.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-                <Zap className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-600 mb-2">No users detected yet.</p>
-                <p className="text-slate-500 text-sm">Go back to Step 1 to detect signals.</p>
+              <div className="text-center py-12 bg-[var(--card)] rounded-2xl border border-[var(--border)]">
+                <Zap className="w-12 h-12 mx-auto mb-4 text-[var(--foreground-subtle)]" />
+                <p className="text-[var(--foreground-muted)] mb-2">No users detected yet.</p>
+                <p className="text-[var(--foreground-subtle)] text-sm">Go back to Step 1 to detect signals.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -693,7 +693,7 @@ export default function PriorityQueuePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.03 }}
-                    className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all"
+                    className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-sm hover:shadow-md transition-all"
                   >
                     <div
                       className="p-5 cursor-pointer"
@@ -704,14 +704,14 @@ export default function PriorityQueuePage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           {/* Priority Score Badge */}
-                          <div className={`px-3 py-2 rounded-xl border flex items-center gap-2 ${
+                          <div className={`px-3 py-2 rounded-lg border flex items-center gap-2 ${
                             user.priorityScore >= 50
                               ? 'bg-red-100 text-red-700 border-red-300'
                               : user.priorityScore >= 35
                               ? 'bg-orange-100 text-orange-700 border-orange-300'
                               : user.priorityScore >= 20
                               ? 'bg-amber-100 text-amber-700 border-amber-300'
-                              : 'bg-slate-100 text-slate-600 border-slate-300'
+                              : 'bg-[var(--muted)] text-[var(--foreground-muted)] border-[var(--border)]'
                           }`}>
                             <Zap className="w-4 h-4" />
                             <span className="font-bold">{user.priorityScore}</span>
@@ -719,15 +719,15 @@ export default function PriorityQueuePage() {
 
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-900">
+                              <span className="font-semibold text-[var(--foreground)]">
                                 {user.name || user.email || user.distinctId.slice(0, 16)}
                               </span>
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[var(--foreground-subtle)]">
                                 {user.signals.length} signal{user.signals.length !== 1 ? 's' : ''}
                               </span>
                             </div>
                             {user.email && (
-                              <div className="text-sm text-slate-600 flex items-center gap-1 mt-0.5">
+                              <div className="text-sm text-[var(--foreground-muted)] flex items-center gap-1 mt-0.5">
                                 <Mail className="w-3 h-3" />
                                 {user.email}
                               </div>
@@ -748,7 +748,7 @@ export default function PriorityQueuePage() {
                                 );
                               })}
                               {user.signals.length > 4 && (
-                                <span className="text-xs text-slate-500 px-2 py-0.5">
+                                <span className="text-xs text-[var(--foreground-subtle)] px-2 py-0.5">
                                   +{user.signals.length - 4} more
                                 </span>
                               )}
@@ -758,9 +758,9 @@ export default function PriorityQueuePage() {
 
                         <div className="flex items-center gap-3">
                           {expandedUser === user.distinctId ? (
-                            <ChevronUp className="w-5 h-5 text-slate-400" />
+                            <ChevronUp className="w-5 h-5 text-[var(--foreground-subtle)]" />
                           ) : (
-                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                            <ChevronDown className="w-5 h-5 text-[var(--foreground-subtle)]" />
                           )}
                         </div>
                       </div>
@@ -773,37 +773,37 @@ export default function PriorityQueuePage() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-slate-200 overflow-hidden"
+                      className="border-t border-[var(--border)] overflow-hidden"
                     >
-                      <div className="p-5 bg-slate-50">
+                      <div className="p-5 bg-[var(--background-subtle)]">
                         {/* User Context */}
                         {(user.properties?.$geoip_city_name || user.properties?.$initial_referrer || user.properties?.created_at) && (
                           <>
-                            <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                              <Globe className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-[var(--brand-primary)]" />
                               User Context
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                               {/* Location */}
                               {(user.properties?.$geoip_city_name || user.properties?.$geoip_country_name) && (
-                                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                                <div className="p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                                  <div className="flex items-center gap-2 text-[var(--foreground-subtle)] text-xs mb-1">
                                     <MapPin className="w-3 h-3" />
                                     Location
                                   </div>
-                                  <div className="font-medium text-slate-900 text-sm">
+                                  <div className="font-medium text-[var(--foreground)] text-sm">
                                     {[user.properties?.$geoip_city_name, user.properties?.$geoip_country_name].filter(Boolean).join(', ') || 'Unknown'}
                                   </div>
                                 </div>
                               )}
                               {/* Referrer */}
                               {user.properties?.$initial_referrer && (
-                                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                                <div className="p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                                  <div className="flex items-center gap-2 text-[var(--foreground-subtle)] text-xs mb-1">
                                     <Link2 className="w-3 h-3" />
                                     Acquisition Source
                                   </div>
-                                  <div className="font-medium text-slate-900 text-sm truncate" title={user.properties.$initial_referrer}>
+                                  <div className="font-medium text-[var(--foreground)] text-sm truncate" title={user.properties.$initial_referrer}>
                                     {user.properties.$initial_referrer === '$direct' 
                                       ? 'Direct traffic'
                                       : (() => {
@@ -819,14 +819,14 @@ export default function PriorityQueuePage() {
                               )}
                               {/* Account Age */}
                               {user.properties?.created_at && (
-                                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                                  <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                                <div className="p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                                  <div className="flex items-center gap-2 text-[var(--foreground-subtle)] text-xs mb-1">
                                     <Clock className="w-3 h-3" />
                                     Account Age
                                   </div>
-                                  <div className="font-medium text-slate-900 text-sm">
+                                  <div className="font-medium text-[var(--foreground)] text-sm">
                                     {formatAccountAge(user.properties.created_at)}
-                                    <span className="text-slate-400 text-xs ml-1">
+                                    <span className="text-[var(--foreground-subtle)] text-xs ml-1">
                                       ({new Date(user.properties.created_at).toLocaleDateString()})
                                     </span>
                                   </div>
@@ -837,8 +837,8 @@ export default function PriorityQueuePage() {
                         )}
 
                         {/* All Signals Detail */}
-                        <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-purple-600" />
+                        <h4 className="font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-[var(--brand-primary)]" />
                           Detected Signals
                         </h4>
                         <div className="space-y-2 mb-4">
@@ -847,14 +847,14 @@ export default function PriorityQueuePage() {
                             return (
                               <div
                                 key={i}
-                                className={`flex items-start gap-3 p-3 bg-white rounded-xl border ${info.color}`}
+                                className={`flex items-start gap-3 p-3 bg-[var(--card)] rounded-lg border ${info.color}`}
                               >
                                 <div className="mt-0.5">{info.icon}</div>
                                 <div className="flex-1">
                                   <div className="font-medium text-sm">{info.label}</div>
-                                  <p className="text-sm text-slate-600 mt-0.5">{signal.description}</p>
+                                  <p className="text-sm text-[var(--foreground-muted)] mt-0.5">{signal.description}</p>
                                 </div>
-                                <div className="text-sm font-semibold text-slate-600">
+                                <div className="text-sm font-semibold text-[var(--foreground-muted)]">
                                   {`+${signal.weight}`}
                                 </div>
                               </div>
@@ -867,7 +867,7 @@ export default function PriorityQueuePage() {
                           href={getPostHogPersonUrl(user.distinctId)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors w-fit"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--muted)] text-[var(--foreground-muted)] rounded-lg text-sm hover:bg-[var(--muted-hover)] transition-colors w-fit"
                         >
                           <ExternalLink className="w-4 h-4" />
                           View full profile & sessions in PostHog
@@ -897,15 +897,15 @@ export default function PriorityQueuePage() {
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.95 }}
-                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+                className="bg-[var(--card)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-6 border-b border-slate-200">
-                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Send className="w-5 h-5 text-indigo-600" />
+                <div className="p-6 border-b border-[var(--border)]">
+                  <h3 className="text-xl font-bold text-[var(--foreground)] flex items-center gap-2">
+                    <Send className="w-5 h-5 text-[var(--brand-primary)]" />
                     Contextual Outreach
                   </h3>
-                  <p className="text-slate-600 mt-1">
+                  <p className="text-[var(--foreground-muted)] mt-1">
                     Personalized message for {outreachModal.user.name || outreachModal.user.email || 'this user'}
                   </p>
                 </div>
@@ -913,12 +913,12 @@ export default function PriorityQueuePage() {
                 <div className="p-6 overflow-y-auto max-h-[60vh]">
                   {generatingOutreach ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                      <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-primary)]" />
                     </div>
                   ) : outreachModal.outreach ? (
                     <div className="space-y-4">
                       {/* Cohort context */}
-                      <div className={`p-3 rounded-xl border ${getCohortColor(outreachModal.outreach.cohortType)}`}>
+                      <div className={`p-3 rounded-lg border ${getCohortColor(outreachModal.outreach.cohortType)}`}>
                         <div className="flex items-center gap-2 mb-1">
                           {getCohortIcon(outreachModal.outreach.cohortType)}
                           <span className="font-medium">{getCohortLabel(outreachModal.outreach.cohortType)}</span>
@@ -931,16 +931,16 @@ export default function PriorityQueuePage() {
                       {/* Subject */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm font-medium text-slate-700">Subject</label>
+                          <label className="text-sm font-medium text-[var(--foreground-muted)]">Subject</label>
                           <button
                             onClick={() => copyToClipboard(outreachModal.outreach!.subject)}
-                            className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                            className="text-xs text-[var(--brand-primary)] hover:text-[var(--brand-hover)] flex items-center gap-1"
                           >
                             <Copy className="w-3 h-3" />
                             Copy
                           </button>
                         </div>
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-900">
+                        <div className="p-3 bg-[var(--background-subtle)] rounded-lg border border-[var(--border)] text-[var(--foreground)]">
                           {outreachModal.outreach.subject}
                         </div>
                       </div>
@@ -948,44 +948,44 @@ export default function PriorityQueuePage() {
                       {/* Body */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm font-medium text-slate-700">Message</label>
+                          <label className="text-sm font-medium text-[var(--foreground-muted)]">Message</label>
                           <button
                             onClick={() => copyToClipboard(outreachModal.outreach!.body)}
-                            className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                            className="text-xs text-[var(--brand-primary)] hover:text-[var(--brand-hover)] flex items-center gap-1"
                           >
                             <Copy className="w-3 h-3" />
                             Copy
                           </button>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-900 whitespace-pre-wrap text-sm">
+                        <div className="p-4 bg-[var(--background-subtle)] rounded-lg border border-[var(--border)] text-[var(--foreground)] whitespace-pre-wrap text-sm">
                           {outreachModal.outreach.body}
                         </div>
                       </div>
 
                       {/* Contextual details */}
                       {outreachModal.outreach.contextualDetails.correlationSignal && (
-                        <div className="text-sm text-slate-600 bg-purple-50 border border-purple-200 rounded-xl p-3">
+                        <div className="text-sm text-[var(--foreground-muted)] bg-[var(--brand-primary)]/5 border border-[var(--brand-primary)]/20 rounded-lg p-3">
                           <span className="font-medium">Correlation signal used:</span>{' '}
                           {outreachModal.outreach.contextualDetails.correlationSignal}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-center py-8">Failed to generate outreach</p>
+                    <p className="text-[var(--foreground-subtle)] text-center py-8">Failed to generate outreach</p>
                   )}
                 </div>
 
-                <div className="p-4 border-t border-slate-200 flex justify-end gap-3">
+                <div className="p-4 border-t border-[var(--border)] flex justify-end gap-3">
                   <button
                     onClick={() => setOutreachModal(null)}
-                    className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="px-4 py-2 text-[var(--foreground-muted)] hover:bg-[var(--muted)] rounded-lg transition-colors"
                   >
                     Close
                   </button>
                   {outreachModal.outreach?.email && (
                     <a
                       href={`mailto:${outreachModal.outreach.email}?subject=${encodeURIComponent(outreachModal.outreach.subject)}&body=${encodeURIComponent(outreachModal.outreach.body)}`}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg hover:bg-[var(--brand-hover)] transition-colors flex items-center gap-2"
                     >
                       <Send className="w-4 h-4" />
                       Open in Email
