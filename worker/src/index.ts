@@ -17,22 +17,16 @@ import { extractDomEventTimestamps } from './selection';
 const prisma = new PrismaClient();
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '120', 10) * 1000;
 
-let browser: Browser | null = null;
-
-async function getBrowser(): Promise<Browser> {
-  if (browser && browser.isConnected()) return browser;
-  browser = await chromium.launch({
+async function launchBrowser(): Promise<Browser> {
+  return chromium.launch({
     headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
-      '--single-process',
-      '--no-zygote',
     ],
   });
-  return browser;
 }
 
 async function processSession(sessionId: string): Promise<void> {
@@ -62,9 +56,14 @@ async function processSession(sessionId: string): Promise<void> {
 
     const domTimestamps = extractDomEventTimestamps(semanticSession.logs);
 
-    // Reuse global browser instance
-    const b = await getBrowser();
-    const keyframes = await captureKeyframesWithBrowser(b, events, domTimestamps);
+    // Launch a fresh browser per session to avoid stale process issues
+    const b = await launchBrowser();
+    let keyframes;
+    try {
+      keyframes = await captureKeyframesWithBrowser(b, events, domTimestamps);
+    } finally {
+      await b.close().catch(() => {});
+    }
     console.log(`[Worker] Session ${sessionId}: ${keyframes.length} keyframes captured`);
 
     if (keyframes.length === 0) {
