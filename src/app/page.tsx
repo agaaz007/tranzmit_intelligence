@@ -1,34 +1,66 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Activity } from 'lucide-react';
+import { ArrowRight, Mic, Activity, Zap, Users, GitBranch, Brain, Sparkles } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Subtle ambient glow */}
+    <div className="min-h-screen bg-[#08080c] text-white overflow-hidden">
+      {/* Ambient Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/8 to-transparent blur-[120px]" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[var(--brand-primary)]/8 to-transparent blur-[100px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[var(--brand-primary)]/5 to-transparent blur-[150px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center">
-        {/* Logo + Brand */}
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-            <Activity className="w-5 h-5 text-white" />
+      {/* Grid Pattern Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02]" style={{
+        backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+        backgroundSize: '60px 60px'
+      }} />
+
+      {/* Nav */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 opacity-30 blur-sm -z-10" />
           </div>
-          <span className="text-[22px] font-semibold tracking-tight">tranzmit</span>
+          <span className="font-semibold text-lg tracking-tight">trazmit</span>
         </div>
 
-        <p className="text-white/40 text-sm mb-12">Vercel Intelligence</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors">
+            Login
+          </Link>
+          <Link href="/dashboard" className="group relative px-5 py-2.5 text-sm font-medium">
+            <span className="relative z-10 flex items-center gap-2">
+              Get Started
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 opacity-90" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 blur-lg opacity-50 group-hover:opacity-70 transition-opacity" />
+          </Link>
+        </div>
+      </nav>
 
-        {/* Buttons */}
-        <div className="flex flex-col gap-3 w-72">
-          <Link
-            href="/sign-in"
-            className="flex items-center justify-center h-12 text-[15px] font-medium rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+      {/* Hero */}
+      <header className="relative z-10 max-w-6xl mx-auto px-8 pt-24 pb-20">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Pill Badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full border border-white/10 bg-white/[0.03]"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-white/50 uppercase tracking-wider">Now with PostHog Integration</span>
