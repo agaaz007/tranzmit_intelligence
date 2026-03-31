@@ -13,7 +13,7 @@ export interface SessionListItem {
   eventCount: number;
   analysisStatus: 'pending' | 'analyzing' | 'completed' | 'failed';
   analysis?: SessionAnalysis;
-  multimodalStatus: 'pending' | 'analyzing' | 'completed' | 'failed';
+  multimodalStatus: 'idle' | 'pending' | 'analyzing' | 'completed' | 'failed';
   multimodalAnalysis?: MultimodalAnalysis;
   hasEvents: boolean;
   createdAt: string;

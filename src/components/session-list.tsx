@@ -112,6 +112,20 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
     }
   };
 
+  const handleMultimodalAnalyze = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/multimodal-analyze`, { method: 'POST' });
+      if (res.ok) {
+        setSessions(prev => prev.map(s =>
+          s.id === sessionId ? { ...s, multimodalStatus: 'pending' as const } : s
+        ));
+      }
+    } catch (err) {
+      console.error('Failed to queue multimodal analysis:', err);
+    }
+  };
+
   const totalPages = Math.ceil(total / limit);
 
   const formatDuration = (seconds?: number) => {
@@ -299,7 +313,18 @@ export function SessionList({ projectId, onSelectSession, selectedSessionId, onS
                         Analyze
                       </Button>
                     )}
-                    {session.multimodalStatus === 'analyzing' && (
+                    {session.analysisStatus === 'completed' && (!session.multimodalStatus || session.multimodalStatus === 'idle' || session.multimodalStatus === 'failed') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleMultimodalAnalyze(session.id, e)}
+                        className="h-8 px-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Multimodal
+                      </Button>
+                    )}
+                    {(session.multimodalStatus === 'pending' || session.multimodalStatus === 'analyzing') && (
                       <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs">
                         <Loader2 className="w-3 h-3 animate-spin mr-1" />
                         MM

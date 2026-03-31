@@ -1,27 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { runMultimodalAnalysis } from '@/lib/multimodal-analysis';
+import { prisma } from '@/lib/prisma';
 
-// POST: Trigger multimodal (DOM + vision) analysis for a session
-// Expects { keyframes: [{ timestamp, base64, reason }] } in the body
+// POST: Queue a session for multimodal analysis (picked up by the Railway worker)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const { sessionId: id } = await params;
-    const body = await req.json();
+    const { sessionId } = await params;
 
-    if (!body.keyframes || !Array.isArray(body.keyframes) || body.keyframes.length === 0) {
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+      select: { id: true, analysisStatus: true, multimodalStatus: true },
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    if (session.analysisStatus !== 'completed') {
       return NextResponse.json(
-        { error: 'keyframes array is required in request body' },
+        { error: 'Session must be analyzed first' },
         { status: 400 }
       );
     }
 
-    const analysis = await runMultimodalAnalysis(id, body.keyframes);
-    return NextResponse.json({ analysis });
+    if (session.multimodalStatus === 'analyzing') {
+      return NextResponse.json(
+        { error: 'Multimodal analysis already in progress' },
+        { status: 409 }
+      );
+    }
+
+    await prisma.session.update({
+      where: { id: sessionId },
+      data: { multimodalStatus: 'pending' },
+    });
+
+    return NextResponse.json({ status: 'queued' });
   } catch (error) {
-    console.error('Error running multimodal analysis:', error);
+    console.error('Error queuing multimodal analysis:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }
