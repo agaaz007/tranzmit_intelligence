@@ -106,7 +106,7 @@ async function pollAndProcess(): Promise<void> {
       },
       select: { id: true },
       orderBy: { createdAt: 'desc' },
-      take: 1, // process 1 at a time to control memory
+      take: 1, // process one at a time to stay within Railway memory limits
     });
 
     if (pendingSessions.length === 0) return;
