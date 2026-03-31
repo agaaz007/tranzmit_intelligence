@@ -10,8 +10,8 @@ export default function Home() {
       {/* Ambient Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-500/8 to-transparent blur-[120px]" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-blue-600/8 to-transparent blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-purple-500/5 to-transparent blur-[150px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[var(--brand-primary)]/8 to-transparent blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[var(--brand-primary)]/5 to-transparent blur-[150px]" />
       </div>
 
       {/* Grid Pattern Overlay */}
@@ -69,7 +69,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
             <span className="text-white">Product analytics</span>
             <br />
-            <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-hover)] bg-clip-text text-transparent">
               meets AI interviews
             </span>
           </h1>
@@ -127,7 +127,7 @@ export default function Home() {
               {/* Funnel Visualization */}
               <div className="space-y-3">
                 {[
-                  { step: 'Landing Page', users: 12450, rate: 100, color: 'from-blue-500 to-blue-400' },
+                  { step: 'Landing Page', users: 12450, rate: 100, color: 'from-[var(--brand-primary)] to-[var(--brand-primary)]' },
                   { step: 'Sign Up Started', users: 7890, rate: 63, color: 'from-cyan-500 to-cyan-400', drop: 37 },
                   { step: 'Email Verified', users: 5230, rate: 42, color: 'from-emerald-500 to-emerald-400', drop: 33 },
                   { step: 'First Project', users: 2890, rate: 23, color: 'from-amber-500 to-amber-400', drop: 45 },
@@ -215,13 +215,13 @@ export default function Home() {
               icon: GitBranch,
               title: 'Funnel Visualization',
               desc: 'See conversion rates at each step. Color-coded drop-off severity. Click any step to dig deeper.',
-              gradient: 'from-blue-500 to-cyan-500'
+              gradient: 'from-[var(--brand-primary)] to-[var(--brand-primary)]'
             },
             {
               icon: Brain,
               title: 'AI Drop-off Analysis',
               desc: 'Automatically identify patterns in where and why users leave. No manual analysis needed.',
-              gradient: 'from-purple-500 to-pink-500'
+              gradient: 'from-[var(--brand-primary)] to-[var(--brand-hover)]'
             },
             {
               icon: Users,
@@ -267,7 +267,7 @@ export default function Home() {
           viewport={{ once: true }}
         >
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-purple-500/10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-primary)]/10 via-transparent to-[var(--brand-primary)]/5" />
 
           <div className="relative">
             <Sparkles className="w-10 h-10 mx-auto mb-6 text-orange-400" />

@@ -73,7 +73,7 @@ export function Uploader({ onUpload, isAnalyzing, analyzingCount = 0 }: Uploader
         <Card
             className={cn(
                 "border-2 border-dashed p-10 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900",
-                isDragging ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-zinc-200 dark:border-zinc-800",
+                isDragging ? "border-[var(--brand-primary)] bg-[var(--brand-light)]" : "border-zinc-200 dark:border-zinc-800",
                 isAnalyzing && "opacity-50 pointer-events-none"
             )}
             onDragOver={handleDragOver}
@@ -97,7 +97,7 @@ export function Uploader({ onUpload, isAnalyzing, analyzingCount = 0 }: Uploader
                 Drop multiple files or click to browse
             </p>
             {isAnalyzing && analyzingCount > 0 && (
-                <p className="text-sm text-blue-500 mt-3 font-medium">
+                <p className="text-sm text-[var(--brand-primary)] mt-3 font-medium">
                     Analyzing {analyzingCount} file{analyzingCount > 1 ? 's' : ''}...
                 </p>
             )}

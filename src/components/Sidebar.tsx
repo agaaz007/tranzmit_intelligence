@@ -52,7 +52,7 @@ export default function Sidebar() {
             {/* Logo */}
             <div className="px-4 py-5 relative">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--brand-primary)] flex items-center justify-center shadow-lg dark:shadow-[0_0_20px_var(--brand-glow)] transition-all group-hover:scale-105">
+                    <div className="w-9 h-9 rounded-lg bg-[var(--brand-primary)] flex items-center justify-center transition-all group-hover:scale-105">
                         <Radio className="w-4.5 h-4.5 text-white" />
                     </div>
                     <div className="flex flex-col">
@@ -94,7 +94,7 @@ export default function Sidebar() {
                                 }`}
                             >
                                 {isActive && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-primary)] to-blue-600 dark:from-[var(--brand-primary)] dark:to-blue-500" />
+                                    <div className="absolute inset-0 bg-[var(--brand-primary)]" />
                                 )}
                                 <item.icon className="w-4 h-4 relative z-10" strokeWidth={1.75} />
                                 <span className="font-medium relative z-10">{item.label}</span>
@@ -125,7 +125,7 @@ export default function Sidebar() {
                                 }`}
                             >
                                 {isActive && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-primary)] to-blue-600 dark:from-[var(--brand-primary)] dark:to-blue-500" />
+                                    <div className="absolute inset-0 bg-[var(--brand-primary)]" />
                                 )}
                                 <item.icon className="w-4 h-4 relative z-10" strokeWidth={1.75} />
                                 <span className="font-medium relative z-10">{item.label}</span>
@@ -178,7 +178,7 @@ export default function Sidebar() {
                 {/* User Account */}
                 <div className="px-3 py-3 border-t border-[var(--border)] dark:border-[var(--border)]/50">
                     <div className="flex items-center gap-2.5 group cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-blue-600 flex items-center justify-center text-white text-xs font-semibold shadow-md dark:shadow-[0_0_12px_var(--brand-glow)] transition-shadow group-hover:shadow-lg">
+                        <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-xs font-semibold">
                             T
                         </div>
                         <div className="flex-1 min-w-0">

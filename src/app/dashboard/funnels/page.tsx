@@ -161,7 +161,7 @@ export default function FunnelsPage() {
                 value={timeWindow}
                 onChange={(e) => handleTimeWindowChange(e.target.value)}
                 disabled={isLoading}
-                className="px-3 py-2.5 bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
+                className="px-3 py-2.5 bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent disabled:opacity-50"
               >
                 {TIME_WINDOWS.map((window) => (
                   <option key={window.value} value={window.value}>
@@ -236,7 +236,7 @@ export default function FunnelsPage() {
 
                     <div className="flex items-center gap-5">
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        <div className="text-2xl font-bold text-[var(--brand-primary)]">
                           {(funnel.overallConversion || 0).toFixed(1)}%
                         </div>
                         <div className="text-xs text-[var(--muted-foreground)] font-medium">overall conversion</div>
@@ -247,7 +247,7 @@ export default function FunnelsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-2 text-[var(--muted-foreground)] hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition-all"
+                        className="p-2 text-[var(--muted-foreground)] hover:text-[var(--brand-primary)] hover:bg-[var(--brand-light)] rounded-lg transition-all"
                         title="View in PostHog"
                       >
                         <ExternalLink className="w-5 h-5" />
@@ -288,7 +288,7 @@ export default function FunnelsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-[var(--card)] rounded-xl shadow-sm">
-                      <Target className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      <Target className="w-6 h-6 text-[var(--brand-primary)]" />
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-[var(--foreground)]">{selectedFunnel.name}</h2>
@@ -300,7 +300,7 @@ export default function FunnelsPage() {
                         <span className="text-[var(--border)]">•</span>
                         <span>{selectedFunnel.steps.length} steps</span>
                         <span className="text-[var(--border)]">•</span>
-                        <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium">
+                        <span className="flex items-center gap-1 text-[var(--brand-primary)] font-medium">
                           <TrendingUp className="w-4 h-4" />
                           {(selectedFunnel.overallConversion || 0).toFixed(1)}% conversion
                         </span>

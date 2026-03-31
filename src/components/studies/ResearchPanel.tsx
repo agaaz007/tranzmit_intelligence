@@ -114,7 +114,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
         </button>
 
         {/* Question Badge */}
-        <span className="flex-shrink-0 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 rounded text-xs font-semibold">
+        <span className="flex-shrink-0 px-2 py-0.5 bg-[var(--brand-light)] text-[var(--brand-primary)] rounded text-xs font-semibold">
           Q{index + 1}
         </span>
 
@@ -165,7 +165,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                 <select
                   value={questionType}
                   onChange={(e) => setQuestionType(e.target.value)}
-                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[160px]"
+                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] min-w-[160px]"
                 >
                   <option value="open-ended">Open-ended</option>
                   <option value="multiple-choice">Multiple choice</option>
@@ -181,7 +181,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
                   onBlur={handleSave}
-                  className="w-full p-3 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full p-3 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none"
                   rows={2}
                 />
               </div>
@@ -192,7 +192,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                 <select
                   value={followUpMode}
                   onChange={(e) => setFollowUpMode(e.target.value)}
-                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[160px]"
+                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] min-w-[160px]"
                 >
                   <option value="if-short">If short answer</option>
                   <option value="always">Always</option>
@@ -206,7 +206,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                 <select
                   value={inputType}
                   onChange={(e) => setInputType(e.target.value)}
-                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[160px]"
+                  className="px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] min-w-[160px]"
                 >
                   <option value="voice">Default (voice)</option>
                   <option value="text">Text only</option>
@@ -222,7 +222,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                   onChange={(e) => setGuidelines(e.target.value)}
                   onBlur={handleSave}
                   placeholder="If they mention A, understand why."
-                  className="w-full p-3 border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full p-3 border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none"
                   rows={2}
                 />
               </div>
@@ -231,20 +231,20 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
               {!isReprompting ? (
                 <button
                   onClick={() => setIsReprompting(true)}
-                  className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition-colors"
+                  className="flex items-center gap-2 text-sm text-[var(--brand-primary)] hover:text-[var(--brand-hover)] font-medium transition-colors"
                 >
                   <Sparkles size={16} />
                   Regenerate with AI
                 </button>
               ) : (
                 <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-800 rounded-lg p-3 space-y-3">
-                  <label className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase block">
+                  <label className="text-xs font-semibold text-[var(--brand-primary)] uppercase block">
                     How should I improve this question?
                   </label>
                   <textarea
                     value={repromptInput}
                     onChange={(e) => setRepromptInput(e.target.value)}
-                    className="w-full p-2 border border-purple-200 dark:border-purple-700 rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                    className="w-full p-2 border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] bg-[var(--card)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none"
                     rows={2}
                     placeholder="e.g., Make it more specific, add emotional probes..."
                     disabled={isLoading}
@@ -253,7 +253,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, index, onUpdate, 
                     <button
                       onClick={handleReprompt}
                       disabled={isLoading || !repromptInput.trim()}
-                      className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 bg-[var(--brand-primary)] text-white text-sm font-medium rounded-md hover:bg-[var(--brand-hover)] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? (
                         <>
@@ -357,7 +357,7 @@ const DiscussionGuideSection: React.FC<DiscussionGuideSectionProps> = ({
         {/* Add Question Button */}
         <button
           onClick={onAddQuestion}
-          className="w-full py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted-foreground)] hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/50 transition-colors flex items-center justify-center gap-2 mt-3"
+          className="w-full py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)]/30 hover:bg-[var(--brand-light)] transition-colors flex items-center justify-center gap-2 mt-3"
         >
           <Plus size={18} />
           Add Question
@@ -417,7 +417,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
         </div>
         <div className="w-full bg-[var(--muted)] h-1.5 rounded-full overflow-hidden">
           <motion.div
-            className="bg-indigo-600 h-full rounded-full"
+            className="bg-[var(--brand-primary)] h-full rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${getProgress()}%` }}
             transition={{ duration: 0.5 }}

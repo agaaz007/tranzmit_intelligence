@@ -48,3 +48,4 @@ Tranzmit Listen Labs Clone/
 
 # clerk configuration (can include secrets)
 /.clerk/
+.gstack/

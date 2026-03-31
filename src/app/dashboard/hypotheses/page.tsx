@@ -223,7 +223,7 @@ export default function QualitativePage() {
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       completed: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-      in_progress: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+      in_progress: 'bg-[var(--brand-light)] text-[var(--brand-primary)]',
       failed: 'bg-red-500/15 text-red-600 dark:text-red-400',
     };
     return (
@@ -318,7 +318,7 @@ export default function QualitativePage() {
           <div className="text-sm text-[var(--foreground-muted)]">AI PM Agent</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card p-4">
-          <div className="text-2xl font-bold text-blue-500 dark:text-blue-400">{manualCount}</div>
+          <div className="text-2xl font-bold text-[var(--brand-primary)]">{manualCount}</div>
           <div className="text-sm text-[var(--foreground-muted)]">Manual Uploads</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card p-4">
@@ -389,12 +389,12 @@ export default function QualitativePage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        conv.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-blue-500/10'
+                        conv.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-[var(--brand-light)]'
                       }`}>
                         {conv.source === 'elevenlabs' ? (
                           <Bot className="w-4 h-4 text-violet-500" />
                         ) : (
-                          <User className="w-4 h-4 text-blue-500" />
+                          <User className="w-4 h-4 text-[var(--brand-primary)]" />
                         )}
                       </div>
                       <div>
@@ -411,7 +411,7 @@ export default function QualitativePage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       conv.source === 'elevenlabs'
                         ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
-                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        : 'bg-[var(--brand-light)] text-[var(--brand-primary)]'
                     }`}>
                       {conv.source === 'elevenlabs' ? 'AI PM Agent' : 'Manual'}
                     </span>
@@ -457,12 +457,12 @@ export default function QualitativePage() {
             <div className="sticky top-0 bg-[var(--card)] border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  selectedConversation?.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-blue-500/10'
+                  selectedConversation?.source === 'elevenlabs' ? 'bg-violet-500/10' : 'bg-[var(--brand-light)]'
                 }`}>
                   {selectedConversation?.source === 'elevenlabs' ? (
                     <Bot className="w-5 h-5 text-violet-500" />
                   ) : (
-                    <User className="w-5 h-5 text-blue-500" />
+                    <User className="w-5 h-5 text-[var(--brand-primary)]" />
                   )}
                 </div>
                 <div>
@@ -600,7 +600,7 @@ export default function QualitativePage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[var(--card)] rounded-xl shadow-2xl w-full max-w-lg border border-[var(--border)]"
+              className="bg-[var(--card)] rounded-lg shadow-2xl w-full max-w-lg border border-[var(--border)]"
             >
               <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-[var(--foreground)]">Upload Transcript</h3>

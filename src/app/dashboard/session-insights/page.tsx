@@ -51,7 +51,7 @@ function CollapsibleCard({ title, count, defaultOpen = false, accent = 'blue', i
 }) {
     const [open, setOpen] = useState(defaultOpen);
     const accentColors = {
-        blue: { border: 'border-l-blue-500', bg: 'bg-blue-500/5', pill: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+        blue: { border: 'border-l-[var(--brand-primary)]', bg: 'bg-[var(--brand-light)]', pill: 'bg-[var(--brand-light)] text-[var(--brand-primary)]' },
         emerald: { border: 'border-l-emerald-500', bg: 'bg-emerald-500/5', pill: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
         amber: { border: 'border-l-amber-500', bg: 'bg-amber-500/5', pill: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
     };
@@ -702,7 +702,7 @@ function SessionInsightsContent() {
             <div className="border-b border-[var(--border)] px-8 py-5 backdrop-blur-md bg-[var(--background)]/80 sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--brand-primary)] shadow-[0_0_8px_var(--brand-glow)]" />
                         <h1 className="text-xl font-semibold text-[var(--foreground)] tracking-tight">
                             Session Insights
                         </h1>
@@ -741,7 +741,7 @@ function SessionInsightsContent() {
                     <div className="rounded-xl border border-[var(--border)] overflow-hidden backdrop-blur-sm bg-[var(--card)]/80 dark:bg-[var(--card)]/60 shadow-md dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]">
                         <div className="px-7 pt-6 pb-5">
                             <h2 className="text-base font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
-                                <BarChart3 className="w-5 h-5 text-blue-500" />
+                                <BarChart3 className="w-5 h-5 text-[var(--brand-primary)]" />
                                 Summary
                             </h2>
                             <p className="text-[15px] text-[var(--muted-foreground)] leading-relaxed">
@@ -763,9 +763,9 @@ function SessionInsightsContent() {
                                         <p className="text-xs font-medium text-red-500 uppercase tracking-wider">Critical</p>
                                         <p className={`text-2xl font-bold mt-1 tabular-nums ${criticalIssueCount > 0 ? 'text-red-500' : 'text-[var(--foreground)]'}`}>{criticalIssueCount}</p>
                                     </div>
-                                    <div className="rounded-lg bg-blue-500/8 dark:bg-blue-500/10 p-3">
-                                        <p className="text-xs font-medium text-blue-500 uppercase tracking-wider">Goals</p>
-                                        <p className="text-2xl font-bold text-blue-500 mt-1 tabular-nums">{goalCount}</p>
+                                    <div className="rounded-lg bg-[var(--brand-light)] p-3">
+                                        <p className="text-xs font-medium text-[var(--brand-primary)] uppercase tracking-wider">Goals</p>
+                                        <p className="text-2xl font-bold text-[var(--brand-primary)] mt-1 tabular-nums">{goalCount}</p>
                                     </div>
                                 </div>
                             </div>
@@ -850,7 +850,7 @@ function SessionInsightsContent() {
                 {/* Loading state */}
                 {isLoadingInsights && !hasInsights && (
                     <div className="rounded-xl border border-[var(--border)] backdrop-blur-sm bg-[var(--card)]/80 dark:bg-[var(--card)]/60 p-12 flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                        <Loader2 className="w-5 h-5 animate-spin text-[var(--brand-primary)]" />
                         <p className="text-sm text-[var(--muted-foreground)]">Analyzing sessions...</p>
                     </div>
                 )}
@@ -858,8 +858,8 @@ function SessionInsightsContent() {
                 {/* Empty state */}
                 {!isLoadingInsights && !hasInsights && (
                     <div className="rounded-xl border border-[var(--border)] border-dashed backdrop-blur-sm bg-[var(--card)]/80 dark:bg-[var(--card)]/60 px-6 py-10 text-center">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
-                            <BarChart3 className="w-5 h-5 text-blue-500" />
+                        <div className="w-10 h-10 rounded-xl bg-[var(--brand-light)] flex items-center justify-center mx-auto mb-3">
+                            <BarChart3 className="w-5 h-5 text-[var(--brand-primary)]" />
                         </div>
                         <h2 className="text-sm font-semibold text-[var(--foreground)] mb-1.5">No Insights Yet</h2>
                         <p className="text-sm text-[var(--muted-foreground)]">Sync sessions to start seeing insights</p>
@@ -870,7 +870,7 @@ function SessionInsightsContent() {
                 {hasInsights && persistedInsights && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {persistedInsights.topUserGoals.length > 0 && (
-                            <CollapsibleCard title="User Goals" count={persistedInsights.topUserGoals.length} accent="blue" icon={<Target className="w-4 h-4 text-blue-500" />}>
+                            <CollapsibleCard title="User Goals" count={persistedInsights.topUserGoals.length} accent="blue" icon={<Target className="w-4 h-4 text-[var(--brand-primary)]" />}>
                                 <div className="space-y-2">
                                     {persistedInsights.topUserGoals.map((goal, i) => {
                                         const isLow = goal.success_rate.toLowerCase().includes('fail') || goal.success_rate.toLowerCase().includes('low') || goal.success_rate.toLowerCase().includes('0%');
@@ -911,7 +911,7 @@ function SessionInsightsContent() {
                                     {persistedInsights.immediateActions.map((action, i) => (
                                         <div key={`act-${i}`} className="rounded-lg bg-[var(--muted)]/40 dark:bg-[var(--muted)]/20 p-3 hover:bg-[var(--muted)]/60 transition-colors">
                                             <div className="flex items-start gap-2.5">
-                                                <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                                                <span className="w-5 h-5 rounded-full bg-[var(--brand-light)] text-[var(--brand-primary)] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{i + 1}</span>
                                                 <span className="text-sm text-[var(--foreground)] leading-snug">{action}</span>
                                             </div>
                                         </div>
@@ -953,18 +953,18 @@ function SessionInsightsContent() {
                         {inputMode === 'all-sessions' && currentProjectId && (
                             <>
                                 {distinctIdFilter && (
-                                    <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg flex items-center justify-between">
+                                    <div className="mb-4 p-3 bg-[var(--brand-light)] border border-[var(--brand-primary)]/20 rounded-lg flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <User className="w-4 h-4 text-indigo-500" />
+                                            <User className="w-4 h-4 text-[var(--brand-primary)]" />
                                             <span className="text-sm text-[var(--foreground)]">
-                                                Filtering sessions for user: <span className="font-mono text-indigo-600 dark:text-indigo-400">{distinctIdFilter}</span>
+                                                Filtering sessions for user: <span className="font-mono text-[var(--brand-primary)]">{distinctIdFilter}</span>
                                             </span>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => window.location.href = '/dashboard/session-insights'}
-                                            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-500/10"
+                                            className="text-[var(--brand-primary)] hover:text-[var(--brand-hover)] hover:bg-[var(--brand-light)]"
                                         >
                                             <X className="w-4 h-4 mr-1" />
                                             Clear filter
@@ -1015,8 +1015,8 @@ function SessionInsightsContent() {
                         {inputMode === 'sync' && (
                             <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8">
                                 <div className="flex flex-col items-center justify-center gap-5 max-w-sm mx-auto">
-                                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                                        <Cloud className="w-6 h-6 text-blue-500" />
+                                    <div className="w-12 h-12 rounded-xl bg-[var(--brand-light)] border border-[var(--brand-primary)]/20 flex items-center justify-center">
+                                        <Cloud className="w-6 h-6 text-[var(--brand-primary)]" />
                                     </div>
                                     <div className="text-center">
                                         <h3 className="font-medium text-[var(--foreground)]">
@@ -1032,7 +1032,7 @@ function SessionInsightsContent() {
                                             value={sessionCount}
                                             onChange={(e) => setSessionCount(Number(e.target.value))}
                                             disabled={syncProgress.status !== 'idle' && syncProgress.status !== 'error' && syncProgress.status !== 'complete'}
-                                            className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
                                         >
                                             {SESSION_COUNT_OPTIONS.map((count) => (
                                                 <option key={count} value={count}>{count} sessions</option>
@@ -1044,7 +1044,7 @@ function SessionInsightsContent() {
                                             {(syncProgress.status === 'fetching-sessions' || syncProgress.status === 'analyzing') && (
                                                 <div>
                                                     <div className="h-1.5 bg-[var(--muted)] rounded-full overflow-hidden">
-                                                        <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }} />
+                                                        <div className="h-full bg-[var(--brand-primary)] transition-all duration-300" style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }} />
                                                     </div>
                                                     <p className="text-[11px] text-[var(--muted-foreground)] mt-1 text-center">{syncProgress.current} / {syncProgress.total}</p>
                                                 </div>
@@ -1052,7 +1052,7 @@ function SessionInsightsContent() {
                                             <div className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-sm ${
                                                 syncProgress.status === 'error' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
                                                 syncProgress.status === 'complete' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                                                'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                                'bg-[var(--brand-light)] text-[var(--brand-primary)]'
                                             }`}>
                                                 {(syncProgress.status === 'fetching-list' || syncProgress.status === 'fetching-sessions' || syncProgress.status === 'analyzing') && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                                 {syncProgress.status === 'complete' && <Check className="w-3.5 h-3.5" />}
@@ -1085,11 +1085,11 @@ function SessionInsightsContent() {
                             <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle className="flex items-center gap-2 text-[var(--foreground)]">
-                                        <PlayCircle className="w-5 h-5 text-blue-500" />
+                                        <PlayCircle className="w-5 h-5 text-[var(--brand-primary)]" />
                                         Session Replay
                                         <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{dbSelectedSession.name}</span>
                                         <Badge variant="outline" className={
-                                            dbSelectedSession.source === 'posthog' ? 'border-blue-500/30 text-blue-500' :
+                                            dbSelectedSession.source === 'posthog' ? 'border-[var(--brand-primary)]/30 text-[var(--brand-primary)]' :
                                             dbSelectedSession.source === 'mixpanel' ? 'border-orange-500/30 text-orange-500' :
                                             dbSelectedSession.source === 'amplitude' ? 'border-violet-500/30 text-violet-500' :
                                             'border-emerald-500/30 text-emerald-500'
@@ -1097,7 +1097,7 @@ function SessionInsightsContent() {
                                             {dbSelectedSession.source === 'posthog' ? 'PostHog' : dbSelectedSession.source === 'mixpanel' ? 'Mixpanel' : dbSelectedSession.source === 'amplitude' ? 'Amplitude' : 'Upload'}
                                         </Badge>
                                         {dbSelectedSession.multimodalStatus === 'completed' && (
-                                            <Badge className="bg-purple-500/10 text-purple-500 border border-purple-500/30">
+                                            <Badge className="bg-[var(--brand-light)] text-[var(--brand-primary)] border border-[var(--brand-primary)]/30">
                                                 Multimodal
                                             </Badge>
                                         )}
@@ -1128,7 +1128,7 @@ function SessionInsightsContent() {
                             <Card className="bg-[var(--card)] border-[var(--border)]">
                                 <CardHeader><CardTitle className="text-[var(--foreground)] text-sm">User Intent</CardTitle></CardHeader>
                                 <CardContent>
-                                    <p className="text-base font-medium text-blue-500">&ldquo;{dbSelectedSession.analysis.user_intent}&rdquo;</p>
+                                    <p className="text-base font-medium text-[var(--brand-primary)]">&ldquo;{dbSelectedSession.analysis.user_intent}&rdquo;</p>
                                     <p className="text-sm text-[var(--muted-foreground)] mt-2">{dbSelectedSession.analysis.summary}</p>
                                 </CardContent>
                             </Card>
@@ -1169,11 +1169,11 @@ function SessionInsightsContent() {
                                 </CardContent>
                             </Card>
                             {dbSelectedSession.multimodalAnalysis && (
-                                <Card className="bg-[var(--card)] border-purple-500/20">
+                                <Card className="bg-[var(--card)] border-[var(--brand-primary)]/20">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2 text-purple-500 text-sm">
+                                        <CardTitle className="flex items-center gap-2 text-[var(--brand-primary)] text-sm">
                                             <Zap className="w-4 h-4" />Multimodal Analysis
-                                            <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-[10px] ml-auto">
+                                            <Badge className="bg-[var(--brand-light)] text-[var(--brand-primary)] border-[var(--brand-primary)]/30 text-[10px] ml-auto">
                                                 {dbSelectedSession.multimodalAnalysis.frames_analyzed} frames
                                             </Badge>
                                         </CardTitle>
@@ -1184,11 +1184,11 @@ function SessionInsightsContent() {
                                         </div>
                                         {dbSelectedSession.multimodalAnalysis.visual_insights && dbSelectedSession.multimodalAnalysis.visual_insights.length > 0 && (
                                             <div>
-                                                <h4 className="text-xs font-semibold text-purple-500 uppercase tracking-wider mb-2">Visual Insights</h4>
+                                                <h4 className="text-xs font-semibold text-[var(--brand-primary)] uppercase tracking-wider mb-2">Visual Insights</h4>
                                                 <ul className="space-y-1.5">
                                                     {dbSelectedSession.multimodalAnalysis.visual_insights.map((insight: string, i: number) => (
                                                         <li key={i} className="flex items-start gap-2 text-sm text-[var(--muted-foreground)]">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)] mt-1.5 shrink-0" />
                                                             {insight}
                                                         </li>
                                                     ))}
@@ -1200,9 +1200,9 @@ function SessionInsightsContent() {
                                                 <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2">Visual Friction Points</h4>
                                                 <div className="space-y-2">
                                                     {dbSelectedSession.multimodalAnalysis.friction_points.map((pt: any, i: number) => (
-                                                        <div key={i} className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                                                        <div key={i} className="p-3 rounded-lg bg-[var(--brand-light)] border border-[var(--brand-primary)]/20">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <Badge variant="outline" className="text-purple-400 border-purple-500/30 text-[10px]">{pt.timestamp}</Badge>
+                                                                <Badge variant="outline" className="text-[var(--brand-primary)] border-[var(--brand-primary)]/30 text-[10px]">{pt.timestamp}</Badge>
                                                                 <Badge variant="outline" className={
                                                                     pt.severity === 'critical' ? 'text-red-500 border-red-500/30 text-[10px]' :
                                                                     pt.severity === 'high' ? 'text-orange-500 border-orange-500/30 text-[10px]' :
@@ -1211,7 +1211,7 @@ function SessionInsightsContent() {
                                                             </div>
                                                             <p className="text-sm text-[var(--foreground)]">{pt.issue}</p>
                                                             {pt.visual_evidence && (
-                                                                <p className="text-xs text-purple-400 mt-1">Visual: {pt.visual_evidence}</p>
+                                                                <p className="text-xs text-[var(--brand-primary)] mt-1">Visual: {pt.visual_evidence}</p>
                                                             )}
                                                             {pt.product_fix && (
                                                                 <p className="text-xs text-emerald-400 mt-1">Fix: {pt.product_fix}</p>
@@ -1244,7 +1244,7 @@ function SessionInsightsContent() {
                             <Card className="border-0 shadow-lg ring-1 ring-[var(--border)] bg-[var(--card)]">
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <CardTitle className="flex items-center gap-2 text-[var(--foreground)]">
-                                        <PlayCircle className="w-5 h-5 text-blue-500" />
+                                        <PlayCircle className="w-5 h-5 text-[var(--brand-primary)]" />
                                         Session Replay
                                         <span className="text-sm font-normal text-[var(--muted-foreground)] ml-2">{selectedEntry.fileName}</span>
                                     </CardTitle>
@@ -1272,7 +1272,7 @@ function SessionInsightsContent() {
                             <Card className="bg-[var(--card)] border-[var(--border)]">
                                 <CardHeader><CardTitle className="text-[var(--foreground)] text-sm">User Intent</CardTitle></CardHeader>
                                 <CardContent>
-                                    <p className="text-base font-medium text-blue-500">&ldquo;{selectedEntry.analysis.user_intent}&rdquo;</p>
+                                    <p className="text-base font-medium text-[var(--brand-primary)]">&ldquo;{selectedEntry.analysis.user_intent}&rdquo;</p>
                                     <p className="text-sm text-[var(--muted-foreground)] mt-2">{selectedEntry.analysis.summary}</p>
                                 </CardContent>
                             </Card>

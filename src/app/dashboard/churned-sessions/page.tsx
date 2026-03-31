@@ -387,7 +387,7 @@ export default function ChurnedSessionsPage() {
             )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card p-4">
-            <div className="text-2xl font-bold text-purple-500 dark:text-purple-400">
+            <div className="text-2xl font-bold text-[var(--brand-primary)]">
               {batches.reduce((sum, b) => sum + b.emailsFound, 0)}
             </div>
             <div className="text-sm text-[var(--foreground-muted)]">Users Found</div>
@@ -717,7 +717,7 @@ function UploadModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[var(--card)] rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col border border-[var(--border)]"
+        className="bg-[var(--card)] rounded-lg p-6 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col border border-[var(--border)]"
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Upload Churned User Emails</h3>
@@ -734,7 +734,7 @@ function UploadModal({
         )}
 
         {emails.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--border)] rounded-xl p-12 text-center">
+          <div className="border-2 border-dashed border-[var(--border)] rounded-lg p-12 text-center">
             <Upload className="w-12 h-12 mx-auto text-[var(--foreground-subtle)] mb-4" />
             <p className="text-[var(--foreground-muted)] mb-2">Upload a CSV file with churned user emails</p>
             <p className="text-sm text-[var(--foreground-subtle)] mb-4">

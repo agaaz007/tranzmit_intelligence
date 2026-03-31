@@ -1,23 +1,44 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Instrument_Serif } from "next/font/google";
+import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+});
+
+const generalSans = localFont({
+  src: [
+    { path: "../fonts/GeneralSans-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/GeneralSans-Semibold.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/GeneralSans-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-general-sans",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
-  title: "Tranzmit | AI Interview Platform",
-  description: "AI-led customer interviews that drive growth. Reduce churn with real feedback, accelerate product decisions with AI-driven evidence.",
+  title: "Tranzmit | AI Session Analytics",
+  description: "AI-native session analytics. Multimodal analysis that catches friction, predicts churn, and recovers revenue.",
 };
 
 export default function RootLayout({
@@ -29,7 +50,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--background)]`}
+        className={`${dmSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} ${generalSans.variable} antialiased bg-[var(--background)]`}
       >
         <ClerkProvider>
           <PostHogProvider>
