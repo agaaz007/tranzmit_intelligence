@@ -108,12 +108,25 @@ export async function captureKeyframesWithBrowser(
 
     for (let i = 0; i < totalFrames; i++) {
       const timestampMs = (i / scanFps) * 1000;
-      try {
-        await page.evaluate((ms: number) => {
-          (window as any).__replayer?.pause(ms);
-        }, timestampMs);
-        await page.waitForTimeout(50);
 
+      // Wrap pause() inside page context so rrweb errors don't poison page.evaluate
+      const pauseOk = await page.evaluate((ms: number) => {
+        try {
+          (window as any).__replayer?.pause(ms);
+          return true;
+        } catch {
+          return false;
+        }
+      }, timestampMs);
+
+      if (!pauseOk) {
+        console.warn(`[Capture] Pass 1: skipping frame ${i} at ${(timestampMs / 1000).toFixed(1)}s — replay error`);
+        continue;
+      }
+
+      await page.waitForTimeout(50);
+
+      try {
         const buf = await page.screenshot({
           type: 'jpeg',
           quality: 10,
@@ -130,7 +143,7 @@ export async function captureKeyframesWithBrowser(
 
         prevBuf = buf;
       } catch (err) {
-        console.warn(`[Capture] Pass 1: skipping frame ${i} at ${(timestampMs / 1000).toFixed(1)}s — replay error`);
+        console.warn(`[Capture] Pass 1: screenshot failed at frame ${i}`);
       }
     }
 
@@ -145,11 +158,17 @@ export async function captureKeyframesWithBrowser(
 
     for (const frame of selected) {
       const timestampMs = frame.timestampSec * 1000;
-      try {
-        await page.evaluate((ms: number) => {
+
+      const pauseOk = await page.evaluate((ms: number) => {
+        try {
           (window as any).__replayer?.pause(ms);
-        }, timestampMs);
-      } catch (err) {
+          return true;
+        } catch {
+          return false;
+        }
+      }, timestampMs);
+
+      if (!pauseOk) {
         console.warn(`[Capture] Pass 2: skipping frame at ${frame.timestampSec.toFixed(1)}s — replay error`);
         continue;
       }
