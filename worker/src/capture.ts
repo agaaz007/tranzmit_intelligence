@@ -69,21 +69,34 @@ export async function captureKeyframesWithBrowser(
     await page.addScriptTag({ path: path.join(replayDir, 'replay.umd.cjs') });
     await page.addStyleTag({ path: path.join(replayDir, 'style.css') });
 
-    // Initialize the Replayer
-    await page.evaluate((eventsJson: string) => {
-      const events = JSON.parse(eventsJson);
-      const container = document.getElementById('player-container')!;
-      // @ts-ignore — rrweb loaded via UMD script tag
-      const replayer = new rrweb.Replayer(events, {
-        root: container,
-        skipInactive: false,
-        showWarning: false,
-        liveMode: false,
-        triggerFocus: false,
-        mouseTail: false,
-      });
-      (window as any).__replayer = replayer;
+    // Suppress rrweb internal errors (e.g. media mutations on non-Element nodes)
+    page.on('pageerror', () => {});
+
+    // Initialize the Replayer — wrap in try/catch since malformed events can crash rrweb constructor
+    const initOk = await page.evaluate((eventsJson: string) => {
+      try {
+        const events = JSON.parse(eventsJson);
+        const container = document.getElementById('player-container')!;
+        // @ts-ignore — rrweb loaded via UMD script tag
+        const replayer = new rrweb.Replayer(events, {
+          root: container,
+          skipInactive: false,
+          showWarning: false,
+          liveMode: false,
+          triggerFocus: false,
+          mouseTail: false,
+        });
+        (window as any).__replayer = replayer;
+        return true;
+      } catch (e) {
+        return false;
+      }
     }, JSON.stringify(sorted));
+
+    if (!initOk) {
+      console.warn('[Capture] rrweb Replayer failed to initialize — skipping session');
+      return [];
+    }
 
     await page.waitForTimeout(1000);
 
@@ -95,26 +108,30 @@ export async function captureKeyframesWithBrowser(
 
     for (let i = 0; i < totalFrames; i++) {
       const timestampMs = (i / scanFps) * 1000;
-      await page.evaluate((ms: number) => {
-        (window as any).__replayer?.pause(ms);
-      }, timestampMs);
-      await page.waitForTimeout(50);
+      try {
+        await page.evaluate((ms: number) => {
+          (window as any).__replayer?.pause(ms);
+        }, timestampMs);
+        await page.waitForTimeout(50);
 
-      const buf = await page.screenshot({
-        type: 'jpeg',
-        quality: 10,
-        clip: { x: 0, y: 0, width: THUMB_WIDTH, height: THUMB_HEIGHT },
-      });
+        const buf = await page.screenshot({
+          type: 'jpeg',
+          quality: 10,
+          clip: { x: 0, y: 0, width: THUMB_WIDTH, height: THUMB_HEIGHT },
+        });
 
-      const diffScore = prevBuf ? bufferDiffScore(prevBuf, buf) : 0;
+        const diffScore = prevBuf ? bufferDiffScore(prevBuf, buf) : 0;
 
-      scanFrames.push({
-        index: i,
-        timestampSec: i / scanFps,
-        diffScore,
-      });
+        scanFrames.push({
+          index: i,
+          timestampSec: i / scanFps,
+          diffScore,
+        });
 
-      prevBuf = buf;
+        prevBuf = buf;
+      } catch (err) {
+        console.warn(`[Capture] Pass 1: skipping frame ${i} at ${(timestampMs / 1000).toFixed(1)}s — replay error`);
+      }
     }
 
     // ===== 4-Layer Selection =====
@@ -128,9 +145,14 @@ export async function captureKeyframesWithBrowser(
 
     for (const frame of selected) {
       const timestampMs = frame.timestampSec * 1000;
-      await page.evaluate((ms: number) => {
-        (window as any).__replayer?.pause(ms);
-      }, timestampMs);
+      try {
+        await page.evaluate((ms: number) => {
+          (window as any).__replayer?.pause(ms);
+        }, timestampMs);
+      } catch (err) {
+        console.warn(`[Capture] Pass 2: skipping frame at ${frame.timestampSec.toFixed(1)}s — replay error`);
+        continue;
+      }
       await page.waitForTimeout(300);
 
       try {

@@ -37,6 +37,12 @@ export async function POST(
       data: { multimodalStatus: 'pending' },
     });
 
+    // Fire-and-forget: notify the worker to pick up immediately
+    const workerUrl = process.env.WORKER_TRIGGER_URL;
+    if (workerUrl) {
+      fetch(`${workerUrl}/trigger`, { method: 'POST' }).catch(() => {});
+    }
+
     return NextResponse.json({ status: 'queued' });
   } catch (error) {
     console.error('Error queuing multimodal analysis:', error);
